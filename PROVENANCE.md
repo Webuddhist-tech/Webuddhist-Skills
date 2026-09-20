@@ -12,7 +12,7 @@ retire the vault copy when the team has moved over.
 ---
 
 
-**50 canonical skills, consolidated from 172 source files across 6 repos.**
+**51 canonical skills, consolidated from 172 source files across 6 repos.**
 
 ### `library/annotate-root-text`
 
@@ -20,6 +20,11 @@ retire the vault copy when the team has moved over.
 
 - `webuddhist-library-data-pipeline/skills/annotate-root-text/SKILL.md`
 - `data-pipeline/skills/annotate-root-text/SKILL.md`
+
+### `library/headings-not-content`
+
+*profile: `library-pipeline`* — absorbs 0 source file(s):
+
 
 ### `library/lint-annotations`
 

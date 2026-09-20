@@ -4,7 +4,7 @@ Every skill in this repo. Generated from each skill's own frontmatter —
 run `python3 tools/build-catalog.py` after adding or changing one.
 
 - **47** text-processing skills in [`rails/`](rails/README.md)
-- **3** library ingestion skills in [`library/`](library/README.md)
+- **4** library ingestion skills in [`library/`](library/README.md)
 - **17** org & engineering skills at the repo root
 
 The rails and library skills consolidate **172**
@@ -132,6 +132,7 @@ for the full mapping.
 | Skill | Does | Absorbs |
 |---|---|---|
 | [`annotate-root-text`](library/annotate-root-text/SKILL.md) | Pipeline 1 orchestrator | 2 |
+| [`headings-not-content`](library/headings-not-content/SKILL.md) | Keep markdown headings out of an edition's uploaded content and segmentation, and build the table of contents from them instead | 0 |
 | [`lint-annotations`](library/lint-annotations/SKILL.md) | Annotation-convention linter | 2 |
 | [`upload-root-text`](library/upload-root-text/SKILL.md) | Pipeline 2 agent wrapper around tools/run_upload.py (lint -> parse -> upload) for a completed texts/<text-id>/annotated.md | 2 |
 
