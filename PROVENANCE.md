@@ -12,7 +12,7 @@ retire the vault copy when the team has moved over.
 ---
 
 
-**51 canonical skills, consolidated from 172 source files across 6 repos.**
+**52 canonical skills, consolidated from 178 source files across 6 repos.**
 
 ### `library/annotate-root-text`
 
@@ -210,6 +210,17 @@ retire the vault copy when the team has moved over.
 *profile: `rails-vault`* — absorbs 1 source file(s):
 
 - `21-taras-rails/4-SYSTEM/Skills/gemini-article-polish/SKILL.md`
+
+### `rails/graded-translate`
+
+*profile: `rails-vault`* — absorbs 6 source file(s):
+
+- `bodhisattvacharyavatara-rails/4-SYSTEM/Skills/english-translation/bo-en-translate-skill.md`
+- `bodhisattvacharyavatara-rails/4-SYSTEM/Skills/hindi-translation/bo-hi-keyword-grade-skill.md`
+- `bodhisattvacharyavatara-rails/4-SYSTEM/Skills/hindi-translation/bo-hi-translate-skill.md`
+- `bodhisattvacharyavatara-rails/4-SYSTEM/Skills/vietnamese-translation/bo-vi-keyword-grade-skill.md`
+- `bodhisattvacharyavatara-rails/4-SYSTEM/Skills/vietnamese-translation/bo-vi-translate-skill.md`
+- `bodhisattvacharyavatara-rails/4-SYSTEM/scripts/termbase-consistency-check/check_termbase_consistency.py`
 
 ### `rails/interlinear-gloss`
 

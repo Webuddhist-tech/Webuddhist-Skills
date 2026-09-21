@@ -25,7 +25,7 @@ GROUPS = [
  ("Summaries & context",
                       ["section-summary","verse-context","multilevel-summary","local-wiki-article"]),
  ("Claims",           ["commentary-claims","claims-consolidate"]),
- ("Translation",      ["machine-translate","zeroshot-translate","translate-commentary",
+ ("Translation",      ["machine-translate","zeroshot-translate","graded-translate","translate-commentary",
                        "verse-translate","translation-qa"]),
  ("Validation",       ["vault-audit","commentary-fact-check"]),
  ("Wiki article production",

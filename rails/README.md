@@ -41,7 +41,8 @@ raw-to-sources ───┘                     format-commentary     extract-so
           ▼                        ▼                        ▼
   bilingual-glossary       claims-consolidate        machine-translate
   keyword-extract          wiki-article-from-claims  zeroshot-translate
-  term-definition                                    translation-qa
+  term-definition                                    graded-translate
+                                                     translation-qa
                                                      commentary-fact-check
 ```
 
@@ -59,5 +60,11 @@ phases — run the phase asked for, not the whole pipeline. Each skill's own
 - **OCR repair happens in `format-commentary`, and nowhere else.** The
   segmentation and ID skills are bound by a no-loss assertion and cannot fix a
   character.
+- **Lock the vocabulary before translating anything that will be published.**
+  `graded-translate` Phase 1 builds the per-grade termbase from `keyword-extract`'s
+  output; Phase 2 translates with it locked; Phase 3 checks for drift. A
+  `machine-translate` / `zeroshot-translate` Mode 3 output is a first look, not a
+  release candidate — regenerate it through `graded-translate` and run
+  `commentary-fact-check` before upload.
 - **Never translate in `section-summary` Phase 1.** That phase's original-language
   terminology is the evidence `bilingual-glossary` and `term-definition` read.

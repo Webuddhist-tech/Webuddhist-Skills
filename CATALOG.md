@@ -3,11 +3,11 @@
 Every skill in this repo. Generated from each skill's own frontmatter —
 run `python3 tools/build-catalog.py` after adding or changing one.
 
-- **47** text-processing skills in [`rails/`](rails/README.md)
+- **48** text-processing skills in [`rails/`](rails/README.md)
 - **4** library ingestion skills in [`library/`](library/README.md)
 - **17** org & engineering skills at the repo root
 
-The rails and library skills consolidate **172**
+The rails and library skills consolidate **178**
 skill files that were duplicated across six repos. See [`PROVENANCE.md`](PROVENANCE.md)
 for the full mapping.
 
@@ -97,6 +97,7 @@ for the full mapping.
 |---|---|---|
 | [`machine-translate`](rails/machine-translate/SKILL.md) | Produce a zero-shot machine-baseline translation of a block-ID'd source text by calling a translation API on small batches of adjacent blocks, threading… | 4 |
 | [`zeroshot-translate`](rails/zeroshot-translate/SKILL.md) | Translate a block-ID'd source text into a target language in one pass, with the degree of terminology control the job needs: no termbase at all, a locked… | 3 |
+| [`graded-translate`](rails/graded-translate/SKILL.md) | Produce an audience-graded, term-consistent translation of a block-ID'd verse text into any target language (English, Hindi, Vietnamese, …): first build a… | 6 |
 | [`translate-commentary`](rails/translate-commentary/SKILL.md) | Translate a source commentary into the target language using AI translation requirements, termbase, and section summaries to ensure terminological… | 1 |
 | [`verse-translate`](rails/verse-translate/SKILL.md) | Translate a batch of BCA verses into metrical or rhymed verse in any target language, working from `2-RAILS/Verses/<id>-summary.md` packages rather than… | 1 |
 | [`translation-qa`](rails/translation-qa/SKILL.md) | MQM-based quality check of a Hindi (or any-language) translation file or track against the source text, the 2-RAILS/ verse packages, and the track's… | 2 |
