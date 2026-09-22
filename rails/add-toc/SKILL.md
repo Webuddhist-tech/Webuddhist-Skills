@@ -4,7 +4,7 @@ description: >
   Generate a nested, decimal-numbered Table of Contents (TOC / dkar-chag) from
   a flat draft list at the top of a markdown document. Each entry in the
   output is tagged with a `^toc-X-Y-Z` block ID. The output file is saved to
-  texts/<text-id>/work/ with the prefix `toc-` added to the original filename.
+  $WORK/ with the prefix `toc-` added to the original filename.
 
   Trigger this skill whenever the user says things like:
   "add a TOC", "generate a table of contents", "create a dkar chag",
@@ -21,6 +21,9 @@ supersedes:
 
 # Add-TOC Skill
 
+> **Locations.** `$WORK` resolves per repo — see `rails/PROFILES.md`. The block-ID
+> namespaces are defined in `rails/CONVENTIONS.md` §2 and §4.
+
 The input is a **flat, unindented list** of outline items already present in
 the document's TOC section (originally written for Tibetan texts; the
 hierarchy-inference heuristics below are Tibetan-specific — adapt the ordinal
@@ -29,10 +32,10 @@ regardless of their structural depth. Your job is to read this list,
 reconstruct the hierarchy from the text itself, and write a clean nested TOC.
 
 Note: the `^toc-X-Y-Z` IDs produced by this skill are a **separate namespace**
-from the `^N-0` / `^N-N-0` heading anchors documented in
-`docs/reference/conventions.md` — they index the standalone decimal outline
-block this skill builds, not the body headings themselves. Do not confuse the
-two.
+from the `^N-0` / `^N-N-0` heading anchors — see `rails/CONVENTIONS.md` §4.
+They index the standalone decimal outline block this skill builds, not the body
+headings themselves. A TOC entry may link to its heading; it never replaces it.
+Do not confuse the two.
 
 ---
 
@@ -170,8 +173,13 @@ Write the complete file (new TOC section + original body) to:
 $WORK/toc-{original-filename}
 ```
 
-If an existing TOC section is present, replace it with the new one. Splice
-the TOC immediately after the YAML frontmatter.
+If an existing TOC section is present, **replace it** — never leave two. A TOC
+section is the heading that opens the outline block together with the bullet
+list under it, whatever that heading is called in the document's own language
+(`## དཀར་ཆག`, `## དཀར་ཆག / Table of Contents`, `## Table of Contents`, `## Contents`,
+`## Outline`, …), up to the `---` or the next `##` heading that closes it.
+Delete that whole block and write the new one in its place. Splice the TOC
+immediately after the YAML frontmatter.
 
 ---
 
@@ -184,6 +192,7 @@ right. Report the output path to the user.
 
 ## Provenance
 
-Adapted from `bodhisattvacharyavatara-rails/4-SYSTEM/Skills/add-toc/SKILL.md`.
-Output path changed from `$WORK/` to `$WORK/`; the
-Tibetan-specific hierarchy heuristics are unchanged and labelled as examples.
+The hard-coded vault output folder it wrote to is now the logical name `$WORK/`,
+resolved per repo from `rails/PROFILES.md`; the conventions reference now points
+at `rails/CONVENTIONS.md` §4. The Tibetan-specific hierarchy heuristics are
+unchanged and labelled as examples.

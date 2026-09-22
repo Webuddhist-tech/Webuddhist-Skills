@@ -23,7 +23,7 @@ The fixed tail (== འབྲེལ་ཡོད་ཤོག་ངོས། == onw
 reviewer callout are never sent to the model and are reattached byte-identical.
 
 The API key is resolved from, in order: the GEMINI_API_KEY environment variable,
-4-SYSTEM/Pipelines/wikipedia/.env, ~/.zshrc (export line). It is never printed.
+a vault-local .env, then the shell profile (export line). It is never printed.
 
 Usage:
     python3 gemini_polish.py <path-to-article.md> --out <output-dir>

@@ -23,16 +23,16 @@ Pipeline position:
 
 Usage:
     # full QC (detect + repair + re-check):
-    python3 4-SYSTEM/Skills/block-resegmentation/scripts/qc_check.py \\
-        "0-INBOX/resegmented/bo-kunpal.reseg.md"
+    python3 4-SYSTEM/Skills/segment-commentary/scripts/qc_check--block-resegmentation.py \\
+        "0-INBOX/temp/resegmented/<commentary-id>.reseg.md"
 
     # detection only (no LLM repair):
-    python3 4-SYSTEM/Skills/block-resegmentation/scripts/qc_check.py \\
-        "0-INBOX/resegmented/bo-kunpal.reseg.md" --no-fix
+    python3 4-SYSTEM/Skills/segment-commentary/scripts/qc_check--block-resegmentation.py \\
+        "0-INBOX/temp/resegmented/<commentary-id>.reseg.md" --no-fix
 
     # dry run (compute corrections but do not write files):
-    python3 4-SYSTEM/Skills/block-resegmentation/scripts/qc_check.py \\
-        "0-INBOX/resegmented/bo-kunpal.reseg.md" --dry-run
+    python3 4-SYSTEM/Skills/segment-commentary/scripts/qc_check--block-resegmentation.py \\
+        "0-INBOX/temp/resegmented/<commentary-id>.reseg.md" --dry-run
 
 Set GEMINI_API_KEY before running (not needed with --no-fix).
 """

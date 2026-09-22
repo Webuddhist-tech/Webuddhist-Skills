@@ -7,10 +7,10 @@ For each verse, sends the English text, Tibetan text, and keyword list
 to Gemini and gets back the Tibetan word/phrase for each keyword in context.
 
 Usage:
-    python 4-SYSTEM/Skills/english-keyword-extraction/scripts/enrich_en_bo_keyword_meaning.py
-    python 4-SYSTEM/Skills/english-keyword-extraction/scripts/enrich_en_bo_keyword_meaning.py --limit 20
-    python 4-SYSTEM/Skills/english-keyword-extraction/scripts/enrich_en_bo_keyword_meaning.py --resume
-    python 4-SYSTEM/Skills/english-keyword-extraction/scripts/enrich_en_bo_keyword_meaning.py --workers 10
+    python 4-SYSTEM/Skills/keyword-extract/scripts/enrich_en_bo_keyword_meaning.py
+    python 4-SYSTEM/Skills/keyword-extract/scripts/enrich_en_bo_keyword_meaning.py --limit 20
+    python 4-SYSTEM/Skills/keyword-extract/scripts/enrich_en_bo_keyword_meaning.py --resume
+    python 4-SYSTEM/Skills/keyword-extract/scripts/enrich_en_bo_keyword_meaning.py --workers 10
 """
 
 import os, sys, json, re, time, argparse, pathlib, warnings, threading

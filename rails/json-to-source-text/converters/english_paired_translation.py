@@ -24,7 +24,7 @@ Mapping:
         merged into the current verse if one is buffered, else dropped
 
 Output: Bible-style numbering matching the Pāli source-text convention
-(see ../../../docs/reference/conventions.md and this skill's SKILL.md §"Existing
+(see 4-SYSTEM/CLAUDE.md §5–5b and this skill's SKILL.md §"Existing
 Converters" for the "Pāli Tipiṭaka root text" scheme). Verse IDs are
 identical to those produced by tipitaka_org_book.py for the same book.
 
@@ -73,7 +73,7 @@ def convert_json_to_source_text(
     *,
     book_id: int = 1,
     pitaka_slug: str = "abhidhamma",
-    root_text_ref: str = "texts/<text-id>/raw.md",
+    root_text_ref: str = "1-SOURCES/Text/<root-text>.md",
     translator: str = "AI-assisted (CSCD-aligned); selected passages from Rhys Davids 1900",
 ) -> None:
     json_path = Path(json_path)
@@ -239,7 +239,7 @@ def main() -> None:
     ap.add_argument("output_path", type=Path)
     ap.add_argument("--book-id", type=int, default=1)
     ap.add_argument("--pitaka", default="abhidhamma")
-    ap.add_argument("--root-text", default="texts/<text-id>/raw.md")
+    ap.add_argument("--root-text", default="1-SOURCES/Text/<root-text>.md")
     args = ap.parse_args()
     convert_json_to_source_text(
         args.json_path,

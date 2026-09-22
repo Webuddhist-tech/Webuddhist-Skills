@@ -76,14 +76,14 @@ DEFAULT_STYLE = (
 
 # FORK(liturgy-rails): work-NEUTRAL. Anything work-specific belongs in the
 # per-text "Work: …" line that is appended to this at call time.
-# FORK(21-taras-rails): this vault serves one text, so the preamble is generic;
+# SINGLE-TEXT VAULT: this vault serves one text, so the preamble is generic;
 # the "Work:" line carries the title and author.
 DEFAULT_TRACK_PREAMBLE = (
     "A canonical Tibetan Buddhist text, translated block by block from the "
     "critical edition in this vault. The blocks below are being translated in order."
 )
 
-# FORK(21-taras-rails): track layout follows the Liturgy vault —
+# SINGLE-TEXT VAULT: track layout follows the Liturgy vault —
 # 3-TRANSFORMATIONS/Translations/<Generator>/<tag>/<source stem>-<tag>.md —
 # so the six imported tracks and any new one share one shape.
 DEFAULT_TRACK_ROOT = "3-TRANSFORMATIONS/Translations/Dharmamitra"
@@ -98,7 +98,7 @@ LANG_NAMES = {
     "id": "Indonesian", "bo": "Tibetan", "sa": "Sanskrit", "pi": "Pali",
 }
 
-# FORK(21-taras-rails): the renderer rebuilds the frontmatter from the ledger on
+# SINGLE-TEXT VAULT: the renderer rebuilds the frontmatter from the ledger on
 # every run. These keys are NOT the renderer's to invent — backend ids,
 # researched titles, import provenance — so they are carried over from the
 # file that is being overwritten (and may be seeded with --extra-fm). Order is
@@ -541,7 +541,7 @@ def render(out_md, units, ledger, meta, args, source_rel, prov=None, extra_fm=No
     keys that sit where `focus`/`context_blocks`/`batching` sit here) and
     `warning` (the callout text).
 
-    FORK(21-taras-rails) — three things differ from the Liturgy renderer:
+    SINGLE-TEXT VAULT — three things differ from the Liturgy renderer:
 
     * Frontmatter keys the renderer cannot know (backend ids, researched
       titles, import provenance — PRESERVE_FM_KEYS) are carried over from the
@@ -624,7 +624,7 @@ def render(out_md, units, ledger, meta, args, source_rel, prov=None, extra_fm=No
         "headings_translated": sum(1 for u in units if u["kind"] == "heading" and u["id"] in heads),
         "imported_from": keep("imported_from"),
         "import_note": keep("import_note"),
-        # FORK(21-taras-rails): the machine-baseline warning lives HERE, not as a
+        # SINGLE-TEXT VAULT: the machine-baseline warning lives HERE, not as a
         # callout in the body — the vault linter requires every body block that
         # is not a transclusion to end in a block id, so a callout fails lint.
         "note": re.sub(r"^> ?(\[!warning\] )?", "", prov["warning"], flags=re.M).replace("\n", " ").strip(),
@@ -762,7 +762,7 @@ def main():
 
     args.lang = args.lang.strip().lower()
     args.lang_tag = args.lang_tag or LANG_TAGS.get(args.lang) or re.sub(r"[^a-z]", "", args.lang)[:3]
-    # FORK(21-taras-rails): default track folder is <DEFAULT_TRACK_ROOT>/<tag>;
+    # SINGLE-TEXT VAULT: default track folder is <DEFAULT_TRACK_ROOT>/<tag>;
     # --track keeps the old <tag>-dharmamitra-zeroshot shape for anyone who wants it.
     if args.out:
         out_dir = pathlib.Path(args.out)
@@ -813,7 +813,7 @@ def main():
             if line.strip():
                 ledger.append(json.loads(line))
 
-    # FORK(21-taras-rails): the rendered file is ALWAYS <source stem>-<tag>.md,
+    # SINGLE-TEXT VAULT: the rendered file is ALWAYS <source stem>-<tag>.md,
     # never an English slug — the vault's linter/parser/uploader derive the
     # source stem from that filename, and the Gemini track already names files
     # this way.

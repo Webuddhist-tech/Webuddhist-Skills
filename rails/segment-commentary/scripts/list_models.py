@@ -3,7 +3,7 @@
 List Gemini models available to your API key that support generateContent.
 
 Usage (from project root, venv activated, GEMINI_API_KEY in environment):
-    python 4-SYSTEM/Skills/block-resegmentation/scripts/list_models.py
+    python 4-SYSTEM/Skills/segment-commentary/scripts/list_models.py
 """
 import os
 import sys

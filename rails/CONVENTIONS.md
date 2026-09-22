@@ -65,9 +65,12 @@ original content in that section always starts at `1`.
 | Level | Markdown | Purpose | Block ID | Example |
 |---|---|---|---|---|
 | 1 | `#` | Title of the work | none (see §1b) | `# Bodhisattvacaryāvatāra` |
-| 2 | `##` | Chapter | `^N-0` | `## 1. ལེའུ་དང་པོ། ^1-0` |
+| 2 | `##` | Chapter / top-level division | `^N-0` | `## 1. ལེའུ་དང་པོ། ^1-0` |
 | 3 | `###` | Section | `^N-N-0` | `### 1.2 Some Section ^1-2-0` |
 | 4 | `####` | Sub-section | `^N-N-N-0` | `#### 1.2.3 Sub-section ^1-2-3-0` |
+| 5 | `#####` | Sub-sub-section | `^N-N-N-N-0` | `##### 1.2.3.1 … ^1-2-3-1-0` |
+| 6 | `######` | Fifth-level node | `^N-N-N-N-N-0` | `###### 1.2.3.1.1 … ^1-2-3-1-1-0` |
+| 7+ | `######` + `**bold**` title | Deeper nodes | full path + `-0` | `###### **1.2.3.1.1.4 …** ^1-2-3-1-1-4-0` |
 
 ```markdown
 ## 0. Introduction ^0-0
@@ -87,8 +90,21 @@ Second prose block. ^1-2-2
 
 Rules:
 - Chapter `0` is always the pre-chapter introduction (`## 0. Introduction ^0-0`).
-- IDs must not exceed four segments (three path segments plus the `0`).
-  Flatten anything deeper.
+- **Heading block IDs use the full decimal path of the structural tree plus
+  the `-0` slot. There is no segment cap.** A node numbered `1.2.2.1.1.4` in
+  the tree gets `^1-2-2-1-1-4-0`; `1.3.2.2.2.2.1.1.1` gets
+  `^1-3-2-2-2-2-1-1-1-0`. Depth follows the tree exactly — never flatten,
+  merge or truncate a deep tree to fit a shorter ID.
+- **Markdown heading level follows tree depth.** `##` is the text's top-level
+  division (chapter, or the first level of a commentary's *sa bcad*); each
+  deeper tree level adds one `#`. Markdown stops at `######` (six), so nodes
+  deeper than that keep `######`, wrap the heading title in `**bold**` to make
+  the extra depth visible, and rely on the full-path block ID for the real
+  depth. The block ID, not the number of `#`, is the authoritative record of a
+  heading's position in the tree.
+- When a TOC file's depth-1 entry is the work's own title (which is already
+  the file's `#` line), that entry is excluded from insertion and its children
+  start at `##`. Otherwise the tree's depth-1 nodes are the `##` headings.
 - No zero-padding on any segment.
 
 ---
@@ -164,6 +180,35 @@ Older drafts and one-off scripts used `^TOC-N` for chapter anchors
 expecting `^N-0` does not recognise a `^TOC-N` anchor, so the text silently
 ends up with no table of contents and no error. Correct any `^TOC-N` you
 encounter before using the file.
+
+---
+
+## 7. Registered deviations — declared in the vault annex
+
+The schemes above are the default. A vault may declare a bounded deviation in
+its annex (`4-SYSTEM/Guidelines/vault-annex.md`) when the text genuinely
+needs it; a skill honours a declared deviation and never invents one. The
+recognised deviations are:
+
+- **`^I-*` intro / `^a-*` back-matter zones** for non-Sanskrit texts whose
+  front matter (homage, prologue, translator's preface) or back matter
+  (colophon, dedication) must stay addressable apart from the chapters
+  (`^I-1`, `^I-2`, …; `^a-1`, `^a-2`, …; headings `^I-0`, `^a-0`). The
+  annex names which files use them and the `verse_id_format` value they
+  declare.
+- **Bible-style `book-verse`** (`verse_id_format: book-verse`) for texts
+  addressed by book and verse with no chapter level: `^N-V` where `N` is the
+  book. The annex lists the book numbering.
+- **Letter sub-namespaces** for a heading whose children are lettered rather
+  than numbered in the tradition (`^1-0a-1`, `^1-0b-1`, …): the letter is
+  appended to the parent's `-0` slot and the children count from `1` under it.
+  Use only when the source's own structure is lettered.
+- **Flat `^N`** (`verse_id_format: verse`) for collections of short texts
+  where each file is one text with no internal chapters: blocks are `^1`,
+  `^2`, … and the single heading, if any, is `^0`.
+
+A deviation is registered once, in the annex, with the list of files it
+applies to. Files not listed follow §1–§2 unchanged.
 
 ---
 

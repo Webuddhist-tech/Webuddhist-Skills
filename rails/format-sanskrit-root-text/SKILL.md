@@ -1,42 +1,46 @@
 ---
 name: format-sanskrit-root-text
 description: >
-  Format and re-index a Sanskrit root-text file (texts/<text-id>/work/*.md)
-  using this repo's four-zone block ID scheme (^T-n pre-title, ^I-n front
-  matter, ^N-V verses, ^N-a colophons/back matter), driven by the bundled
-  scripts/apply.py audit→apply workflow. Specific to Sanskrit root texts —
-  not commentaries.
+  Format and re-index a Sanskrit root-text file using the four-zone block ID
+  scheme (^T-n pre-title, ^I-n front matter, ^N-V verses, ^N-a
+  colophons/back matter), driven by the bundled $SKILL/scripts/apply.py
+  audit→apply workflow.
 
   Trigger this skill for any Sanskrit/Devanagari root-text formatting or ID
   work — "format the Sanskrit text", "add block IDs to the Devanagari
-  file", "audit the zones", "re-index the verses" — and as the
-  `sa`-language route of /annotate Steps 2–3 and its Step 6 audit.
+  file", "audit the zones", "re-index the verses".
+
+  Language scope: **Sanskrit root texts only.** Not commentaries (use
+  `format-commentary`), not other languages (use `format-root-text`).
 profile: any
 supersedes:
   - webuddhist-library-data-pipeline/skills/format-sanskrit-root-text/SKILL.md
   - data-pipeline/skills/format-sanskrit-root-text/SKILL.md
 ---
 
+> **Locations.** `$SKILL` is this skill's own directory. All other `$NAME`
+> paths resolve per repo — see `rails/PROFILES.md`. Block ID and heading rules
+> are in `rails/CONVENTIONS.md`; this skill implements them.
+
 # format-sanskrit-root-text
 
-This skill applies this repo's block ID convention (see
-`docs/reference/conventions.md`) to a Sanskrit root-text `.md` file under
-`$WORK/`. It is **not** for commentaries or translations of
-commentaries.
+This skill applies the four-zone Sanskrit block ID convention
+(`rails/CONVENTIONS.md` §1b) to a Sanskrit root-text `.md` file. Work on a copy
+in `$WORK/` until the zones are confirmed. It is **not** for commentaries or
+translations of commentaries — use `format-commentary` for those.
 
 ---
 
 ## Workflow
 
-The skill uses a helper script `scripts/apply.py`, bundled next to this
-SKILL.md. Always follow this order:
+The skill uses `$SKILL/scripts/apply.py`. Always follow this order:
 
 ### 1 — Script reads the file (audit)
 
 Construct the path at runtime from the skill's own location:
 
 ```bash
-python "<this-skill-dir>/scripts/apply.py" audit "<path-to-file.md>"
+python3 "$SKILL/scripts/apply.py" audit "<path-to-file.md>"
 ```
 
 The audit prints:
@@ -58,7 +62,7 @@ Note any decisions that the script cannot apply automatically.
 ### 3 — Script applies mechanical changes
 
 ```bash
-python "<this-skill-dir>/scripts/apply.py" apply "<path-to-file.md>"
+python3 "$SKILL/scripts/apply.py" apply "<path-to-file.md>"
 ```
 
 The script handles:
@@ -81,7 +85,7 @@ and edits directly using the Edit tool.
 
 ## Block ID Convention
 
-Sanskrit root texts follow a **three-zone** scheme based on content role, not
+Sanskrit root texts follow a **four-zone** scheme based on content role, not
 heading level:
 
 ### Zone markers
@@ -280,7 +284,7 @@ Each Sanskrit verse stanza:
 - **DO** treat chapter colophon lines as back matter even if they contain verse-like Sanskrit.
 - **DO** assign `^I-0` etc. to front matter sections that currently use `^0-0`, `^0-1`…
 - **DON'T** assign a block's zone (front matter / verse / colophon) based on its position under a heading alone — read the Sanskrit to confirm its role.
-- **DON'T** apply this skill to commentaries or translations — use `format-root-text` instead.
+- **DON'T** apply this skill to commentaries or translations — use `format-commentary` instead.
 - **DON'T** use more than 3 segments for verse IDs (`^C-S-V` max).
 - **DON'T** put block IDs inside headings — only on content lines and heading lines per the table above.
 - **DON'T** assign IDs to standalone OCR line-number lines — remove them in Step 0 before parsing.
@@ -292,10 +296,12 @@ Each Sanskrit verse stanza:
 
 ---
 
-## Provenance
+## Note on `apply.py`
 
-Adapted from `bodhisattvacharyavatara-rails/4-SYSTEM/Skills/add-block-id-root-text/`
-(original `name: format-sk-root-text`, renamed here to `format-sanskrit-root-text`
-for consistency with `format-tibetan-root-text`). `apply.py` is unchanged from
-the source skill — it already worked purely from CLI arguments and the
-skill's own directory, with no hardcoded vault paths.
+`apply.py` works purely from its CLI arguments and the skill's own directory —
+it has no hard-coded vault paths, so it is safe to run from any repo. It carries
+one fix worth knowing about: it detects a missing YAML frontmatter block rather
+than assuming one is present. Without that check, a file with no frontmatter yet
+is silently skipped in its entirety — every block reported as already having an
+ID, every verse count zero. If you see that symptom, you are running an older
+copy of the script.

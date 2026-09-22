@@ -8,42 +8,42 @@ supersedes:
 
 # wiki-article-from-claims
 
-Produces a publish-ready Tibetan wikitext article for one topic — a canonical spine slot (e.g. `tara-01`) or a keyword subject (e.g. `mudra`) — from its consolidated claims topic page in `$CLAIMS/`. The consolidated page supplies the facts (consensus + ⚑ divergences + unique claims, in English, with attestation counts); the raw tree-guided claims files supply the verbatim Tibetan (**བོད་ཡིག**) and the `$SOURCES/` block citations behind every attestation. The skill exists so that article prose is never drafted from source files directly and never from parametric knowledge — the failure modes it prevents are added facts, flattened divergences, and quotations that are not character-for-character real.
+Produces a publish-ready Tibetan wikitext article for one topic — a canonical spine slot, or a keyword subject (e.g. `mudra`) — from its consolidated claims topic page in `$CLAIMS/`. The consolidated page supplies the facts (consensus + ⚑ divergences + unique claims, in English, with attestation counts); the raw tree-guided claims files supply the verbatim original-language text (each claim's `**Original:**` field) and the `$SOURCES/` block citations behind every attestation. The skill exists so that article prose is never drafted from source files directly and never from parametric knowledge — the failure modes it prevents are added facts, flattened divergences, and quotations that are not character-for-character real.
 
 Correct output is an article a Tibetan reader experiences as connected encyclopedic prose in wikivoice — commentator names appearing only where positions genuinely diverge — whose fence body passes every blocking rule of the wikitext spec; a `citations.md` that lets a reviewer trace every `<ref>` back to claim IDs and source blocks without opening the model's head; and an `article-preview.md` the reviewer can read in Obsidian with citations collapsed to footnote superscripts.
 
-**Version history.** The original version (v1, 2026-08-12) drafted the 43-article term batch with the full trust machinery but literature-review-style prose. The 2026-08-18 Tibetan-linguist review of that batch produced the style rules now in Rules 5–9 (wikivoice, citation cap, quotation budget, prose-before-fragments, readability), and a second review round the same day added Rules 15–17 (the punctuation contract and `author_in_use` naming), first shipped as a separate skill `wiki-article-from-claims-v2`. On 2026-08-21 the human contributor retired v1 and promoted v2 to be this skill — the sole version in use. Git history holds both predecessors.
+**Version history.** An earlier version drafted a term batch with the full trust machinery but literature-review-style prose. A Tibetan-linguist review of that batch produced the style rules now in Rules 5–9 (wikivoice, citation cap, quotation budget, prose-before-fragments, readability), and a second review round added Rules 15–17 (the punctuation contract and `author_in_use` naming). Those were merged back into this skill, which is the sole version in use.
 
-This skill writes vault files only. It never publishes — publishing stays behind the pipeline's `/publish` gate.
+This skill writes vault files only. It never publishes — publishing stays behind an explicit human gate.
 
 ---
 
 ## Inputs
 
 1. **Topic ID(s)** — one of:
-   - a spine slot ID from the registry in `4-SYSTEM/Guidelines/vault-annex.md` §2a (e.g. `tara-01`, `origin`), **or**
+   - a spine slot ID from the registry in the vault annex, section "Canonical spine slots", **or**
    - a keyword/term topic (e.g. `mudra`, `lotus`) whose consolidated page exists at `$CLAIMS/<topic>.md`.
 
-   Two documented multi-topic cases: `structure` + `benefits` together → one article on the root text itself (a *work* article, not a deity article); `origin` (optionally with the origin material in `tara-01`) → the article on Tārā the deity. For these, `<topic>` in output paths is the joined slug (`structure-benefits`, `origin`). If the consolidated page for a requested topic does not exist, stop and report — never substitute another page.
-2. **The consolidated page's raw sources** — every file listed in its `sources:` frontmatter (paths under `$CLAIMS/raw/tree-guided/`). These resolve claim IDs to བོད་ཡིག, English gloss, and `Cite:` targets. If a listed file is missing, stop and report.
-3. **The wikitext output contract** — `4-SYSTEM/Pipelines/wikipedia/docs/reference/wikitext-spec.md`. Read it in full before drafting; its blocking validator rules (V1–V12) are this skill's acceptance criteria.
-4. **Commentary metadata** — from each raw claims file's own frontmatter (`author`, `title`, `author_in_use`, `author_in_english`/`title_in_english` where present). If a raw claims file predates the `author_in_use` key, read that one key from the frontmatter of the commentary named in its `source_file` — a metadata-only lookup, never a reason to reopen the commentary body. Never from memory.
+   A **multi-topic article** joins several topic pages into one article: e.g. the global slots `structure` + `benefits` together → one article on the root text itself (a *work* article), or an `origin` slot plus the origin material in a spine slot → the article on the text's principal subject. For these, `<topic>` in output paths is the joined slug (`structure-benefits`, `origin`). If the consolidated page for a requested topic does not exist, stop and report — never substitute another page.
+2. **The consolidated page's raw sources** — every file listed in its `sources:` frontmatter (paths under `$CLAIMS/raw/tree-guided/`). These resolve claim IDs to the claim's `**Original:**` field, English gloss, and `Cite:` targets. If a listed file is missing, stop and report.
+3. **The wikitext output contract** — `$SKILL/references/wikitext-spec.md`, bundled with this skill. Read it in full before drafting; its blocking validator rules (V1–V12) are this skill's acceptance criteria.
+4. **Commentary metadata** — from each raw claims file's own frontmatter (`author`, `title`, `author_in_use`, `author_in_english`/`title_in_english` where present). **`author_in_use` is set by `author-metadata-sync`**, which is what propagates the human-curated in-article name form from the commentary's own frontmatter into the claims files; if it has not been run for this corpus, run it first. If a raw claims file predates the `author_in_use` key, read that one key from the frontmatter of the commentary named in its `source_file` — a metadata-only lookup, never a reason to reopen the commentary body. Never from memory.
 
 ## Output
 
 Three files per article:
 
 ```
-$TRANSFORMATIONS/Wikipedia/tara21/term-articles/<topic>/article.md          (keyword topics)
-$TRANSFORMATIONS/Wikipedia/tara21/term-articles/<topic>/citations.md
-$TRANSFORMATIONS/Wikipedia/tara21/term-articles/<topic>/article-preview.md
+$TRANSFORMATIONS/Wikipedia/<text-slug>/term-articles/<topic>/article.md          (keyword topics)
+$TRANSFORMATIONS/Wikipedia/<text-slug>/term-articles/<topic>/citations.md
+$TRANSFORMATIONS/Wikipedia/<text-slug>/term-articles/<topic>/article-preview.md
 
-$TRANSFORMATIONS/Wikipedia/tara21/slot-articles/<topic>/article.md          (spine-slot topics)
-$TRANSFORMATIONS/Wikipedia/tara21/slot-articles/<topic>/citations.md
-$TRANSFORMATIONS/Wikipedia/tara21/slot-articles/<topic>/article-preview.md
+$TRANSFORMATIONS/Wikipedia/<text-slug>/slot-articles/<topic>/article.md          (spine-slot topics)
+$TRANSFORMATIONS/Wikipedia/<text-slug>/slot-articles/<topic>/citations.md
+$TRANSFORMATIONS/Wikipedia/<text-slug>/slot-articles/<topic>/article-preview.md
 ```
 
-**Obsidian-viewability convention (2026-08-12, human contributor decision):** the article file is `.md`, not `.wiki`, so it is viewable and reviewable inside Obsidian. It consists of a small YAML frontmatter (`topic`, `article_kind`, `format`, `status`), a callout explaining the format, and the publishable wikitext inside a single ```` ```wikitext ```` fence — verbatim, byte-identical to what would be published. A raw `.wiki` file is invisible to Obsidian, and raw wikitext in an unfenced `.md` misrenders and pollutes the vault graph with fake `[[…]]` links. Reviewers edit **inside the fence only**; the publish step extracts the fence body and ships exactly that.
+**Obsidian-viewability convention (a human contributor decision):** the article file is `.md`, not `.wiki`, so it is viewable and reviewable inside Obsidian. It consists of a small YAML frontmatter (`topic`, `article_kind`, `format`, `status`), a callout explaining the format, and the publishable wikitext inside a single ```` ```wikitext ```` fence — verbatim, byte-identical to what would be published. A raw `.wiki` file is invisible to Obsidian, and raw wikitext in an unfenced `.md` misrenders and pollutes the vault graph with fake `[[…]]` links. Reviewers edit **inside the fence only**; the publish step extracts the fence body and ships exactly that.
 
 `article-preview.md` is **generated, read-only output** — produced by `scripts/make_preview.py` from `article.md`, never hand-edited, regenerated after every edit to `article.md`. It exists solely so a human reviewer can read the article in Obsidian's reading view with citations rendered as clickable footnote superscripts instead of inline `<ref>` blocks. Footnote labels show the **author's name** (a slug of the commentary's `author_in_english`, read live from the `$COMMENTARIES/` frontmatter — e.g. `[^jetsun-yama-sonam]`), never the internal ref key / `registered_id`, which stays frozen in the wikitext itself. It is not published, not cited from anywhere, and carries `generated: true` frontmatter plus a warning callout. The script also runs standalone on any existing `article.md` drafted before the preview convention existed, so previews can be produced without redrafting.
 
@@ -67,7 +67,7 @@ status: draft
 
 ## Reference map
 
-| Ref | Commentary | Claim ID(s) | Quotation (verbatim བོད་ཡིག, if quoted) | Source block |
+| Ref | Commentary | Claim ID(s) | Quotation (verbatim original language, if quoted) | Source block |
 |---|---|---|---|---|
 | 1 | taranatha | c-1-5 | ཐུགས་དམིགས་པ་མེད་པའི་... | $COMMENTARIES/<file>.md#^0-4 |
 
@@ -106,9 +106,9 @@ Three skeletons, chosen by topic kind. Section headings are a menu, not a quota 
 
 ### Keyword/term topics — doctrinal-term skeleton
 
-Use the doctrinal-term skeleton of the wikitext spec §1 as-is.
+Use the doctrinal-term skeleton of `$SKILL/references/wikitext-spec.md` §1 as-is.
 
-### `tara-01` … `tara-21` — deity-profile skeleton
+### Spine-slot topics — deity-profile skeleton
 
 The fenced wikitext body (everything inside the ```` ```wikitext ```` fence — the file's own frontmatter/callout wrapper is vault furniture, never published): pure wikitext, Tibetan script and Tibetan numerals only in the body. The doctrinal-term skeleton does not fit a deity; this profile adapts it while keeping the spec's lead rule, fixed tail, citation form, and every validator rule:
 
@@ -157,7 +157,7 @@ topic: <topic>
 article_kind: term-article-preview
 generated: true
 generated_from: article.md
-generated_by: 4-SYSTEM/Skills/wiki-article-from-claims/scripts/make_preview.py
+generated_by: $SKILLS/wiki-article-from-claims/scripts/make_preview.py
 ---
 
 > [!warning] Generated preview — do not edit
@@ -180,9 +180,9 @@ generated_by: 4-SYSTEM/Skills/wiki-article-from-claims/scripts/make_preview.py
 Rules 1–4 and 10–14 are the trust machinery, unchanged since v1. Rules 5–9 are the 2026-08-18 style delta (first linguist review round). Rules 15–17 are the second-round linguist feedback: the punctuation contract and the author-naming rule.
 
 1. **Claims-only drafting.** Every statement in the article body traces to a claim on the consolidated topic page. No parametric knowledge — no dates, Sanskrit forms, iconographic details, or doctrinal framings that are not in a claim, however standard they seem. If it cannot be cited, it does not go in.
-2. **The resolution chain is fixed.** Consolidated attestation `commentary:claim-id` → that commentary's file under `$CLAIMS/raw/tree-guided/` → the claim's **བོད་ཡིག**, English gloss, and `Cite:` target. An attestation that does not resolve is dropped and logged under *Unresolvable attestations* — never guessed, never cited anyway.
-3. **Quotations are verbatim or absent.** Direct quotations come only from the **བོད་ཡིག** field of a resolved claim, character-for-character, wrapped in `" "`, each followed immediately by its `<ref>`. Never quote from memory of the source, never smooth a quotation's spelling or punctuation.
-4. **Every quotation is verified before completion** — located character-for-character (whitespace-collapsed) in the `$SOURCES/` file its claim's `Cite:` names, PASS/FAIL recorded per quote in `citations.md`. A FAIL is fixed or the quotation removed. This mirrors the kwiki pipeline's deterministic gate V1 and is not optional.
+2. **The resolution chain is fixed.** Consolidated attestation `commentary:claim-id` → that commentary's file under `$CLAIMS/raw/tree-guided/` → the claim's **Original** field, English gloss, and `Cite:` target. An attestation that does not resolve is dropped and logged under *Unresolvable attestations* — never guessed, never cited anyway.
+3. **Quotations are verbatim or absent.** Direct quotations come only from the **Original** field of a resolved claim, character-for-character, wrapped in `" "`, each followed immediately by its `<ref>`. Never quote from memory of the source, never smooth a quotation's spelling or punctuation.
+4. **Every quotation is verified before completion** — located character-for-character (whitespace-collapsed) in the `$SOURCES/` file its claim's `Cite:` names, PASS/FAIL recorded per quote in `citations.md`. A FAIL is fixed or the quotation removed. This is the spec's blocking rule V1 and is not optional.
 5. **Wikivoice for consensus.** ⭐ Any claim the consolidated page marks as consensus (or majority-attested and uncontested) is stated as plain declarative fact — no commentator names, no "མཁས་པ་མང་པོས་…བཤད" / "…གིས་གསུངས" framing, no quotation. The sentence asserts; the `<ref>`s carry the support. Inline attribution ("ཏཱ་ར་ནཱ་ཐས་…") is **reserved** for ⚑ divergences (every position attributed) and for unique claims worth including. Attribution-heavy material concentrates in `གཞུང་ལུགས་སོ་སོའི་བཤད་པ།`; the other sections stay in wikivoice.
 6. **Quotation budget: at most 2 verbatim commentary quotations per article.** ⭐ Spend them only where the exact wording is itself the point (a contested formulation, a definition whose phrasing matters). Root-text verse quotation in the lead (the established practice for deity articles) does not count against the budget. Everything else is paraphrased into prose — still claim-backed, still cited.
 7. **Citation cap: at most 3 `<ref>`s on any statement.** ⭐ For consensus claims, cite 2–3 *representative* commentaries — prefer refs already named elsewhere in the article, so the reference list stays compact. Never attach the full attestation set to a sentence. Attestation breadth may be asserted in prose ("འགྲེལ་པ་བཅུ་དྲུག་ཀ་…") when the consolidated page's count supports it, backed by 2–3 refs; the complete list of supporting claim IDs goes in `citations.md` §*Full attestation beyond in-article refs*, so nothing is lost.
@@ -191,7 +191,7 @@ Rules 1–4 and 10–14 are the trust machinery, unchanged since v1. Rules 5–9
 10. **Due weight follows attestation counts** — consensus forms the backbone, unique claims are attributed inline, ⚑ divergences present every position with attribution, never flattened, never adjudicated.
 11. **Ref form, spec mechanics, and tail are unchanged from v1**: hand-formatted `<ref><AUTHOR>། <TITLE>།</ref>` built from raw-file frontmatter (year/page appended when attested; no URLs exist for these sources yet — never fabricate one, never emit `dummy.com`; the missing URL goes in *Warnings*), named refs on reuse (`<ref name="...">` full form first, `<ref name="..." />` after), `== ལུང་ཁུངས། ==` + `<references />` (never `{{Reflist}}`), Tibetan-only body (Tibetan script and numerals; Latin only inside ref URLs), tsheg at every `'''` and `[[` boundary, wikilink targets end in tsheg never shad, ≥1 citation per section, ≥1 category from the spec §5 allowlist and no invented category names, fixed last-three-section order. Validator rules V1–V12 are blocking.
 12. **The preview is derived, never authored.** `article-preview.md` is written only by `scripts/make_preview.py`. Never hand-edit it; never edit it in place of `article.md`; regenerate it after any change to `article.md`. It is excluded from the citation chain and from publishing.
-13. **Read-only outside the output folder.** This skill never modifies `$SOURCES/`, `$RAILS/`, or anything in `4-SYSTEM/`. It writes only under the topic's output folder.
+13. **Read-only outside the output folder.** This skill never modifies `$SOURCES/`, `$RAILS/`, or anything in `$SYSTEM/`. It writes only under the topic's output folder.
 14. **Output is always `status: draft`**; the consolidated page's `status` is recorded as `rails_status` in `citations.md`, with a prominent warning when it is not `complete` — the vault rule is that transformations generate from complete rails, and a human contributor accepts that risk explicitly when running this skill on a draft page. No publishing, no network.
 15. **Sentence-final shad, paragraph-final double shad.** ⭐ Every Tibetan sentence in the body ends with a shad `།`. The final sentence of every paragraph — including the lead and single-sentence paragraphs — ends with a double shad `།།` (ཉིས་ཤད). Where classical orthography adjusts the shad after particular final letters (a bare ང takes tsheg + shad: `…ང་།`; a final ཀ or ག suppresses the immediately following shad), follow the practice attested in the source commentaries themselves — never improvise an orthographic rule. Punctuation always comes **before** the `<ref>` tag(s) it closes over: `…བཤད།<ref … />`, never `…བཤད<ref … />།`.
 16. **No commas — the character does not exist in Tibetan.** ⭐ Neither ASCII `,` nor any comma variant (`，`, `、`) may appear anywhere in the fence body. At every point where a draft reaches for a comma: if the position is a genuine clause or sentence boundary, write a shad `།`; if it is not, write nothing and let the tsheg-joined syntax carry the connection. The `<ref name="…" />,` pattern is always wrong — delete the comma, and when a boundary is needed there, place the shad before the refs (Rule 15). Latin punctuation survives only inside `<ref>` content, per the spec.
@@ -203,15 +203,15 @@ Rules 1–4 and 10–14 are the trust machinery, unchanged since v1. Rules 5–9
 
 Use Mode A when no article exists yet for the topic, or when the consolidated claims page has changed materially since the last draft.
 
-1. **Load the contracts.** Read `4-SYSTEM/Pipelines/wikipedia/docs/reference/wikitext-spec.md` in full. Read the consolidated page `$CLAIMS/<topic>.md` in full; record its `status` and `sources:` list. For a multi-topic article, read every constituent page.
-2. **Build the claim-resolution table.** Collect every attestation ID cited anywhere on the consolidated page (`commentary:claim-id`). For each, open the commentary's raw tree-guided file and extract: the claim's **བོད་ཡིག**, its English line, its `Cite:` path and block ID, and the raw file's `author`/`title`/`author_in_use` frontmatter (with the Input 4 fallback for raw files that predate the key). Record every ID that fails to resolve — the unresolvables must be known up front so nothing is built on them.
+1. **Load the contracts.** Read `$SKILL/references/wikitext-spec.md` in full. Read the consolidated page `$CLAIMS/<topic>.md` in full; record its `status` and `sources:` list. For a multi-topic article, read every constituent page.
+2. **Build the claim-resolution table.** Collect every attestation ID cited anywhere on the consolidated page (`commentary:claim-id`). For each, open the commentary's raw tree-guided file and extract: the claim's **Original** field, its English line, its `Cite:` path and block ID, and the raw file's `author`/`title`/`author_in_use` frontmatter (with the Input 4 fallback for raw files that predate the key). Record every ID that fails to resolve — the unresolvables must be known up front so nothing is built on them.
 3. **Classify for register.** Mark each claim: **backbone** (consensus/majority, uncontested → wikivoice, Rule 5), **unique-attributed** (worth including, attributed inline), or **⚑ divergence** (destined for `གཞུང་ལུགས་སོ་སོའི་བཤད་པ།`, every position attributed). Select the ≤2 quotations the article will carry (Rule 6) and, for each backbone statement, its 2–3 representative refs (Rule 7) — preferring commentaries that recur across statements. Take the article's title/lead name from the consolidated page's own Tibetan heading, never from an unattested variant.
 4. **Outline, then draft.** Map the consolidated page's sections onto the skeleton. Draft the lead (bold name with tsheg surviving the `'''` boundary, identification, one–two cited sentences). Draft each body section as connected wikivoice prose per Rules 5–8, attaching ≤3 refs per statement; put attributed material where Rule 5 sends it. Apply the punctuation contract (Rules 15–16) and the `author_in_use` naming rule (Rule 17) as you draft, not as an afterthought.
 5. **Readability pass** (Rule 9): reread the full article; redraft any who-said-what passage outside the divergence section.
-6. **Assemble the tail** — related pages (for `tara-NN`: the adjacent Tārās in the series and the root text's article; targets end in tsheg; red links expected), `ལུང་ཁུངས།` + `<references />`, `དཔྱད་གཞིའི་ཡིག་ཆ།` (one bullet per commentary actually cited, `<AUTHOR>། <TITLE>།` from frontmatter), one allowlisted category.
+6. **Assemble the tail** — related pages (for a spine slot in a numbered series: the adjacent slots' articles and the root text's article; targets end in tsheg; red links expected), `ལུང་ཁུངས།` + `<references />`, `དཔྱད་གཞིའི་ཡིག་ཆ།` (one bullet per commentary actually cited, `<AUTHOR>། <TITLE>།` from frontmatter), one allowlisted category.
 7. **Write `citations.md`** per the format above — reference map, claims-used list, §*Full attestation beyond in-article refs* for every capped consensus statement, unresolvables, warnings.
 8. **Verify** — (a) every quotation character-for-character against its cited `$SOURCES/` file, PASS/FAIL recorded; (b) every `<ref>` appears in the reference map; (c) walk validator rules V1–V12 against the fence body; (d) style self-check: no statement carries >3 refs, ≤2 commentary quotations in the whole article, no inline attribution of consensus material; (e) punctuation walk: no comma character anywhere in the fence body, every paragraph ends with `།།`, no punctuation after a `<ref>` tag; (f) naming walk: every in-prose commentator name is an `author_in_use` value (or the logged `author` fallback).
-9. **Generate the preview.** Run `python3 4-SYSTEM/Skills/wiki-article-from-claims/scripts/make_preview.py <path-to-article.md>` — it writes `article-preview.md` beside the article. Confirm the preview opens clean in Obsidian terms: no `<ref>` tags remaining, no `[[…]]` vault links leaked from wikitext, footnotes present for every named ref.
+9. **Generate the preview.** Run `python3 $SKILL/scripts/make_preview.py <path-to-article.md>` — it writes `article-preview.md` beside the article. Confirm the preview opens clean in Obsidian terms: no `<ref>` tags remaining, no `[[…]]` vault links leaked from wikitext, footnotes present for every named ref.
 10. **Report.** State the three files written, rails_status, counts (refs, quotations, backbone vs attributed statements), verification results, and every warning — the human reviewer decides what happens next.
 
 ---
@@ -234,7 +234,7 @@ Use Mode B when a verified `article.md` + `citations.md` already exists for the 
 6. **Spot-verify, don't re-verify from scratch.** For each of the ≤2 quotations retained, confirm it is an unchanged, exact substring of the quotation already marked PASS in the source `citations.md` — a text diff, not a fresh `$SOURCES/` lookup. Do not touch quotations that are being removed; they need no re-check.
 7. **Readability + punctuation pass (Rules 9, 15–17).** Reread start to finish; redraft any remaining who-said-what fragment sequence outside the divergence section. Then walk the punctuation contract: no comma anywhere, every paragraph closed with `།།`, no punctuation after a `<ref>` tag, every in-prose name an `author_in_use` value.
 8. **Write the revised `citations.md`** — carry forward the source file's reference map and verification table unchanged for retained refs, add *Full attestation beyond in-article refs*, and add a header noting `revision_mode: B`, the source article's path, and revision date.
-9. **Generate the preview**: `python3 4-SYSTEM/Skills/wiki-article-from-claims/scripts/make_preview.py <path-to-revised-article.md>`.
+9. **Generate the preview**: `python3 $SKILL/scripts/make_preview.py <path-to-revised-article.md>`.
 10. **Report** the topic, source path, output path, ref-count and quotation-count before/after, and confirmation that no claim ID appears in the revision that wasn't already in the source `citations.md`.
 
 ---
@@ -252,3 +252,18 @@ Use Mode B when a verified `article.md` + `citations.md` already exists for the 
 - [ ] Spec validator rules V1–V12 walked and passing; `<references />` present; no `{{Reflist}}` anywhere; allowlisted category; fixed tail order
 - [ ] `article-preview.md` generated by the script (not hand-written), carries `generated: true` + warning callout, contains no `<ref>` tags and no wikitext `[[…]]` links
 - [ ] `citations.md` frontmatter records `context_packages`, `rails_status`, `status: draft`; warnings list rails_status if not `complete` and every ref missing year/page/URL
+
+---
+
+## Dependencies
+
+- **`author_in_use`** must be present in the raw claims files' frontmatter. It is set by
+  `author-metadata-sync`; run that first if it is missing (Input 4 gives the per-file
+  fallback and the warning it must log).
+- **The wikitext contract** ships with this skill at `$SKILL/references/wikitext-spec.md` —
+  the skill does not depend on any external pipeline for it.
+- **`scripts/make_preview.py`** — Python 3 standard library only.
+- **No network access and no API key** are needed to draft. Checking whether the target
+  article already exists is `wiki-article-inventory`'s job (read-only Wikipedia + Wikidata
+  API access, no key); polishing the register is `gemini-article-polish`'s job
+  (`GEMINI_API_KEY`).

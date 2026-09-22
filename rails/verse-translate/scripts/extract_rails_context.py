@@ -1,12 +1,25 @@
 #!/usr/bin/env python3
-"""Build per-batch context bundles for rails-to-verse-translation (Step 3).
+"""Build per-batch context bundles for verse-translate (Step 3).
 
-For each verse in range, emits: Tibetan root, Sanskrit, the human-translation
-witnesses, the rail's synthesis, its key-term table, and its divergence block.
+For each verse in range, emits: the root text, an optional second-language
+root, every translation witness you name, the rail's AI Overview, its key-term
+table, and its divergence block.
+
+Nothing about a particular text is baked in. The root text, the optional
+auxiliary root, the witnesses and the rail path are all command-line
+arguments; the rail sections are matched by their English heading names, which
+every verse package carries (`## AI Overview`, `## Key Concepts`,
+`## Divergences`) whether or not it also carries an original-language label in
+parentheses after the name.
 
 Run from the vault root.
 
-    python3 extract_rails_context.py --range 2-25-2-50 --batch-size 6 --out /tmp/work
+    python3 extract_rails_context.py \\
+        --range 2-25-2-50 --batch-size 6 --out $WORK/verse-translate \\
+        --root 1-SOURCES/Text/<lang>-root-text.md \\
+        --aux-root 1-SOURCES/Text/<lang2>-root-text.md \\
+        --witness w1=1-SOURCES/Translations/<tgt>-<translator-a>.md \\
+        --witness w2=Full Name=1-SOURCES/Translations/<tgt>-<translator-b>.md
 
 Reports any verse whose rail is missing a section, and any witness whose verse
 numbering is offset (see SKILL.md Rule 3).
@@ -17,25 +30,26 @@ import os
 import re
 import sys
 
-ROOT_BO = "1-SOURCES/Translations/bo-བློ་ལྡན་ཤེས་རབ།.md"
-ROOT_SK = "1-SOURCES/Text/BCAV08_SH_sk.md"
-WITNESSES = [
-    ("pad", "Padmakara", "1-SOURCES/Translations/en-Padmakara_2006.md"),
-    ("wal", "Wallace", "1-SOURCES/Translations/en-Wallace.md"),
-    ("cho", "Choephel", "1-SOURCES/Translations/en-David_Karma_Choephel.md"),
-]
-RAIL = "2-RAILS/Verses/{vid}-summary.md"
+DEFAULT_RAIL = "2-RAILS/Verses/{vid}.md"
 
-SECTIONS = {
-    "synthesis": r"## བསྡུས་དོན།.*?(?=\n---|\Z)",
-    "key_terms": r"## གནད་ཚིག.*?(?=\n---|\n## |\Z)",
-    "divergences": r"### ⚑ འགྲེལ་ཚུལ་མི་མཐུན་པ།.*?(?=\n---|\n## |\Z)",
-    "teaching_points": r"## གཙོ་གནད།.*?(?=\n---|\n## |\Z)",
+# Rail sections are matched on the ENGLISH heading name. A package heading may
+# carry an original-language label in parentheses after that name
+# (`## AI Overview (བསྡུས་དོན།)`), so each pattern allows an optional trailing
+# parenthetical before the end of the heading line. Override any of these with
+# --section-regex NAME=PATTERN.
+DEFAULT_SECTIONS = {
+    "overview": r"## AI Overview(?:\s*\([^)\n]*\))?\s*$.*?(?=\n---|\n## |\Z)",
+    "key_terms": r"## Key Concepts(?:\s*\([^)\n]*\))?\s*$.*?(?=\n---|\n## |\Z)",
+    "divergences": r"#{3,4} Divergences(?:\s*\([^)\n]*\))?\s*$.*?(?=\n---|\n#{2,4} |\Z)",
+    # Fallback when a package carries no Key Concepts layer: the disambiguated
+    # restatement is the next most useful thing for a translator.
+    "restatement": r"## Disambiguated Restatement(?:\s*\([^)\n]*\))?\s*$.*?(?=\n---|\n## |\Z)",
 }
+SECTION_FLAGS = re.S | re.M
 
 
 def parse_blocks(path):
-    """Map block ID -> block text for a file using ^chapter-verse IDs."""
+    """Map block ID -> block text for a file using ^block-id suffixes."""
     if not os.path.exists(path):
         return None
     text = open(path, encoding="utf-8").read()
@@ -65,25 +79,86 @@ def parse_range(spec):
     return ch, a, b
 
 
+def parse_witness(spec):
+    """--witness id=path  or  --witness id=Display Name=path"""
+    parts = spec.split("=")
+    if len(parts) == 2:
+        key, path = parts
+        return key.strip(), key.strip(), path.strip()
+    if len(parts) >= 3:
+        key, label, path = parts[0], parts[1], "=".join(parts[2:])
+        return key.strip(), label.strip(), path.strip()
+    sys.exit(f"could not parse --witness {spec!r}; use id=path or id=Label=path")
+
+
+def parse_section_override(spec):
+    if "=" not in spec:
+        sys.exit(f"could not parse --section-regex {spec!r}; use name=regex")
+    name, pat = spec.split("=", 1)
+    return name.strip(), pat
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--range", required=True, help="e.g. 2-25-2-50")
     ap.add_argument("--batch-size", type=int, default=6)
     ap.add_argument("--out", required=True)
+    ap.add_argument(
+        "--root",
+        required=True,
+        help="the root text this vault translates from, per the vault annex",
+    )
+    ap.add_argument(
+        "--aux-root",
+        help="optional second-language root / parallel edition, per the vault annex",
+    )
+    ap.add_argument(
+        "--witness",
+        action="append",
+        default=[],
+        metavar="id=path",
+        help="a block-aligned existing translation; repeatable. "
+        "Also accepts id=Display Name=path.",
+    )
+    ap.add_argument(
+        "--rail-pattern",
+        default=DEFAULT_RAIL,
+        help=f"path template for the verse package, with {{vid}} (default: {DEFAULT_RAIL})",
+    )
+    ap.add_argument(
+        "--section-regex",
+        action="append",
+        default=[],
+        metavar="name=regex",
+        help="override a rail section pattern. Names: "
+        + ", ".join(sorted(DEFAULT_SECTIONS))
+        + ". Repeatable.",
+    )
     args = ap.parse_args()
+
+    sections = dict(DEFAULT_SECTIONS)
+    for spec in args.section_regex:
+        name, pat = parse_section_override(spec)
+        if name not in sections:
+            print(f"note: --section-regex defines a new section {name!r}", file=sys.stderr)
+        sections[name] = pat
+
+    witnesses = [parse_witness(w) for w in args.witness]
 
     ch, first, last = parse_range(args.range)
     vids = [f"{ch}-{n}" for n in range(first, last + 1)]
     os.makedirs(args.out, exist_ok=True)
 
-    src = {"bo": parse_blocks(ROOT_BO), "sk": parse_blocks(ROOT_SK)}
-    for key, _label, path in WITNESSES:
+    roots = [("__root", "Root text", args.root)]
+    if args.aux_root:
+        roots.append(("__aux", "Second-language root", args.aux_root))
+
+    src = {}
+    for key, _label, path in roots + witnesses:
         src[key] = parse_blocks(path)
 
     problems = []
-    for key, label, path in [("bo", "Tibetan root", ROOT_BO), ("sk", "Sanskrit", ROOT_SK)] + [
-        (k, l, p) for k, l, p in WITNESSES
-    ]:
+    for key, label, path in roots + witnesses:
         if src.get(key) is None:
             problems.append(f"MISSING FILE  {label}: {path}")
             continue
@@ -96,23 +171,23 @@ def main():
 
     rails, rail_problems = {}, []
     for vid in vids:
-        path = RAIL.format(vid=vid)
+        path = args.rail_pattern.format(vid=vid)
         if not os.path.exists(path):
             rail_problems.append(f"MISSING RAIL  {path}")
             rails[vid] = {}
             continue
         text = open(path, encoding="utf-8").read()
         got = {}
-        for name, pat in SECTIONS.items():
-            m = re.search(pat, text, re.S)
+        for name, pat in sections.items():
+            m = re.search(pat, text, SECTION_FLAGS)
             got[name] = m.group(0) if m else ""
         st = re.search(r"^status:\s*(\S+)", text, re.M)
         got["status"] = st.group(1) if st else "unknown"
-        if not got["synthesis"]:
-            rail_problems.append(f"NO SYNTHESIS  {path}")
-        if not got["key_terms"]:
+        if not got.get("overview"):
+            rail_problems.append(f"NO AI OVERVIEW {path}")
+        if not got.get("key_terms"):
             rail_problems.append(
-                f"NO KEY TERMS  {path} -- fall back to གཙོ་གནད། teaching points"
+                f"NO KEY CONCEPTS {path} -- fall back to the Disambiguated Restatement"
             )
         if got["status"] != "complete":
             rail_problems.append(f"STATUS={got['status']:<9} {path}")
@@ -125,23 +200,27 @@ def main():
             out.append("\n" + "=" * 70)
             out.append(f"## VERSE {vid}")
             out.append("=" * 70 + "\n")
-            out.append("### Tibetan root\n" + strip_transclusions(src["bo"].get(vid, "—") if src["bo"] else "—"))
-            out.append("\n### Sanskrit\n" + strip_transclusions(src["sk"].get(vid, "—") if src["sk"] else "—"))
-            for key, label, _ in WITNESSES:
+            for key, label, _ in roots:
+                blocks = src.get(key)
+                out.append(
+                    f"### {label}\n"
+                    + strip_transclusions(blocks.get(vid, "—") if blocks else "—")
+                )
+            for key, label, _ in witnesses:
                 if not src.get(key):
                     continue
                 t = strip_transclusions(src[key].get(vid, ""))
                 if t:
-                    out.append(f"\n### EN witness — {label}\n{t}")
+                    out.append(f"\n### Witness — {label}\n{t}")
             r = rails.get(vid, {})
-            if r.get("synthesis"):
-                out.append("\n### RAIL — synthesis\n" + r["synthesis"])
+            if r.get("overview"):
+                out.append("\n### RAIL — AI Overview\n" + r["overview"])
             if r.get("key_terms"):
-                out.append("\n### RAIL — key terms\n" + r["key_terms"])
-            elif r.get("teaching_points"):
+                out.append("\n### RAIL — Key Concepts\n" + r["key_terms"])
+            elif r.get("restatement"):
                 out.append(
-                    "\n### RAIL — teaching points (no key-term table in this rail)\n"
-                    + r["teaching_points"]
+                    "\n### RAIL — Disambiguated Restatement "
+                    "(no Key Concepts layer in this rail)\n" + r["restatement"]
                 )
             if r.get("divergences"):
                 out.append("\n### RAIL — DIVERGENCES\n" + r["divergences"])
@@ -154,6 +233,8 @@ def main():
     for vid in vids:
         for line in rails.get(vid, {}).get("key_terms", "").split("\n"):
             m = re.match(r"\|\s*\*\*(.+?)\*\*\s*\|\s*(.+?)\s*\|", line)
+            if not m:
+                m = re.match(r"-\s*\*\*(.+?)\*\*\s*[—-]\s*(.+?)\s*$", line)
             if m:
                 rows.append({"verse": vid, "lemma": m.group(1).strip(), "gloss": m.group(2).strip()})
     tb = os.path.join(args.out, "key_terms.json")

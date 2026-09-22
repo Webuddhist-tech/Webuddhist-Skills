@@ -33,6 +33,7 @@ left to right; a later stage never writes back into an earlier one.
 |---|---|---|
 | `$INBOX` | `0-INBOX/` | Unprocessed arrivals; scratch |
 | `$WORK` | `0-INBOX/temp/` | Intermediate drafts |
+| `$SOURCES` | `1-SOURCES/` | All human-produced source material (the folder that contains the rows below) |
 | `$SOURCE_TEXTS` | `1-SOURCES/Text/` | Root texts (canonical, citable) |
 | `$COMMENTARIES` | `1-SOURCES/Commentaries/` | Commentaries |
 | `$TRANSLATIONS` | `1-SOURCES/Translations/` | Existing human translations |
@@ -44,13 +45,17 @@ left to right; a later stage never writes back into an earlier one.
 | `$GLOSSARIES` | `2-RAILS/Bilingual-Glossaries/` | Consolidated glossaries |
 | `$GLOSSARIES_RAW` | `2-RAILS/Bilingual-Glossaries/Raw/` | Per-source raw glossaries |
 | `$LOCAL_WIKI` | `2-RAILS/Local-Wiki/` | Per-term wiki articles |
+| `$KEYWORDS` | `2-RAILS/Keywords/` | Descriptive graded keyword inventories (source-term registry, frequency matrix, ranked article queue) |
 | `$CLAIMS` | `2-RAILS/Claims/` | Extracted + consolidated claims |
 | `$TERMBASES` | `2-RAILS/termbases/` | Locked terminology |
 | `$TRANSFORMATIONS` | `3-TRANSFORMATIONS/` | Audience-facing outputs |
 | `$SYSTEM` | `4-SYSTEM/` | Skills, scripts, docs |
+| `$SKILLS` | `4-SYSTEM/Skills/` | The installed skill folders (`$SKILLS/<skill-name>/`) |
+| `$SKILL` | `4-SYSTEM/Skills/<this-skill>/` | The folder of the skill currently being executed — its own `scripts/`, `prompts/`, `templates/`, `references/` |
 
 **Not every vault has every folder.** Liturgy-rails has no `Commentaries/`,
-`Claims/` is 21-Taras-only, `termbases/` is BCA-only. A skill whose input
+`Claims/` and `Keywords/` exist only in vaults that run the claims / keyword
+pipelines, `termbases/` is BCA-only. A skill whose input
 folder does not exist in the current vault should say so and stop, not invent
 a location.
 

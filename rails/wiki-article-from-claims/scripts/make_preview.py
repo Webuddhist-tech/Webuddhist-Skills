@@ -86,7 +86,7 @@ WARNING_CALLOUT = (
     "> This file is rendered from `article.md` for review reading only. Citations appear\n"
     "> as footnotes. Any correction belongs in `article.md` (inside the wikitext fence);\n"
     "> then regenerate this preview with\n"
-    "> `4-SYSTEM/Skills/wiki-article-from-claims/scripts/make_preview.py`.\n"
+    "> `<skills>/wiki-article-from-claims/scripts/make_preview.py`.\n"
     "> This file is never published.\n"
 )
 
@@ -211,7 +211,7 @@ def make_preview(article_path: Path) -> Path:
         "article_kind: article-preview\n"
         "generated: true\n"
         "generated_from: article.md\n"
-        "generated_by: 4-SYSTEM/Skills/wiki-article-from-claims/scripts/make_preview.py\n"
+        "generated_by: wiki-article-from-claims/scripts/make_preview.py\n"
         "---\n"
     )
     out_path = article_path.parent / "article-preview.md"

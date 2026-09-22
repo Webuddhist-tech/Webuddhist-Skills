@@ -4,15 +4,16 @@ description: >
   Format a Tibetan root-text markdown file into clean, navigable verse with
   block IDs (^chapter-verse), chapter headings with ^N-0 anchors, and one
   stanza per paragraph with each verse-line on its own line, using the two
-  bundled formatters (scripts/format_bca.py, colophon-driven;
-  scripts/format_bo_root.py, table-driven). Input
-  texts/<text-id>/work/cleaned.md (or raw.md); output
-  texts/<text-id>/work/segmented.md.
+  bundled formatters ($SKILL/scripts/format_bca.py, colophon-driven;
+  $SKILL/scripts/format_bo_root.py, table-driven). Reads a cleaned draft in
+  $WORK/ and writes a segmented one beside it.
 
   Trigger this skill for any Tibetan root-text formatting or segmentation —
   "format the Tibetan text", "segment the verses", "add chapter headings
-  and block IDs to the bo file" — and as the `bo`-language route of
-  /annotate Steps 2–3. Root texts only, not commentaries.
+  and block IDs to the bo file".
+
+  Language scope: **Tibetan root texts only.** Not commentaries (use
+  `format-commentary`), not other languages (use `format-root-text`).
 profile: any
 supersedes:
   - 21-taras-rails/4-SYSTEM/Skills/format-tibetan-root-text/SKILL.md
@@ -21,6 +22,10 @@ supersedes:
   - 21-taras-rails/4-SYSTEM/Skills/Root-Text-Structure/SKILL.md
   - bodhisattvacharyavatara-rails/4-SYSTEM/Skills/Root-Text-Structure/SKILL.md
 ---
+
+> **Locations.** `$SKILL` is this skill's own directory. All other `$NAME`
+> paths resolve per repo — see `rails/PROFILES.md`. Block ID and heading rules
+> are in `rails/CONVENTIONS.md`; this skill implements them.
 
 # format-tibetan-root-text
 
@@ -38,14 +43,14 @@ underlying procedure is generic.
 ## CRITICAL — heading anchor convention
 
 Chapter headings use **`^N-0`**, not `^TOC-N`. This is the canonical
-convention for this repo (see `4-SYSTEM/Pipelines/wikipedia/docs/reference/conventions.md` §"Heading
-hierarchy"), and it is what `tools/parser/` expects when it builds the
+convention (`rails/CONVENTIONS.md` §2, and the vault's `1-SOURCES/About
+Sources.md` §5), and it is what a parser expects when it builds the
 table-of-contents payload. A file annotated with `^TOC-N` anchors will parse
 without a usable TOC. Every example and instruction below uses `^N-0`.
 
 ## Core Principles
 
-Before processing any file, review `4-SYSTEM/Pipelines/wikipedia/docs/reference/conventions.md` — it is
+Before processing any file, read `rails/CONVENTIONS.md` — it is
 the canonical spec for block IDs and heading hierarchy in this repo. The
 block ID is the single most important linking mechanism for verse-level
 references.
@@ -171,21 +176,21 @@ anchors (not `^TOC-N`):
   no reliable colophon marker to detect automatically.
 
 Both scripts take explicit `--input` / `--output` CLI arguments — run them
-from the repo root against the per-text working directory:
+from the vault root:
 
 ```bash
-python3 skills/format-tibetan-root-text/scripts/format_bca.py \
+python3 $SKILL/scripts/format_bca.py \
     --input $WORK/cleaned.md \
     --output $WORK/segmented.md
 
 # or, for the table-driven variant:
-python3 skills/format-tibetan-root-text/scripts/format_bo_root.py \
+python3 $SKILL/scripts/format_bo_root.py \
     --input $WORK/cleaned.md \
     --output $WORK/segmented.md
 ```
 
-Neither script writes into `raw.md`; both read the cleaned draft and write a
-new file so the run is repeatable.
+Neither script writes over its input; both read the cleaned draft and write a
+new file, so the run is repeatable.
 
 **What `format_bca.py` does (in order):**
 
@@ -318,10 +323,10 @@ this skill:
 
 ---
 
-## Provenance
+## Note on the superseded `^TOC-N` anchors
 
-Adapted from `bodhisattvacharyavatara-rails/4-SYSTEM/Skills/Root-Text-Structure/SKILL.md`
-and `4-SYSTEM/scripts/format_bo_root.py` / `format_bca.py`. The source skill
-taught `^TOC-N` chapter-heading anchors; this version corrects every instance
-to the repo's canonical `^N-0` convention (see `4-SYSTEM/Pipelines/wikipedia/docs/reference/conventions.md`)
-so that `tools/parser/` produces a usable table of contents.
+An earlier version of this procedure taught `^TOC-N` chapter-heading anchors.
+Every instance is corrected here to the canonical `^N-0` form
+(`rails/CONVENTIONS.md` §6). A parser expecting `^N-0` does not recognise a
+`^TOC-N` anchor, so a file still carrying them silently ends up with no table
+of contents and no error. Correct any you encounter before using the file.

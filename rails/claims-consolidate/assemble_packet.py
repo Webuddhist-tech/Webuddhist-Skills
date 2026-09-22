@@ -13,12 +13,12 @@ commentary's raw file and concatenating them into one packet.
 
 Nothing here uses model judgment. Every claim block in the output is copied
 character-for-character out of `2-RAILS/Claims/raw/tree-guided/<id>.md`, which is
-also why it fixes a whole error class the 2026-08-07 pilot audit found: silently
-elided syllables and normalized orthography in Tibetan quotes. A script cannot
-mis-transcribe བོད་ཡིག.
+also why it fixes a whole error class a retrospective audit found: silently
+elided syllables and normalized orthography in original-language quotes. A script
+cannot mis-transcribe them.
 
 The packet's `## Manifest` is the authoritative input to the coverage check
-(claims-consolidation procedure step 5): diff it against the claim IDs the finished
+(claims-consolidate Phase 1, procedure step 5): diff it against the claim IDs the finished
 topic page cites, and every ID in the gap must be closed.
 
 Exit code 0 = packet written; 1 = a commentary has no disposition for the slot

@@ -3,7 +3,8 @@ name: outline-extract
 description: >
   Extract the structural outline (ས་བཅད། / sa bcad) already embedded in a
   Tibetan commentary and emit it as a standalone nested file — YAML frontmatter,
-  heading-based hierarchy for levels 1–5, indented bold list items deeper than that.
+  heading-based hierarchy for levels 1–5 (`# ` title, `## ` level-1 … `###### ` level-5),
+  indented bold list items deeper than that.
 
   Trigger on "extract the outline", "pull out the sa bcad", "give me this commentary's
   structure as a file", "build the outline file".
@@ -35,13 +36,20 @@ This skill is the cheap path and only works when the outline is already written 
 If you find yourself inferring hierarchy from prose, stop and use `toc-generate` —
 that is what its four verified passes are for.
 
-> **Legacy variant — `^TOC-N` IDs.** An older flat, tab-indented variant of this skill
-> (`bodhisattvacharyavatara-rails/$WORK/Outline-Extractor`) emitted hierarchical
-> `^TOC-` block IDs, reproducing the kunpal ས་བཅད་རྐྱང་པ། outline format. **That ID
-> scheme is deprecated** — see `rails/CONVENTIONS.md` §6. A parser expecting `^N-0`
-> does not recognise a `^TOC-N` anchor, so the text silently ends up with no table of
-> contents and no error. If you need that flat bullet format, produce it, but emit
-> `^N-0`-style IDs; and correct `^TOC-N` wherever you find it in existing files.
+> **`^TOC-N` IDs — where they are and are not allowed.** This skill's two outputs
+> carry hierarchical `^TOC-N[-N…]` IDs, and that is deliberate: they are **standalone
+> Adaptation files** whose lines are outline entries, not headings inside a source
+> text. The IDs index positions within the outline file itself, exactly as `add-toc`'s
+> `^toc-X-Y-Z` indexes lines in the outline block it writes (`rails/CONVENTIONS.md`
+> §4).
+>
+> **They are never used for a source file's headings.** As a heading anchor in
+> `$SOURCES/`, `^TOC-N` is deprecated and wrong (`rails/CONVENTIONS.md` §6): the
+> canonical form is `^N-0`, and a parser expecting `^N-0` does not recognise a
+> `^TOC-N` anchor, so the text silently ends up with no table of contents and no
+> error. Correct any `^TOC-N` you find on a heading in a source file. If you need
+> these outline entries to *link* to real headings in the commentary, link to the
+> commentary's own `^N-0` anchors — do not renumber the source to match this file.
 
 ---
 
@@ -117,15 +125,15 @@ lang_tag: bo
 status: draft
 ---
 
-## <title-bo>
+# <title-bo>
 
-### <Level-1 text> ^TOC-N
+## <Level-1 text> ^TOC-N
 
-#### <Level-2 text> ^TOC-N-N
+### <Level-2 text> ^TOC-N-N
 
-##### <Level-3 text> ^TOC-N-N-N
+#### <Level-3 text> ^TOC-N-N-N
 
-###### <Level-4 text> ^TOC-N-N-N-N
+##### <Level-4 text> ^TOC-N-N-N-N
 
 ###### <Level-5 text> ^TOC-N-N-N-N-N
 
@@ -147,9 +155,14 @@ Depth-to-format mapping:
 | 7 | `  - **` (2-space indent per additional level) |
 | 8+ | `    - **…**` (2 additional spaces per level beyond 7) |
 
+The `# <title-bo>` line takes no block ID; depth-1 entries start at `## `. This
+mapping and the template above are the same scheme stated twice — if you ever read
+them as disagreeing, the table wins and the template is the bug.
+
 Always include the block ID at the end of each line.
 
-Add a `---` horizontal rule between the top-level sections (between `## 1.` and `## 2.` groups) for readability.
+Add a `---` horizontal rule between the top-level (depth-1) sections — between the
+`## ` groups — for readability.
 
 ---
 
@@ -205,7 +218,7 @@ The phrase `གཉིས་པ་ལ་བཞི།` declares 4 children. The fo
 
    **Parsing logic for number-declaration blocks:** when a phrase containing `་ལ་<N>།` or `་ལ་ཡང་<N>།` is found, read forward to collect exactly N named items — these names appear in the same sentence as a semicolon-delimited or shad-delimited list and become the child outline entries of that node. The subsequent sub-item address phrases (form b above) confirm the match and mark where each child's body begins; they are not themselves separate outline entries — they are the body openers for the entries already named.
 3. **Preserve original Tibetan text exactly.** Do not translate, paraphrase, or correct orthography. Copy text verbatim from the source.
-4. **Block IDs are hierarchical.** `^TOC-N` for level-1 entries, `^TOC-N-N` for level-2, etc. Numbering is sequential within each parent: the first child of `^TOC-1` is `^TOC-1-1`, the second is `^TOC-1-2`, and so on. Never skip or reuse numbers.
+4. **Block IDs are hierarchical, and confined to these two files.** `^TOC-N` for level-1 entries, `^TOC-N-N` for level-2, etc. Numbering is sequential within each parent: the first child of `^TOC-1` is `^TOC-1-1`, the second is `^TOC-1-2`, and so on. Never skip or reuse numbers. This ID namespace is tolerated **only** inside these standalone Adaptation outline files; never write a `^TOC-` anchor onto a heading in a `$SOURCES/` file (`rails/CONVENTIONS.md` §6 — heading anchors are `^N-0`).
 5. **Complete all siblings before advancing.** When a number-declaration establishes N siblings, do not advance past that sibling group until all N entries — and all their own descendant sub-outlines recursively — have been fully extracted. Concretely: finish sibling 1 (including every sub-declaration it contains, at any depth) before extracting sibling 2; finish sibling 2 completely before extracting sibling 3; and so on. Only after the last sibling and all its descendants are extracted is the current sibling group considered closed. This applies at every level of nesting: a sub-declaration inside sibling 2 must itself be fully resolved before sibling 3 is touched.
 6. **Two outputs are always produced.** Do not produce one without the other.
 7. **Output folder must exist.** Create `$TRANSFORMATIONS/Adaptations/<commentary-id>-sa-bcad/` before writing if it does not exist.
@@ -311,4 +324,6 @@ d. No source text has been altered.
 - [ ] File 2 (`ལྟེ་བའི་དཀར་ཆག།`) written with YAML frontmatter, heading hierarchy for depths 1–5, and bold indented list items for depth 6+
 - [ ] Every block ID from File 1 appears in File 2
 - [ ] No source text in `$SOURCES/` modified
+- [ ] File 2's headings follow the depth-to-format table exactly: `# ` title, `## ` depth-1, … `###### ` depth-5, bold list items from depth 6
+- [ ] `^TOC-` IDs appear only in these two Adaptation files — no `^TOC-` anchor written onto any heading in `$SOURCES/`
 - [ ] Both output files have `status: draft` in frontmatter

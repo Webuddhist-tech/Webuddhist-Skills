@@ -12,7 +12,7 @@ retire the vault copy when the team has moved over.
 ---
 
 
-**52 canonical skills, consolidated from 178 source files across 6 repos.**
+**60 canonical skills, consolidated from 194 source files across 6 repos.**
 
 ### `library/annotate-root-text`
 
@@ -42,12 +42,13 @@ retire the vault copy when the team has moved over.
 
 ### `rails/add-block-ids`
 
-*profile: `any`* — absorbs 6 source file(s):
+*profile: `any`* — absorbs 7 source file(s):
 
 - `21-taras-rails/4-SYSTEM/Skills/Obsidian-Block-ID-to-Commentary/SKILL.md`
 - `21-taras-rails/4-SYSTEM/Skills/add-block-id-root-text/SKILL.md`
 - `bodhisattvacharyavatara-rails/4-SYSTEM/Skills/add-block-id-root-text/SKILL.md`
 - `Liturgy-rails/.claude/skills/block-ids/SKILL.md`
+- `Liturgy-rails/4-SYSTEM/Skills/Add-Block-ID/SKILL.md`
 - `21-taras-rails/4-SYSTEM/Skills/commentary-verse-id/SKILL.md`
 - `bodhisattvacharyavatara-rails/4-SYSTEM/Skills/commentary-verse-id/SKILL.md`
 
@@ -133,8 +134,9 @@ retire the vault copy when the team has moved over.
 
 ### `rails/epub-to-markdown`
 
-*profile: `any`* — absorbs 3 source file(s):
+*profile: `any`* — absorbs 4 source file(s):
 
+- `Fodian-Texts/4-SYSTEM/Skills/sheet-to-inbox/docx_to_markdown.py`
 - `bodhisattvacharyavatara-rails/4-SYSTEM/Skills/epub-to-markdown/SKILL.md`
 - `21-taras-rails/4-SYSTEM/Skills/epub-to-markdown/SKILL.md`
 - `abhidhamma-rails/4-SYSTEM/Skills/epub-to-markdown/SKILL.md`
@@ -291,6 +293,47 @@ retire the vault copy when the team has moved over.
 
 - `abhidhamma-rails/4-SYSTEM/Skills/pali-biterm-extraction/SKILL.md`
 
+### `rails/plan-day-generate`
+
+*profile: `rails-vault`* — absorbs 4 source file(s):
+
+- `bodhisattvacharyavatara-rails/4-SYSTEM/Skills/BCA-Daily-Practice-Plan-HHDL/SKILL.md`
+- `bodhisattvacharyavatara-rails/4-SYSTEM/Skills/Daily-Challenge-Creator/SKILL.md`
+- `bodhisattvacharyavatara-rails/4-SYSTEM/Skills/DKR-Fellow-Plan-Generator/SKILL.md`
+- `bodhisattvacharyavatara-rails/4-SYSTEM/⚡ Pipelines/workflow-english-daily-plan.md`
+
+### `rails/plan-day-package`
+
+*profile: `rails-vault`* — absorbs 3 source file(s):
+
+- `bodhisattvacharyavatara-rails/4-SYSTEM/Skills/day-package-pipeline/SKILL.md`
+- `bodhisattvacharyavatara-rails/4-SYSTEM/scripts/day-package/day_package_tools.py`
+- `bodhisattvacharyavatara-rails/4-SYSTEM/scripts/day-package/reorder_commentators.py`
+
+### `rails/plan-day-qa`
+
+*profile: `rails-vault`* — absorbs 1 source file(s):
+
+- `bodhisattvacharyavatara-rails/4-SYSTEM/Skills/english-plan-evaluator/SKILL.md`
+
+### `rails/plan-day-translate`
+
+*profile: `rails-vault`* — absorbs 1 source file(s):
+
+- `bodhisattvacharyavatara-rails/4-SYSTEM/Skills/dalai-lama-plan-translation/SKILL.md`
+
+### `rails/plan-scaffold`
+
+*profile: `rails-vault`* — absorbs 0 source file(s):
+
+
+### `rails/plan-schedule`
+
+*profile: `rails-vault`* — absorbs 2 source file(s):
+
+- `bodhisattvacharyavatara-rails/4-SYSTEM/Skills/BCA-Verse-Distribution-Updater/SKILL.md`
+- `bodhisattvacharyavatara-rails/4-SYSTEM/Skills/BCA-Verse-Distribution-Updater/scripts/shift_verse.py`
+
 ### `rails/property-creator`
 
 *profile: `rails-vault`* — absorbs 4 source file(s):
@@ -302,9 +345,10 @@ retire the vault copy when the team has moved over.
 
 ### `rails/raw-to-sources`
 
-*profile: `rails-vault`* — absorbs 1 source file(s):
+*profile: `any`* — absorbs 2 source file(s):
 
 - `21-taras-rails/4-SYSTEM/Skills/raw-to-sources/SKILL.md`
+- `Fodian-Texts/4-SYSTEM/Skills/inbox-to-sources/SKILL.md`
 
 ### `rails/section-summary`
 
@@ -401,6 +445,12 @@ retire the vault copy when the team has moved over.
 
 - `bodhisattvacharyavatara-rails/4-SYSTEM/Skills/translate-commentary-ai/SKILL.md`
 
+### `rails/translation-alignment-check`
+
+*profile: `rails-vault`* — absorbs 1 source file(s):
+
+- `21-taras-rails/4-SYSTEM/Skills/translation-alignment-check/SKILL.md`
+
 ### `rails/translation-qa`
 
 *profile: `rails-vault`* — absorbs 2 source file(s):
@@ -408,23 +458,29 @@ retire the vault copy when the team has moved over.
 - `21-taras-rails/4-SYSTEM/Skills/translation-qa/SKILL.md`
 - `bodhisattvacharyavatara-rails/4-SYSTEM/Skills/translation-qa/SKILL.md`
 
+### `rails/translation-upload`
+
+*profile: `rails-vault`* — absorbs 1 source file(s):
+
+- `21-taras-rails/4-SYSTEM/Skills/translation-upload/SKILL.md`
+
 ### `rails/vault-audit`
 
-*profile: `rails-vault`* — absorbs 3 source file(s):
+*profile: `?`* — absorbs 0 source file(s):
 
-- `21-taras-rails/4-SYSTEM/Skills/vault-audit/SKILL.md`
-- `bodhisattvacharyavatara-rails/4-SYSTEM/Skills/vault-audit/SKILL.md`
-- `abhidhamma-rails/4-SYSTEM/Skills/vault-audit/SKILL.md`
 
 ### `rails/verse-context`
 
-*profile: `rails-vault`* — absorbs 5 source file(s):
+*profile: `rails-vault`* — absorbs 8 source file(s):
 
 - `bodhisattvacharyavatara-rails/4-SYSTEM/Skills/verse-context/SKILL.md`
 - `21-taras-rails/4-SYSTEM/Skills/verse-context/SKILL.md`
 - `abhidhamma-rails/4-SYSTEM/Skills/verse-context/SKILL.md`
 - `bodhisattvacharyavatara-rails/4-SYSTEM/Skills/verse-context-batch/SKILL.md`
 - `bodhisattvacharyavatara-rails/4-SYSTEM/Skills/root-verse-context-creator/SKILL.md`
+- `bodhisattvacharyavatara-rails/4-SYSTEM/Skills/AI-summary-generator/SKILL.md`
+- `bodhisattvacharyavatara-rails/4-SYSTEM/Skills/BCA-Verse-Context-Summary/SKILL.md`
+- `bodhisattvacharyavatara-rails/4-SYSTEM/Skills/Verse-package-file-creator/SKILL.md`
 
 ### `rails/verse-translate`
 

@@ -18,11 +18,11 @@ This skill writes vault files only, never publishes, and by default never overwr
 
 ## Inputs
 
-1. **Topic path(s)** — the folder of an existing article: `$TRANSFORMATIONS/Wikipedia/tara21/slot-articles/<topic>/` or `term-articles/<topic>/`, containing a verified `article.md` and its `citations.md`. If either file is missing, stop and report.
-2. **Output mode** — `pilot` (default): write to `$TRANSFORMATIONS/Wikipedia/tara21/work/pilot-gemini/<topic>/`. `in-place` only on explicit human instruction (after the pilot has been reviewed and accepted).
-3. **API key** — `GEMINI_API_KEY`, resolved by the script from the environment, then `4-SYSTEM/Pipelines/wikipedia/.env`, then `~/.zshrc`. Never echo, log, or write the key anywhere.
-4. **The bundled script** — `4-SYSTEM/Skills/gemini-article-polish/scripts/gemini_polish.py` (the only thing that talks to the network).
-5. **The preview generator** — `4-SYSTEM/Skills/wiki-article-from-claims/scripts/make_preview.py`, to regenerate `article-preview.md` from the polished article.
+1. **Topic path(s)** — the folder of an existing article: `$TRANSFORMATIONS/Wikipedia/<text-slug>/slot-articles/<topic>/` or `term-articles/<topic>/`, containing a verified `article.md` and its `citations.md`. If either file is missing, stop and report.
+2. **Output mode** — `pilot` (default): write to `$TRANSFORMATIONS/Wikipedia/<text-slug>/work/pilot-gemini/<topic>/`. `in-place` only on explicit human instruction (after the pilot has been reviewed and accepted).
+3. **API key** — `GEMINI_API_KEY`, resolved by the script from the environment, then a vault-local `.env`, then the shell profile. **This skill is the only one in the article chain that needs a key**, and it needs network access to the Gemini API. Never echo, log, or write the key anywhere.
+4. **The bundled script** — `$SKILL/scripts/gemini_polish.py` (the only thing that talks to the network).
+5. **The preview generator** — `$SKILLS/wiki-article-from-claims/scripts/make_preview.py`, to regenerate `article-preview.md` from the polished article.
 
 ## Output
 
@@ -45,7 +45,7 @@ body-after.txt
 
 ## Output file format
 
-`article.md`, `citations.md`, and `article-preview.md` keep exactly the formats defined in `4-SYSTEM/Skills/wiki-article-from-claims/SKILL.md` — this skill changes prose inside the wikitext fence and nothing else. `gemini-report.md` is written by the script (see its docstring). `semantic-diff.md`:
+`article.md`, `citations.md`, and `article-preview.md` keep exactly the formats defined in `$SKILLS/wiki-article-from-claims/SKILL.md` — this skill changes prose inside the wikitext fence and nothing else. `gemini-report.md` is written by the script (see its docstring). `semantic-diff.md`:
 
 ```markdown
 ---
@@ -97,14 +97,14 @@ status: draft
 1. **Locate the source.** Confirm `<topic-folder>/article.md` and `<topic-folder>/citations.md` exist. Record the article's `status` and any `wiki_title`/`wiki_pageid` frontmatter (published articles get polished in pilot mode only — the live page is never touched by this skill).
 2. **Run the script:**
    ```
-   python3 4-SYSTEM/Skills/gemini-article-polish/scripts/gemini_polish.py \
+   python3 $SKILL/scripts/gemini_polish.py \
        <topic-folder>/article.md \
-       --out $TRANSFORMATIONS/Wikipedia/tara21/work/pilot-gemini/<topic>
+       --out $TRANSFORMATIONS/Wikipedia/<text-slug>/work/pilot-gemini/<topic>
    ```
    Exit 0 = hard checks pass; exit 2 = still failing after retries → apply Rule 7 (report, stop this topic). Read `gemini-report.md` and note every warning.
 3. **Resolve W1 warnings** (paragraph not ending `།།`): if genuine, re-run the script once; if a false positive (e.g. a paragraph ending in a token-adjacent shad pattern), record why in `semantic-diff.md`.
 4. **Semantic diff.** Compare `body-before.txt` and `body-after.txt` sentence by sentence and write `semantic-diff.md` per the format above: every fact matched, every ref's attachment confirmed on the same statement, verdict PASS or FAIL. Apply Rule 8 on FAIL.
-5. **Complete the folder.** Copy the source `citations.md` into the output folder, appending under the frontmatter a blockquote note: `> [!note] Polished — gemini-article-polish, <date>, model <id>; claim usage unchanged from <source path>.` Then regenerate the preview: `python3 4-SYSTEM/Skills/wiki-article-from-claims/scripts/make_preview.py <out>/article.md`.
+5. **Complete the folder.** Copy the source `citations.md` into the output folder, appending under the frontmatter a blockquote note: `> [!note] Polished — gemini-article-polish, <date>, model <id>; claim usage unchanged from <source path>.` Then regenerate the preview: `python3 $SKILLS/wiki-article-from-claims/scripts/make_preview.py <out>/article.md`.
 6. **Report.** State the output folder, model used, attempts, check results, warnings and how each was resolved, the semantic-diff verdict, and the length delta — the domain expert takes it from there.
 
 ---
@@ -120,3 +120,14 @@ status: draft
 - [ ] Frontmatter carries `polished_by` / `polish_model` / `polish_date` / `polish_source`; `status: draft` unchanged
 - [ ] In pilot mode, nothing outside `work/pilot-gemini/<topic>/` was modified; the canonical topic folder and the live wiki page are untouched
 - [ ] The API key was never printed, logged, or written to any file
+
+---
+
+## Dependencies
+
+- **`GEMINI_API_KEY`** in the environment (or a vault-local `.env`, or the shell profile) and
+  network access to the Gemini API. The bundled `scripts/gemini_polish.py` uses `urllib`
+  only — no SDK, no other third-party package.
+- Everything upstream of this skill (`keyword-extract`, `article-subject-filter`,
+  `wiki-article-from-claims`) runs without a key; `wiki-article-inventory` needs read-only
+  network access to Wikipedia and Wikidata but no key either.

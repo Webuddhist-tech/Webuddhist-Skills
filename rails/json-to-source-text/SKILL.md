@@ -1,6 +1,6 @@
 ---
 name: json-to-source-text
-description: Convert JSON dumps of classical texts (tipitaka.org, SuttaCentral, GRETIL exports, BDRC, custom scraped JSON) into properly formatted Markdown source-text files for texts/<text-id>/raw.md. Adaptive — inspects each JSON's schema, reuses an existing converter if the source shape is known, otherwise generates a new converter. The current converter (tipitaka_org_book.py) produces Pāli Tipiṭaka root texts in the Bible-style book-verse numbering scheme.
+description: Convert JSON dumps of classical texts (tipitaka.org, SuttaCentral, GRETIL exports, BDRC, custom scraped JSON) into properly formatted Markdown source-text files for $SOURCE_TEXTS/. Adaptive — inspects each JSON's schema, reuses an existing converter if the source shape is known, otherwise generates a new converter. The current converter (tipitaka_org_book.py) produces Pāli Tipiṭaka root texts in the Bible-style book-verse numbering scheme.
 profile: any
 supersedes:
   - data-pipeline/skills/json-to-source-text/SKILL.md
@@ -14,12 +14,13 @@ supersedes:
 > **OPTIONAL intake path.** Use this skill only when your text originates as
 > a JSON export (tipitaka.org, SuttaCentral, GRETIL, BDRC, or a custom
 > scrape). If you already have a plain-text or markdown source, skip this
-> skill entirely and start from `clean-raw-text` with the file placed at
-> `texts/<text-id>/raw.md`.
+> skill entirely and start from `clean-raw-text` with the file placed in
+> `$INBOX/raw-data/`.
 
 Converts JSON-formatted classical text dumps into Markdown source-text files
-that obey this repo's conventions (`docs/reference/conventions.md` for block
-IDs and headings; `docs/reference/frontmatter-schema.md` for frontmatter).
+that obey the vault's conventions — `$SYSTEM/CLAUDE.md` §5–5b and
+`$SOURCES/About Sources.md` §5 for block IDs and headings, `About Sources.md`
+§4 for frontmatter (and `rails/CONVENTIONS.md`, which both implement).
 
 The skill is **adaptive**: every JSON source uses its own schema (tipitaka.org
 exports look very different from SuttaCentral exports, which look different
@@ -46,7 +47,7 @@ Step 2: Check converters/ for matching source slug
                                                            │
                                                            ▼
                                                     Step 5: Review output
-                                                    against docs/reference/conventions.md
+                                                    against CLAUDE.md §5–5b
 ```
 
 ---
@@ -56,7 +57,7 @@ Step 2: Check converters/ for matching source slug
 Run the inspector to extract a structural profile:
 
 ```bash
-python skills/json-to-source-text/json_inspector.py path/to/source.json
+python3 $SKILL/json_inspector.py path/to/source.json
 ```
 
 The inspector outputs JSON containing:
@@ -80,7 +81,7 @@ Read the profile carefully. Pay particular attention to:
 
 ## Step 2 — Check for an Existing Converter
 
-Look in `skills/json-to-source-text/converters/` for a file named
+Look in `$SKILL/converters/` for a file named
 `<source_slug>.py`.
 
 **If a matching converter exists:** skip to Step 4.
@@ -101,7 +102,7 @@ Existing converters in this skill:
 **First, pick the output convention** appropriate to the source's text type:
 
 - **Pāli Tipiṭaka root texts** (Vinaya, Sutta, Abhidhamma books): use the Bible-style `book-verse` scheme. Model the new converter on `tipitaka_org_book.py`.
-- **Sanskrit / Tibetan root texts**: use the generic `^chapter-verse` (or `^book-chapter-verse`) scheme in `docs/reference/conventions.md`.
+- **Sanskrit / Tibetan root texts**: use the generic `^chapter-verse` (or `^book-chapter-verse`) scheme in `$SYSTEM/CLAUDE.md` §5.
 - **Translations and commentaries**: follow the same block-ID system as the root text they accompany. (Out of scope for this repo's current root-text-only pipeline — see the repo README — but the converter pattern still applies if you're preparing material ahead of that support landing.)
 
 If the source's text type doesn't fit any existing convention, note the new
@@ -111,7 +112,7 @@ converter.
 Write the new Python script at:
 
 ```
-skills/json-to-source-text/converters/<source_slug>.py
+$SKILL/converters/<source_slug>.py
 ```
 
 The script must expose a single function:
@@ -132,14 +133,14 @@ copy and extend it rather than starting from scratch.
 ### What to customise
 
 **3.1 Frontmatter mapping.** Map the JSON's top-level metadata fields to the
-frontmatter required by `docs/reference/frontmatter-schema.md`. Required
+frontmatter required by `$SOURCES/About Sources.md` §4. Required
 minimum:
 
 - `title` — `title` or `title_pali` or `title_sanskrit` etc.
 - `language` — derived from the script/encoding of `content` (Pāli, Sanskrit, Tibetan, Chinese, English…)
 - `script` — Devanāgarī, Roman-PTS, Unicode Tibetan, etc.
 - `file_type` — `root-text` (this repo's current scope; `translation`/`commentary` for future use)
-- `lang_tag` — see `docs/reference/frontmatter-schema.md`
+- `lang_tag` — see `$SOURCES/About Sources.md` §12 (Sanskrit is `sk`, not `sa`)
 - `verse_id_format` — usually `chapter-verse`; pick `verse` if there are no chapter divisions
 - `source_description` — short prose describing where this came from (`"Tipitaka.org Mūla edition, exported {date}"`)
 - `source_url` — original URL if recoverable from the JSON
@@ -162,7 +163,7 @@ should also be preserved as `other_ids` entries.
 Implement the routing as a dispatch table (`CATEGORY_TO_ROLE = {...}`) at the
 top of the converter so it's easy to see and tweak.
 
-**3.3 Heading IDs.** Per `docs/reference/conventions.md`:
+**3.3 Heading IDs.** Per `$SYSTEM/CLAUDE.md` §5a:
 
 - `##` headings get `^chapter-0`
 - `###` headings get `^chapter-section-0`
@@ -195,7 +196,7 @@ under `## 0. Introduction ^0-0` and treat the authored chapter as Chapter 1
 prefatory, keep its numbering and just rename it `Introduction`.
 
 **3.6 Output filename.** This repo's per-text contract expects the converted
-file at `texts/<text-id>/raw.md`. If a converter needs to name an
+file under `$SOURCE_TEXTS/`. If a converter needs to name an
 intermediate file before the text ID is settled, use `[lang]-[text-slug].md`,
 e.g. `pi-dhammasangani.md`, `sk-bodhicaryavatara.md` — no diacritics,
 lowercase, hyphenated.
@@ -225,7 +226,7 @@ A new converter typically:
 Output goes to `$WORK/` for review first:
 
 ```bash
-python skills/json-to-source-text/converters/<source_slug>.py \
+python3 $SKILL/converters/<source_slug>.py \
   <path-to-source>.json \
   $WORK/<lang>-<text-slug>.md
 ```
@@ -236,7 +237,7 @@ Or, to avoid `.pyc` staleness on mounted filesystems:
 python3 - << 'EOF'
 import importlib.util
 spec = importlib.util.spec_from_file_location("conv",
-    "skills/json-to-source-text/converters/<source_slug>.py")
+    "$SKILL/converters/<source_slug>.py")
 m = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(m)
 m.convert_json_to_source_text(
@@ -246,7 +247,7 @@ EOF
 ```
 
 Once reviewed and confirmed, copy or rename the file to
-`texts/<text-id>/raw.md`.
+`$SOURCE_TEXTS/<file>.md`.
 
 ---
 
@@ -254,7 +255,7 @@ Once reviewed and confirmed, copy or rename the file to
 
 ### 5.1 Frontmatter
 
-Verify the YAML block against `docs/reference/frontmatter-schema.md`:
+Verify the YAML block against `$SOURCES/About Sources.md` §4:
 - `source_description` is set
 - `lang_tag`, `language`, `script` match the content
 - `verse_id_format` is correct
@@ -267,7 +268,7 @@ Verify the YAML block against `docs/reference/frontmatter-schema.md`:
 - Every verse on its own line ends in `^chapter-verse`
 - No zero-padding
 - Verse numbers restart per chapter
-- No `^TOC-N` anywhere (deprecated — see `docs/reference/conventions.md`)
+- No `^TOC-N` anywhere (deprecated — `rails/CONVENTIONS.md` §6)
 
 Run a quick check:
 
@@ -300,8 +301,8 @@ grep -E "^\^|\^[0-9]+-[0-9]+( |$)" $WORK/<file>.md | head -20
 
 ## Related References
 
-- `docs/reference/conventions.md` — the authoritative block-ID and heading rules. The converter output must conform to these.
-- `docs/reference/frontmatter-schema.md` — the authoritative frontmatter schema.
+- `$SYSTEM/CLAUDE.md` §5–5b and `$SOURCES/About Sources.md` §5 — the authoritative block-ID and heading rules. The converter output must conform to these.
+- `$SOURCES/About Sources.md` §4 — the authoritative frontmatter schema.
 - `skills/format-root-text/SKILL.md` — for post-hoc cleanup of source files (this skill's output may benefit from a pass through that one, or through `format-tibetan-root-text` / `format-sanskrit-root-text` for those languages).
 
 ---
@@ -314,13 +315,3 @@ grep -E "^\^|\^[0-9]+-[0-9]+( |$)" $WORK/<file>.md | head -20
 - **Unicode normalisation.** No NFC/NFD normalisation is applied. If downstream tools require a specific form, run a separate pass.
 
 ---
-
-## Provenance
-
-Adapted from `bodhisattvacharyavatara-rails/4-SYSTEM/Skills/json-to-source-text/`.
-References to `4-SYSTEM/docs/source-formatting.md` and `$SOURCE_TEXTS/`
-replaced with `docs/reference/conventions.md`,
-`docs/reference/frontmatter-schema.md`, and the `texts/<text-id>/` per-text
-contract. `converters/english_paired_translation.py`'s hardcoded
-`--root-text` default (`$SOURCE_TEXTS/pi-dhammasangani.md`) is changed to
-the generic placeholder `texts/<text-id>/raw.md`.

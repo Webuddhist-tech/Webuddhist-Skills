@@ -4,8 +4,8 @@ description: >
   Add Obsidian block IDs to a text so every verse, prose block, and heading
   can be cited and transcluded. Covers the four cases that occur in practice: a
   commentary keyed off headings a human labelled by hand, a Sanskrit root text using
-  the four-zone scheme, expert-segmented liturgy notes being prepared for the sources
-  folder, and the narrow verse/prose-only pass.
+  the four-zone scheme, automatic sequential numbering of any note whose headings
+  carry no manual labels, and the narrow verse/prose-only pass.
 
   Trigger on "add block IDs", "add Obsidian block IDs", "tag this with block ids",
   "stamp the IDs", "add the citation anchors", "re-index this file", "add TOC/section
@@ -19,6 +19,7 @@ supersedes:
   - 21-taras-rails/4-SYSTEM/Skills/add-block-id-root-text/SKILL.md
   - bodhisattvacharyavatara-rails/4-SYSTEM/Skills/add-block-id-root-text/SKILL.md
   - Liturgy-rails/.claude/skills/block-ids/SKILL.md
+  - Liturgy-rails/4-SYSTEM/Skills/Add-Block-ID/SKILL.md
   - 21-taras-rails/4-SYSTEM/Skills/commentary-verse-id/SKILL.md
   - bodhisattvacharyavatara-rails/4-SYSTEM/Skills/commentary-verse-id/SKILL.md
 ---
@@ -32,12 +33,25 @@ supersedes:
 **Read `rails/CONVENTIONS.md` first.** It defines every ID scheme below; this skill
 only applies them. The four modes differ in *what supplies the key*:
 
-| Mode | Text | Key comes from |
-|---|---|---|
-| 1 | Commentary with `##` headings | **The human contributor**, by hand, on each `##` heading |
-| 2 | Sanskrit root text | The four-zone scheme (front matter / verses / colophons) |
-| 3 | Liturgy notes in `$INBOX` | Expert segmentation already in the note |
-| 4 | Commentary, verses and prose only | Sequential within the section |
+| Mode | Text | Key comes from | Script |
+|---|---|---|---|
+| 1 | Commentary with `##` headings | **The human contributor**, by hand, on each `##` heading | `$SKILL/scripts/apply_commentary.py` |
+| 2 | Sanskrit root text | The four-zone scheme (front matter / verses / colophons) | `$SKILL/scripts/apply_sanskrit.py` |
+| 3 | Any note whose headings carry **no** manual labels | Automatic sequential numbering of the headings themselves | `$SKILL/scripts/add_block_id.py` |
+| 4 | Commentary, verses and prose only | The chapter of the nearest preceding transclusion | `$SKILL/scripts/apply_verse_id.py` |
+
+Modes 1 and 3 are the two halves of the same job and are mutually exclusive:
+if the contributor has keyed the `##` headings by hand, use Mode 1 and never
+touch those labels; if they have not, use Mode 3 and let the script number the
+headings in order. A file that is half-labelled is an error — resolve it with
+the contributor before stamping anything.
+
+> **Collections (many short texts in one folder).** A vault that stamps a whole
+> corpus on a fixed `$INBOX` → `$SOURCE_TEXTS` path usually carries its own
+> pipeline script (e.g. `$SYSTEM/scripts/block_ids.py`) with a
+> plan → stamp → verify → lint workflow, an out-dir, a `--restamp` guard and a
+> retired-texts list. Use that script for that pipeline; the rules below still
+> apply to what it writes. Mode 3 is for stamping an individual note in place.
 
 **The rule that matters most (mode 1).** A commentary's `##` heading ID is written by
 hand by the contributor and is **never generated, edited, or guessed**. The
@@ -79,19 +93,19 @@ This skill stamps every `###`/`####` sub-heading and body-text block of a Tibeta
 Given input where the `##` headings already carry hand-written labels:
 
 ```
-## ༄༅། །ཕྱག་འཚལ་ཉེར་གཅིག་གི་བསྟོད་འགྲེལ་བདུད་རྩིའི་དགའ་ཚལ་བཞུགས་སོ། །
+# ༄༅། །ཕྱག་འཚལ་ཉེར་གཅིག་གི་བསྟོད་འགྲེལ་བདུད་རྩིའི་དགའ་ཚལ་བཞུགས་སོ། །
 
-### མཆོད་བརྗོད། ^I-0
+## མཆོད་བརྗོད། ^I-0
 
 ཨོཾ་སྭ་སྟི།
 
-### དང་པོ་སྦྱོར་བ་ཚོགས་བསགས། ^1-0
+## དང་པོ་སྦྱོར་བ་ཚོགས་བསགས། ^1-0
 
-#### ཚོགས་ཞིང་སྤྱན་འདྲེན་པ།
+### ཚོགས་ཞིང་སྤྱན་འདྲེན་པ།
 
 དེའང་རྗེ་བཙུན་སྒྲོལ་མའི་ཡོན་ཏན་...
 
-![[bo-root-text#^1-1]]
+![[1-SOURCES/Text/bo-root-text.md#^1-1]]
 
 ཨོཾ་ནི་མགོ་འདྲེན། རྒྱལ་བ་ཀུན་གྱི་...
 ```
@@ -99,19 +113,19 @@ Given input where the `##` headings already carry hand-written labels:
 Output:
 
 ```
-## ༄༅། །ཕྱག་འཚལ་ཉེར་གཅིག་གི་བསྟོད་འགྲེལ་བདུད་རྩིའི་དགའ་ཚལ་བཞུགས་སོ། ། ^0
+# ༄༅། །ཕྱག་འཚལ་ཉེར་གཅིག་གི་བསྟོད་འགྲེལ་བདུད་རྩིའི་དགའ་ཚལ་བཞུགས་སོ། ། ^0
 
-### མཆོད་བརྗོད། ^I-0
+## མཆོད་བརྗོད། ^I-0
 
 ཨོཾ་སྭ་སྟི། ^I-1
 
-### དང་པོ་སྦྱོར་བ་ཚོགས་བསགས། ^1-0
+## དང་པོ་སྦྱོར་བ་ཚོགས་བསགས། ^1-0
 
-#### ཚོགས་ཞིང་སྤྱན་འདྲེན་པ། ^1-1-0
+### ཚོགས་ཞིང་སྤྱན་འདྲེན་པ། ^1-1-0
 
 དེའང་རྗེ་བཙུན་སྒྲོལ་མའི་ཡོན་ཏན་... ^1-1
 
-![[bo-root-text#^1-1]]
+![[1-SOURCES/Text/bo-root-text.md#^1-1]]
 
 ཨོཾ་ནི་མགོ་འདྲེན། རྒྱལ་བ་ཀུན་གྱི་... ^1-2
 ```
@@ -121,9 +135,9 @@ Note three things: the `##` headings (`^I-0`, `^1-0`) are exactly what the contr
 A section nested four deep, off a heading manually labeled `^5-0`, follows the same pattern:
 
 ```
-### ... ^5-0
-#### ... ^5-1-0
-##### ... ^5-1-1-0
+## ... ^5-0
+### ... ^5-1-0
+#### ... ^5-1-1-0
 
 body text segment ^5-1
 
@@ -135,8 +149,8 @@ body text segment ^5-3
 A section whose contributor used a Roman-numeral label instead:
 
 ```
-### ... ^II-0
-#### ... ^II-1-0
+## ... ^II-0
+### ... ^II-1-0
 
 body text segment ^II-1
 
@@ -163,42 +177,42 @@ body text segment ^II-2
 6. **No body content may appear between the `#` title and the first `##` heading.** This shape has no validated numbering — abort and ask the human contributor rather than guessing.
 7. **Idempotent:** a `#`/`###`/`####`/body line whose block already ends in a ` ^{label}-...` suffix is left untouched and does not consume a counter slot, so re-running on an already-tagged file is a no-op. `##` heading lines are always left untouched regardless (see Rule 1) — this includes both a first run and every re-run.
 8. **Original line endings (CRLF or LF), YAML frontmatter (if present), and total line count are preserved** — ids are appended to existing lines only, and never to `##` headings.
-9. **Do not hand-edit ids with the Edit tool for bulk tagging** — always use `apply.py` so the heading/body counters stay consistent across the whole file. Manual edits are only for two things: (a) adding the required `^{label}-0` id to a `##` heading before running the skill, and (b) fixing a specific flagged anomaly after review (for example, closing a numbering gap left by a previous partial or buggy run).
+9. **Do not hand-edit ids with the Edit tool for bulk tagging** — always use `apply_commentary.py` so the heading/body counters stay consistent across the whole file. Manual edits are only for two things: (a) adding the required `^{label}-0` id to a `##` heading before running the skill, and (b) fixing a specific flagged anomaly after review (for example, closing a numbering gap left by a previous partial or buggy run).
 
 ---
 
 ### Procedure
 
-The skill uses a helper script `apply.py` located in the same directory as this SKILL.md. Construct the path at runtime from the skill's own location.
+This mode uses `$SKILL/scripts/apply_commentary.py`.
 
-1. **Check `##` heading labels first.** Every `##` heading in the target file must already end in a `^{label}-0` id. `apply.py audit` performs this check automatically and aborts with a line-numbered list if any are missing — but glance at the file yourself too. If any are missing, stop here and tell the human contributor which heading(s) need one added by hand; do not proceed until they've done so.
+1. **Check `##` heading labels first.** Every `##` heading in the target file must already end in a `^{label}-0` id. `apply_commentary.py audit` performs this check automatically and aborts with a line-numbered list if any are missing — but glance at the file yourself too. If any are missing, stop here and tell the human contributor which heading(s) need one added by hand; do not proceed until they've done so. (If the headings were never meant to carry manual labels, this is a Mode 3 file, not a Mode 1 file.)
 
 2. **Audit.** Run:
    ```bash
-   python "<this-skill-dir>/apply.py" audit "<path-to-file.md>"
+   python3 "$SKILL/scripts/apply_commentary.py" audit "<path-to-file.md>"
    ```
    This reports, per `##` section (identified by its manual label), the first id, last id, and body-block count that would be tagged, without writing anything. Confirm the labels and ranges look plausible (e.g. match the `##` headings you can see in the file) before applying.
 
-3. **Dry-run to a scratch copy.** Copy the target file to a scratch/output location and run:
+3. **Dry-run to a scratch copy.** Copy the target file to `$WORK/` and run:
    ```bash
-   python "<this-skill-dir>/apply.py" apply "<scratch-copy.md>"
+   python3 "$SKILL/scripts/apply_commentary.py" apply "$WORK/<scratch-copy.md>"
    ```
-   Do not write directly to the vault file on the first pass.
+   Do not write directly to the source file on the first pass.
 
 4. **Spot-check the output.** Read the first ~30 lines, a `##` section boundary (confirming the `##` line itself is byte-identical to the input, and that the first body id under it starts with `^{that heading's own label}-1`), and at least one point where a transclusion sits between two body blocks — confirm the transclusion is untouched and the two neighboring body ids are back-to-back (no gap).
 
-5. **Verify idempotency.** Run `apply.py apply` a second time on its own output and confirm the file is byte-identical (no diff).
+5. **Verify idempotency.** Run `apply_commentary.py apply` a second time on its own output and confirm the file is byte-identical (no diff).
 
 6. **Verify line count and content are unchanged.** Compare `wc -l` on the original file and the tagged output — they must match exactly. Stripping every ` ^...` suffix the script added (the pre-existing `##` ids were already there, so leave those alone when checking) should reproduce the original file byte-for-byte.
 
-7. **Write the result to the real file.** Once verified, overwrite the actual `file` in the vault with the tagged content (or run `apply.py apply "<path-to-file.md>"` directly on it once confidence is established).
+7. **Write the result to the real file.** Once verified, overwrite the actual `file` with the tagged content (or run `apply_commentary.py apply "<path-to-file.md>"` directly on it once confidence is established).
 
 ---
 
 ### Completion check
 
 - [ ] Every `##` heading in the file already had a manually-added `^{label}-0` id before any tagging ran; if any were missing, the human contributor added them first
-- [ ] `apply.py audit` was run first and its label/section report reviewed before any file was modified
+- [ ] `apply_commentary.py audit` was run first and its label/section report reviewed before any file was modified
 - [ ] Output was dry-run to a scratch copy before touching the vault file
 - [ ] First ~30 lines, a `##` boundary (heading line byte-identical to input, first body id under it matching that heading's own label), and a transclusion-adjacent pair of body blocks spot-checked in the output
 - [ ] Idempotency verified (second run on the tagged output produces no diff)
@@ -220,14 +234,12 @@ This skill applies the vault's block ID convention to a Sanskrit root-text `.md`
 
 ### Workflow
 
-The skill uses a helper script `apply.py` located in the same directory as this SKILL.md. Always follow this order:
+This mode uses `$SKILL/scripts/apply_sanskrit.py`. Always follow this order:
 
 #### 1 — Script reads the file (audit)
 
-`apply.py` is in the same directory as this skill file. Construct the path at runtime from the skill's own location:
-
 ```bash
-python "<this-skill-dir>/apply.py" audit "<path-to-file.md>"
+python3 "$SKILL/scripts/apply_sanskrit.py" audit "<path-to-file.md>"
 ```
 
 The audit prints:
@@ -248,7 +260,7 @@ Note any decisions that the script cannot apply automatically.
 #### 3 — Script applies mechanical changes
 
 ```bash
-python "<this-skill-dir>/apply.py" apply "<path-to-file.md>"
+python3 "$SKILL/scripts/apply_sanskrit.py" apply "<path-to-file.md>"
 ```
 
 The script handles:
@@ -269,7 +281,7 @@ For anything still flagged — ambiguous blocks, interpolated verses, multi-line
 
 ### Block ID Convention
 
-Sanskrit root texts follow a **three-zone** scheme based on content role, not heading level:
+Sanskrit root texts follow a **four-zone** scheme based on content role, not heading level (`rails/CONVENTIONS.md` §1b):
 
 #### Zone markers
 
@@ -463,169 +475,131 @@ Each Sanskrit verse stanza:
 
 ---
 
-## Mode 3 — Liturgy notes — stamp the inbox and prepare sources
+## Mode 3 — Automatic sequential numbering (no manual labels)
 
-Stamps IDs onto expert-segmented notes in `$INBOX` and writes the prepared copies to `$SOURCE_TEXTS`, with a health check.
-
-`$WORK/` holds liturgy notes whose **TOC (headings) and segmentation
-(blank-line-separated blocks) are already correct** — a domain expert made
-every judgment call. The only thing missing is an addressable id per
-heading and per segment. That job is fully mechanical, so it is a script,
-not a judgment call, and not a subagent:
+The general-purpose stamper. Use it when a note's headings and paragraph breaks
+are already correct but nobody has keyed the `##` headings by hand — the script
+numbers the headings itself, in document order, and derives every body id from
+the enclosing `##`.
 
 ```
-$SYSTEM/scripts/block_ids.py
+$SKILL/scripts/add_block_id.py
 ```
 
-**Never edit the text.** No splitting, merging, reordering, re-wrapping,
-retitling, renumbering, or "fixing" of the expert's segmentation or
-headings — not even something that looks like an obvious defect. If a file
-looks wrong, report it and stop; correcting it is the expert's call, made
-outside this pipeline.
+It is purely mechanical: it never rewrites, reorders, splits, merges, or
+retitles anything, and it only appends ids to the last line of each heading and
+each body-text block. **Never edit the text to make it stamp.** If a note's
+headings or paragraph breaks are not right yet, that is fixed by hand first, by
+whoever owns the text; this tool only appends ids. If a file looks wrong, report
+it and stop.
 
-### Format
+### ID scheme
 
 ```
-## ༄༅། །Title              ^0
-### Section k               ^k-0     a heading is "segment 0" of its section
-<segment>                  ^k-1
-#### Subsection j           ^k-j-0
-<segment>                  ^k-j-1
+# Heading                 ^0
+## Heading                ^1-0        first H2 = section 1, "segment 0"
+<body text block>         ^1-1
+<body text block>         ^1-2
+### Heading               ^1-1-0      first H3 under section 1
+<body text block>         ^1-3        still counted under the H2
+## Heading                ^2-0        second H2 — counters restart
+<body text block>         ^2-1
 ```
 
-- Flat texts (no `##` anywhere) number straight through: `^1`, `^2`, …
-- Segments under the H1 *before* the first `##` get `^0-1`, `^0-2`, …
-- A text with no headings at all numbers from `^1` (its title line is
-  simply segment 1).
-- The id goes on the **last line** of its unit, preceded by exactly one
-  space, appended verbatim — a line already ending in a space keeps it, so
-  the id is exactly reversible.
-- Obsidian block ids allow **only digits, letters and hyphens**. Never a
-  dot. `^2-1-1`, not `^2.1.1`.
-
-### Workflow
-
-Run from the vault root. Confirm the tree is clean first — the Obsidian
-git plugin auto-commits every few minutes, so pin a baseline rather than
-trusting floating HEAD:
-
-```bash
-git status --porcelain -- $WORK/ $SOURCE_TEXTS/
-BASE=$(git rev-parse HEAD)
-```
-
-**1. Plan (writes nothing).** Classify every file and confirm the counts
-match what the expert expects:
-
-```bash
-python3 $SYSTEM/scripts/block_ids.py plan 0-INBOX
-```
-
-Add `-v` to print the full id map for one file. Any `ABORT` line is a file
-the parser refuses — read the reason, resolve it with the user, and never
-force it through.
-
-**2. Stamp.** Sources are read-only; stamped copies are written to
-`$SOURCE_TEXTS/`:
-
-```bash
-python3 $SYSTEM/scripts/block_ids.py stamp 0-INBOX --out-dir $SOURCES/Text
-```
-
-`stamp` asserts the round-trip *before every individual write* and skips
-any file that fails, so a bad parse can never produce a written file. A
-source that already carries ids is refused unless you pass `--restamp`.
-
-**3. Verify.** Non-negotiable, every run:
-
-```bash
-python3 $SYSTEM/scripts/block_ids.py verify $SOURCES/Text --src-dir 0-INBOX
-```
-
-Must print `0 FAILED`. It checks that frontmatter is byte-identical to the
-source, that the body is byte-identical once ids are stripped, that every
-heading and segment is stamped exactly once, and that no id is duplicated
-or stranded mid-segment. On failure, delete the output and fix the script
-— never hand-edit a stamped file.
-
-**4. Report.** Per run: files stamped, type breakdown, total ids, verify
-result, and any aborted file with its reason.
-
-### The contract
-
-`strip(stamp(x)) == x`, byte for byte — trailing whitespace, blank runs,
-and a missing final newline all preserved. This is what makes "the
-segmentation is intact" a proven property rather than a promise, and it is
-why `strip` exists as a command. To re-check it by hand at any time:
-
-```bash
-python3 $SYSTEM/scripts/block_ids.py strip "$SOURCE_TEXTS/<name>.md" \
-  | diff - "$WORK/<name>.md" && echo IDENTICAL
-```
-
-### Linting after human edits
-
-Experts do edit stamped notes in Obsidian, and vault-backup commits sync
-those edits in. That easily breaks ids — stranded mid-block, deleted, or
-missing the space before `^`. `lint` finds it without needing a source:
-
-```bash
-python3 $SYSTEM/scripts/block_ids.py lint $SOURCES/Text
-```
-
-Report what it finds. Never silently re-stamp: if the expert resegmented a
-text, every downstream id shifts, and whether to accept that renumbering
-is their decision.
+- `# heading` → `^0`. At most one H1, and if present it must be the first thing
+  in the note.
+- `## heading` → `^1-0`, `^2-0`, `^3-0`, … — H2 sections numbered in order.
+- `### heading` → `^1-1-0`, `^1-2-0`, … — H3 numbered within its parent H2.
+- **Strict rule — body-text ids are always based on the `##` heading.** A
+  body-text block's id is `^<H2 label>-<n>`, always two parts. The counter
+  restarts at every H2 and runs straight through any `###` subheadings inside
+  it: an H3 never resets the count and never appears in a body-text id. Only the
+  H3 heading line itself gets three parts (`^2-1-0`). Example: under
+  `## མཇུག་བྱང་།` (`^2-0`) → `### མཛད་བྱང་།` (`^2-1-0`) → colophon `^2-1`, not
+  `^2-1-1`.
+- A flat note with no `##` anywhere numbers its body blocks straight through:
+  `^1`, `^2`, `^3`, … (`verse_id_format: verse` — `rails/CONVENTIONS.md` §7).
+- Body text sitting directly under the H1, before the first `##`, is section 0:
+  `^0-1`, `^0-2`, …
+- A note with no headings at all numbers straight through from `^1`.
+- The id is appended to the **last line** of its heading or block, preceded by
+  exactly one space, appended verbatim — a line already ending in a space keeps
+  it, so the id is exactly reversible.
+- Obsidian block ids allow **only digits, letters and hyphens**. Never a dot:
+  `^2-1-1`, not `^2.1.1`.
+- YAML frontmatter, if the note has any, is left untouched.
+- Line endings (LF or CRLF) are preserved as found.
 
 ### What the script refuses, and why
 
 Each of these aborts one file with a reason rather than guessing:
 
-- more than one H1, or an H1 that is not the first thing in the body
-- an H3 before any H2, or a heading deeper than `###`
-- an H2 with **both** direct segments and H3 children — the id scheme
-  cannot express that unambiguously; the fix is to give those loose
-  segments their own `###`
-- missing or unterminated frontmatter
-- a source that already carries ids (without `--restamp`)
+- more than one H1, or an H1 that is not the first thing in the note
+- a heading deeper than `###`
+- an H3 that appears before any H2
+- a note that already carries block ids (unless `--restamp` is passed)
 
-### Corpus state (surveyed 2026-08-26)
+A heading deeper than `###` is a genuine limit of this script, not of the
+convention — `rails/CONVENTIONS.md` §2 allows the full decimal path to any
+depth. For a deeper tree, stamp the headings from the outline (Mode 1, or
+`toc-generate`) and use this script only on the flat parts.
 
-103 files, 2,039 segments, 128 headings → **2,167 ids**. Every file has at
-most one H1 and it is always the title, so real TOC levels are `##` and
-`###` only; nesting never goes deeper than `###`.
+### Running it
 
-| Type | Shape | Files |
-|---|---|---|
-| A | H1 title only, no TOC | 95 |
-| B | H1 + H2 | 5 |
-| C | H1 + H2 + H3 | 2 |
-| D | no headings at all | 1 |
+```bash
+# preview the id plan without writing anything
+python3 "$SKILL/scripts/add_block_id.py" plan -v "<path/to/note.md>"
 
-Quirks that are **source truth, not defects** — preserve them:
+# add the ids, in place
+python3 "$SKILL/scripts/add_block_id.py" stamp "<path/to/note.md>"
 
-- ~1,225 lines carry trailing whitespace, spread across all line
-  positions. Genuine source noise. Never `rstrip`.
-- 14 "blank" lines are a lone space; they must count as separators.
-- 27 separators are double-blank; they must not create empty segments.
-- 85 of 103 files have no final newline.
-- `བཀའ་ཐང་བསྡུས་པ།` has a legitimate 79-line segment.
+# re-stamp a note that already has ids (e.g. after it was edited)
+python3 "$SKILL/scripts/add_block_id.py" stamp --restamp "<path/to/note.md>"
+```
 
-### Downstream, not yet updated
+`<path>` can also be a directory, in which case every `*.md` file directly
+inside it (non-recursive) is processed.
 
-**`$SYSTEM/CLAUDE.md` §2 currently instructs agents "Notes carry no block
-IDs … Do not add `^chapter-verse` anchors."** That directive is superseded
-by this skill and will otherwise cause an agent to undo this work — it
-needs rewriting. `README.md` ("What a source note contains") and
-`$SYSTEM/scripts/build_payloads.py` say the same thing and are equally
-stale. Note that block ids are what the pipeline repo's
-`tools/parser/parser.py` derives spans from, so stamping them is what
-makes that standard parser able to read these notes at all.
-`$SOURCES/liturgy-catalog.json`
-is also stale — 100 entries, none of whose `file` values match the current
-103 inbox filenames (the catalog stores names truncated before the final
-`།`). Flag both before any upload; do not quietly rewrite them as part of
-a stamping run.
+### The contract
+
+`strip(stamp(x)) == x`, byte for byte — trailing whitespace, blank runs, and a
+missing final newline all preserved. Before writing, `stamp` always checks that
+stripping the new ids back out reproduces the original file byte-for-byte, so a
+note can never be corrupted by a bad parse; a file that fails the check is
+aborted with a reason instead of being written. This is what makes "the
+segmentation is intact" a proven property rather than a promise, and it is why
+`strip` exists as a command. To re-check it by hand at any time:
+
+```bash
+python3 "$SKILL/scripts/add_block_id.py" strip "<stamped.md>" \
+  | diff - "<original.md>" && echo IDENTICAL
+```
+
+### Linting after human edits
+
+Contributors do edit stamped notes in Obsidian, and vault-backup commits sync
+those edits in. That easily breaks ids — stranded mid-block, deleted, or missing
+the space before `^`. `lint` finds it without needing the original:
+
+```bash
+python3 "$SKILL/scripts/add_block_id.py" lint "<path/to/note-or-dir>"
+```
+
+Report what it finds. **Never silently re-stamp:** if the contributor
+resegmented a text, every downstream id shifts, and whether to accept that
+renumbering is their decision.
+
+### Other commands
+
+```bash
+# remove block ids from a note (prints to stdout; add --in-place to write)
+python3 "$SKILL/scripts/add_block_id.py" strip "<path/to/note.md>"
+```
+
+### Report back
+
+After running: which file(s) were stamped, how many ids were added, and any
+aborted file with its reason.
 
 ---
 
@@ -639,7 +613,7 @@ This skill tags every segment of a segmented Tibetan commentary file — each ro
 
 ### Inputs
 
-- `file` — path to a `*_segmented.md` commentary file under `$COMMENTARIES/Transcluded/` (or similar). It does not need to already contain a transclusion — if it has none at all, every taggable segment is tagged under chapter `0`.
+- `file` — path to a segmented commentary file under `$COMMENTARIES/` that already carries root-text transclusions. It does not need to already contain a transclusion — if it has none at all, every taggable segment is tagged under chapter `0`.
 
 ### Output
 
@@ -656,7 +630,7 @@ Given input (note: the first two lines appear *before* any transclusion):
 
 > རྒྱ་གར་སྐད་དུ། ...
 
-![[bo-བློ་ལྡན་ཤེས་རབ།#^1-1]]
+![[1-SOURCES/Text/bo-root-text.md#^1-1]]
 > བདེ་གཤེགས་ཆོས་ཀྱི་སྐུ་མངའ་སྲས་བཅས་དང་། །ཕྱག་འོས་ཀུན་ལའང་གུས་པས་ཕྱག་འཚལ་ཏེ། །
 
 ཞེས་ཏེ་བདེ་གཤེགས་... (commentary paragraph)
@@ -671,7 +645,7 @@ Output:
 
 > རྒྱ་གར་སྐད་དུ། ... ^0-2
 
-![[bo-བློ་ལྡན་ཤེས་རབ།#^1-1]]
+![[1-SOURCES/Text/bo-root-text.md#^1-1]]
 > བདེ་གཤེགས་ཆོས་ཀྱི་སྐུ་མངའ་སྲས་བཅས་དང་། །ཕྱག་འོས་ཀུན་ལའང་གུས་པས་ཕྱག་འཚལ་ཏེ། ། ^1-1
 
 ཞེས་ཏེ་བདེ་གཤེགས་... (commentary paragraph) ^1-2
@@ -693,39 +667,39 @@ Note how the two segments before the first transclusion get `^0-1` and `^0-2` (c
 6. YAML frontmatter, blank lines, and markdown headings (`#`, `##`, ...) are left untouched and do not consume a counter value.
 7. Idempotent: lines that already end with a block id (matching `\s\^\d+-\d+\s*$`) are skipped, so re-running on an already-tagged file is a no-op.
 8. Original line endings (CRLF or LF) and total line count must be preserved — ids are appended to existing lines only, never inserted as new lines.
-9. Do not hand-edit ids with the Edit tool for bulk tagging — always use `apply.py` so the counter logic stays consistent across the whole file. Manual edits are only for fixing a specific flagged anomaly after review.
+9. Do not hand-edit ids with the Edit tool for bulk tagging — always use `apply_verse_id.py` so the counter logic stays consistent across the whole file. Manual edits are only for fixing a specific flagged anomaly after review.
 
 ---
 
 ### Procedure
 
-The skill uses a helper script `apply.py` located in the same directory as this SKILL.md. Construct the path at runtime from the skill's own location.
+This mode uses `$SKILL/scripts/apply_verse_id.py`.
 
 1. **Audit first.** Run:
    ```bash
-   python "<this-skill-dir>/apply.py" audit "<path-to-file.md>"
+   python3 "$SKILL/scripts/apply_verse_id.py" audit "<path-to-file.md>"
    ```
    This reports, per chapter, the first id, last id, and count of segments that would be tagged, without writing anything. Confirm the chapter numbers and counts look plausible (e.g. match the expected number of chapters in the root text) before applying.
 
-2. **Dry-run to a scratch copy.** Copy the target file to a scratch/output location and run:
+2. **Dry-run to a scratch copy.** Copy the target file to `$WORK/` and run:
    ```bash
-   python "<this-skill-dir>/apply.py" apply "<scratch-copy.md>"
+   python3 "$SKILL/scripts/apply_verse_id.py" apply "$WORK/<scratch-copy.md>"
    ```
-   Do not write directly to the vault file on the first pass.
+   Do not write directly to the source file on the first pass.
 
 3. **Spot-check the output.** Read the first ~80 lines and at least one chapter boundary (where the chapter number changes) to confirm ids look right and no root-quote or commentary line was skipped or double-tagged.
 
-4. **Verify idempotency.** Run `apply.py apply` a second time on its own output and confirm the file is byte-identical (no diff). This confirms the script won't double-tag if run again later.
+4. **Verify idempotency.** Run `apply_verse_id.py apply` a second time on its own output and confirm the file is byte-identical (no diff). This confirms the script won't double-tag if run again later.
 
 5. **Verify line count is unchanged.** Compare `wc -l` on the original file and the tagged output — they must match exactly.
 
-6. **Write the result to the real file.** Once verified, overwrite the actual `file` in the vault with the tagged content (or run `apply.py apply "<path-to-file.md>"` directly on it once confidence is established).
+6. **Write the result to the real file.** Once verified, overwrite the actual `file` with the tagged content (or run `apply_verse_id.py apply "<path-to-file.md>"` directly on it once confidence is established).
 
 ---
 
 ### Completion check
 
-- [ ] `apply.py audit` was run first and its chapter/count report reviewed before any file was modified
+- [ ] `apply_verse_id.py audit` was run first and its chapter/count report reviewed before any file was modified
 - [ ] Output was dry-run to a scratch copy before touching the vault file
 - [ ] First ~80 lines and at least one chapter boundary spot-checked in the output
 - [ ] Idempotency verified (second run on the tagged output produces no diff)

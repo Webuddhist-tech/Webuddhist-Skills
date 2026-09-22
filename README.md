@@ -53,17 +53,54 @@ scan or just the ingest. The same applies to
 [`bilingual-glossary`](rails/bilingual-glossary/SKILL.md) (extract → combine →
 contest → select) and [`segment-commentary`](rails/segment-commentary/SKILL.md).
 
-Nothing was summarised away in the process — each phase carries the full text of
-the skill it replaced.
+The intent was that nothing be summarised away — each phase should carry the
+full text of the skill it replaced. **A later review found that was not always
+true**, and the gaps were repaired: a heading-ingest procedure had been cut from
+~100 lines to 15, an original-language output variant had been reduced to a
+single paragraph, and a table of heading anchors that a checker script parses
+had been dropped. If you find another, treat it the same way — restore from the
+vault original rather than paraphrasing what is left.
+
+## A skill must be self-contained
+
+A skill is installed into repos that do not share this one's layout, so
+**everything it depends on travels with it**: `scripts/`, `prompts/`,
+`templates/` it copies from, `references/` a reader may need. A skill that
+points at a document elsewhere in a vault breaks the moment it is installed
+somewhere that lacks it.
+
+The only things a skill may assume are the folder layout named in
+[`rails/PROFILES.md`](rails/PROFILES.md) and the host vault's own annex, which
+is where anything text-specific lives — the commentary roster, the addressing
+scheme, the tier order, the analysis language. **That division is what makes a
+shared skill possible**: the skill holds the procedure, the annex holds the
+facts. When you find a fact hard-coded in a skill — a commentary id, a chapter
+count, a file name — it belongs in the annex, and the skill should read it from
+there.
 
 ## Using a skill
 
 Point Claude at this repo, or copy the skill folder into a project's
 `.claude/skills/`. Then, before running one:
 
-1. Check its `profile:` — `rails-vault`, `library-pipeline`, or `any`.
+1. Check its `profile:` — `rails-vault` needs a vault's folder layout,
+   `library-pipeline` needs the ingest repo's, and `any` runs anywhere. A skill
+   marked `vault-local` in a vault belongs to that text and is not shared here.
 2. Resolve its `$NAME` paths from [`rails/PROFILES.md`](rails/PROFILES.md).
+   Those tokens are for a skill's prose only: a wiki link or transclusion inside
+   a vault file needs the resolved literal path, because nothing expands them at
+   read time.
 3. If it writes block IDs, read [`rails/CONVENTIONS.md`](rails/CONVENTIONS.md).
+   It is the single authority, including the per-vault deviations a text may
+   register in its annex (§7).
+
+**Installing into a Railroads vault**, use that vault's installer rather than
+copying by hand — it resolves the logical paths, drops the library-only
+frontmatter keys, and writes the slash-command stubs in one pass:
+
+```bash
+python3 4-SYSTEM/scripts/install-skills.py --from ../Webuddhist-Skills
+```
 
 Skills with a **Phases** / **Modes** / **Variants** table near the top are
 separately addressable — run the phase that was asked for, not the whole

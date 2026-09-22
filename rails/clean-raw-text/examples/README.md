@@ -10,7 +10,7 @@ Do not run them as-is: their `SOURCE` / `OUTPUT` paths are hardcoded to the
 original vault's absolute paths (`/sessions/.../1-SOURCES/...`,
 `0-INBOX/...`), which do not exist here. When you need a cleaning script for a
 new text, follow `../SKILL.md` Step 3 to generate a fresh one targeting
-`texts/<text-id>/work/clean-<text-id>.py`.
+`$WORK/<text-id>/clean-<text-id>.py`.
 
 ## Files
 

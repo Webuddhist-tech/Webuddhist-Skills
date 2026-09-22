@@ -7,7 +7,9 @@ Usage:
         --output <filename> [--chapters 1-10]
 
 Behaviour:
-- Collects Chapter-NN.md files (NN = 01..10) in numeric order.
+- Collects Chapter-NN.md files in numeric order. With --chapters all it takes
+  whichever Chapter-NN.md files are present in <track_dir>; no chapter count is
+  assumed, so a text of any length works.
 - Strips each chapter's YAML frontmatter and any preamble before the first
   "## " heading (removes the Chapter-1-only title block).
 - Aggregates context_packages from all chapter frontmatters (unique, ordered).
@@ -24,7 +26,9 @@ import re
 import sys
 from pathlib import Path
 
-BLOCK_ID_RE = re.compile(r"\^([0-9A-Za-z]+-[0-9A-Za-z]+)\s*$", re.MULTILINE)
+# Accepts every block-ID shape in CONVENTIONS.md: ^583, ^1-1, ^1-2-3, ^I-4,
+# ^a-2, ^1-0a-1 -- one alphanumeric segment plus any number of -segment groups.
+BLOCK_ID_RE = re.compile(r"\^([0-9A-Za-z]+(?:-[0-9A-Za-z]+)*)\s*$", re.MULTILINE)
 
 
 def parse_chapter(path: Path):
@@ -60,10 +64,17 @@ def context_packages(fm_lines):
     return items
 
 
-def parse_scope(scope: str):
+def parse_scope(scope: str, track_dir: Path):
     scope = scope.strip()
     if scope.lower() == "all":
-        return list(range(1, 11))
+        found = sorted(
+            int(m.group(1))
+            for m in (re.match(r"Chapter-(\d+)\.md$", f.name) for f in track_dir.iterdir())
+            if m
+        )
+        if not found:
+            sys.exit(f"no Chapter-NN.md files found in {track_dir}")
+        return found
     if "-" in scope:
         a, b = scope.split("-", 1)
         return list(range(int(a), int(b) + 1))
@@ -83,7 +94,7 @@ def main():
     if not track_dir.is_dir():
         sys.exit(f"ERROR: track dir not found: {track_dir}")
 
-    chapters = parse_scope(args.chapters)
+    chapters = parse_scope(args.chapters, track_dir)
     missing = [n for n in chapters if not (track_dir / f"Chapter-{n:02d}.md").exists()]
     if missing:
         sys.exit(f"ERROR: missing chapter files: {', '.join(f'Chapter-{n:02d}.md' for n in missing)}")

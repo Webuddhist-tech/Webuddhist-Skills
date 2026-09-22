@@ -10,12 +10,12 @@ when the source has plain sequential verse numbers with no colophon marker
 reliable enough to auto-detect.
 
 Writes `^N-0` chapter-heading anchors (the repo's canonical convention —
-see 4-SYSTEM/Pipelines/wikipedia/docs/reference/conventions.md). Does NOT write the deprecated `^TOC-N`
+see 4-SYSTEM/CLAUDE.md §5a). Does NOT write the deprecated `^TOC-N`
 style.
 
 Usage:
-    python3 format_bo_root.py --input texts/<text-id>/work/cleaned.md \
-                               --output texts/<text-id>/work/segmented.md
+    python3 format_bo_root.py --input 0-INBOX/temp/<text-id>/cleaned.md \
+                               --output 0-INBOX/temp/<text-id>/segmented.md
 
 The constants below (CHAPTER_STARTS, COLOPHONS, CHAPTER_HEADINGS) are the
 Bodhicaryāvatāra (BCA) example this script was built against — replace them
@@ -94,8 +94,8 @@ def split_stanza(text):
 def main():
     ap = argparse.ArgumentParser(description=__doc__,
                                   formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument('--input', required=True, help='Path to texts/<text-id>/work/cleaned.md (or similar)')
-    ap.add_argument('--output', required=True, help='Path to write texts/<text-id>/work/segmented.md')
+    ap.add_argument('--input', required=True, help='Path to 0-INBOX/temp/<text-id>/cleaned.md (or similar)')
+    ap.add_argument('--output', required=True, help='Path to write 0-INBOX/temp/<text-id>/segmented.md')
     args = ap.parse_args()
 
     INPUT_PATH = args.input
@@ -124,7 +124,7 @@ def main():
     formatted_lines.append("language: Tibetan")
     formatted_lines.append("file_type: root-text")
     formatted_lines.append("lang_tag: bo")
-    formatted_lines.append("source_description: \"<fill in — see 4-SYSTEM/Pipelines/wikipedia/docs/reference/frontmatter-schema.md>\"")
+    formatted_lines.append("source_description: \"<fill in — see 1-SOURCES/About Sources.md §4>\"")
     formatted_lines.append("verse_id_format: chapter-verse")
     formatted_lines.append("---")
     formatted_lines.append("")

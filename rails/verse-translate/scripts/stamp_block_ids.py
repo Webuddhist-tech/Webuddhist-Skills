@@ -2,7 +2,7 @@
 """Stamp ^chapter-verse block IDs onto a verse-translation file (Step 9).
 
 Attaches each ID to the END of the verse's final line, per CLAUDE.md §5 and the
-convention in the Tibetan root. An ID separated from its verse by a blank line
+convention in the root text. An ID separated from its verse by a blank line
 becomes its own Obsidian block and silently breaks every ![[file#^id]] pointing
 at it -- this script never produces that shape.
 

@@ -9,12 +9,12 @@ pattern; adjust COLOPHON_MARKER / FULL_COLOPHON_PREFIX and the two regexes
 in extract_chapter_info() for a different text).
 
 Writes `^N-0` chapter-heading anchors (the repo's canonical convention —
-see 4-SYSTEM/Pipelines/wikipedia/docs/reference/conventions.md). Does NOT write the deprecated `^TOC-N`
+see 4-SYSTEM/CLAUDE.md §5a). Does NOT write the deprecated `^TOC-N`
 style.
 
 Usage:
-    python3 format_bca.py --input texts/<text-id>/work/cleaned.md \
-                           --output texts/<text-id>/work/segmented.md \
+    python3 format_bca.py --input 0-INBOX/temp/<text-id>/cleaned.md \
+                           --output 0-INBOX/temp/<text-id>/segmented.md \
                            [--intro-end N]
 
 --intro-end (default 33) is the number of leading lines (title, TOC,
@@ -182,8 +182,8 @@ def extract_chapter_info(col_text):
 def main():
     ap = argparse.ArgumentParser(description=__doc__,
                                   formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument('--input', required=True, help='Path to texts/<text-id>/work/cleaned.md (or similar)')
-    ap.add_argument('--output', required=True, help='Path to write texts/<text-id>/work/segmented.md')
+    ap.add_argument('--input', required=True, help='Path to 0-INBOX/temp/<text-id>/cleaned.md (or similar)')
+    ap.add_argument('--output', required=True, help='Path to write 0-INBOX/temp/<text-id>/segmented.md')
     ap.add_argument('--intro-end', type=int, default=33,
                      help='Number of leading lines to pass through unchanged (default 33)')
     args = ap.parse_args()

@@ -9,17 +9,18 @@ supersedes:
 # spine-map
 
 This skill answers one question per commentary, once: **which of this commentary's own
-sa-bcad nodes (or, where the sa-bcad is coarser than the spine, which of its claims) hold
-the content for which canonical spine slot of the root text?** The answer is a small
+structural-outline nodes (Tibetan ས་བཅད / *sa bcad*) — or, where that outline is coarser
+than the spine, which of its claims — hold the content for which canonical spine slot of
+the root text?** The answer is a small
 routing table at `$CLAIMS/raw/spine-map/<registered-id>.md`. It records addresses
 only — node numbers, claim IDs, slot names — and never what a claim says.
 
-It exists because `claims-consolidate` (Phase 1) used to re-derive this mapping inside every topic
-run: Stage 1 read all sixteen raw claims files (~3.8 MB, 2,975 claims) once per topic, so a
-full ~25-topic run meant ~400 full-corpus reads of the same unchanged files. The mapping is
-per-commentary, not per-topic — resolving one commentary's numbering against the spine
-answers it for all 21 Tārās at once — so it belongs here, computed once, and reused by
-`assemble_packet.py` for every topic thereafter.
+It exists because `claims-consolidate` (Phase 1) used to re-derive this mapping inside every
+topic run: Stage 1 read every raw claims file in the corpus once per topic, so a full run
+over *T* topics with *N* commentaries meant *N × T* full-corpus reads of the same unchanged
+files. The mapping is per-commentary, not per-topic — resolving one commentary's numbering
+against the spine answers it for **every slot at once** — so it belongs here, computed once,
+and reused by `assemble_packet.py` for every topic thereafter.
 
 Correct output is a table in which **every claim in the commentary's raw claims file has
 exactly one disposition** (routed to a slot by node, routed to a slot by claim ID, flagged
@@ -44,8 +45,9 @@ It is an index over `$CLAIMS/raw/tree-guided/`, read-only on everything it touch
 - **The root text** — `$SOURCE_TEXTS/<root>.md` — ground truth for what each spine slot *is*
   (its verse, its block ID, its opening words). Consult it whenever a node title does not
   itself name the slot.
-- **The canonical slot list** — `4-SYSTEM/Guidelines/vault-annex.md` §2a. This is the vault's
-  registry of spine slots and their root anchors. Never invent a slot ID that is not
+- **The canonical slot list** — the vault annex (`$SYSTEM/Guidelines/vault-annex.md`,
+  section "Canonical spine slots"). This is the vault's registry of spine slots and their
+  root anchors. Never invent a slot ID that is not
   registered there; if the commentary needs one that does not exist, stop and ask the human
   contributor to register it first.
 - If any of the above is missing for a commentary that should be mapped, stop and ask rather
@@ -63,14 +65,14 @@ adds no claims and is regenerable at any time without touching the extractions i
 
 ## Output file format
 
-Template: `4-SYSTEM/Templates/spine-map.md`. Follow it exactly — `assemble_packet.py` and
+Template: `$SKILL/templates/spine-map.md`. Follow it exactly — `assemble_packet.py` and
 `verify_spine_map.py` both parse these tables, so heading names and column order are a
 contract, not a style preference.
 
 ```markdown
 ---
 registered_id: <id>
-spine_scheme: <the annex's scheme name, e.g. tara21>
+spine_scheme: <the annex's scheme name>
 source_tree: $SECTIONS_RAW/toc-tree/<id>.md
 source_claims: $CLAIMS/raw/tree-guided/<id>.md
 root_text: $SOURCE_TEXTS/<root>.md
@@ -89,20 +91,20 @@ status: draft
 
 **Structure of this commentary.** <Two to four sentences: how this commentary's tree is
 shaped, where the spine content sits in it, and what evidence establishes the correspondence
-(node titles that name the homages by ordinal or epithet, root-verse quotations inside the
-claims, etc.). This paragraph is what a later reader needs to trust the table.>
+(node titles that name the root text's units by ordinal or by descriptive name, root-verse
+quotations inside the claims, etc.). This paragraph is what a later reader needs to trust the table.>
 
 ## Slot map
 
 | Slot | Root anchor | Node(s) | Node title(s) (verbatim) | Claims |
 |---|---|---|---|---|
-| `tara-01` | `^1-1` | `1.1.1` | དང་པོ་ཕྱག་འཚལ་ | 9 |
+| `<slot-id>` | `^<block-id>` | `<n.n.n>` | <verbatim node title from the TOC tree> | <n> |
 
 ## Claim-level routing
 
 | Slot | Claim ID(s) | Why routed by claim rather than by node |
 |---|---|---|
-| `tara-01` | `c-2-1-2-1-1`–`c-2-1-2-1-6` | Node 2.1.2.1 runs all 21 homages undivided; boundaries are the "Verse N quoted" claims. |
+| `<slot-id>` | `c-2-1-2-1-1`–`c-2-1-2-1-6` | <routing reason — e.g. "node 2.1.2.1 runs several spine slots undivided; boundaries are the root-verse quotation claims."> |
 
 ## Ambiguous claims
 
@@ -131,9 +133,9 @@ claims, etc.). This paragraph is what a later reader needs to trust the table.>
    citation-chain sense and must never become one.)
 2. **Node numbering is never assumed uniform.** This is `claims-consolidate` (Phase 1) Rule 1, and it
    is the whole reason this skill needs a model rather than a script. One commentary nests a
-   homage at `1.1.N`, another at top level `N`, another titles nodes by epithet instead of
-   ordinal, another runs all twenty-one homages inside a single undivided node. Verify every
-   row against *this* commentary's own tree and the root text. A numbering rule that worked
+   slot's content at `1.1.N`, another at top level `N`, another titles nodes by a descriptive
+   name instead of an ordinal, another runs every slot inside a single undivided node. Verify
+   every row against *this* commentary's own tree and the root text. A numbering rule that worked
    for the last commentary is evidence of nothing about this one.
 3. **Every claim gets exactly one disposition.** Every claim ID in the raw file must be
    covered by exactly one of: a Slot map node's subtree, a Claim-level routing row, an
@@ -155,8 +157,9 @@ claims, etc.). This paragraph is what a later reader needs to trust the table.>
    route goes in Ambiguous claims with its candidate slots and the reason — never
    force-fitted to the nearest slot, never dropped. The assembler passes it into every
    candidate slot's packet with a visible flag so the consolidator decides in the open.
-9. **Slot IDs come from the annex registry.** Lowercase-hyphenated, exactly as registered.
-   Never coin one locally.
+9. **Slot IDs come from the annex registry.** Lowercase-hyphenated, exactly as registered in
+   the vault annex under "Canonical spine slots". Never coin one locally — a locally invented
+   slot ID forks the naming space and every later re-run produces a second page.
 10. **Read-only on everything but the output.** Never modify `$SOURCES/`,
     `$CLAIMS/raw/tree-guided/`, or `$SECTIONS_RAW/toc-tree/` while mapping.
 11. **`status: draft`, always.** An LLM never marks its own output complete — a domain
@@ -169,7 +172,7 @@ claims, etc.). This paragraph is what a later reader needs to trust the table.>
 1. **Get the claim inventory.** Run:
 
    ```
-   python3 4-SYSTEM/Skills/spine-map/verify_spine_map.py --counts <registered-id>
+   python3 $SKILL/verify_spine_map.py --counts <registered-id>
    ```
 
    This prints every node that holds claims, how many, and the node's title from the TOC
@@ -180,14 +183,15 @@ claims, etc.). This paragraph is what a later reader needs to trust the table.>
    own additions (front matter, origin narrative, ritual appendices, story collections,
    colophon).
 
-3. **Read the canonical slot list.** `4-SYSTEM/Guidelines/vault-annex.md` §2a — the registered
-   slots and their root anchors.
+3. **Read the canonical slot list.** The vault annex, section "Canonical spine slots" — the
+   registered slots and their root anchors.
 
 4. **Establish the correspondence, with evidence.** For each slot, find the node whose title
-   or content attests it — an ordinal ("བཅུ་གསུམ་པ་ཕྱག་འཚལ་"), an epithet naming that Tārā, or a
-   quotation of the root verse. Where the tree is coarser than the spine (one node holding
-   several slots), scan that node's **claim heading lines** in the raw claims file: root-verse
-   quotation claims ("Verse N quoted: …") are the reliable boundary markers. Consult the root
+   or content attests it — an ordinal (Tibetan example: བཅུ་གསུམ་པ་ཕྱག་འཚལ་, "thirteenth
+   homage"), a descriptive name the tradition uses for that unit, or a quotation of the root
+   verse. Where the tree is coarser than the spine (one node holding several slots), scan
+   that node's **claim heading lines** in the raw claims file: root-verse quotation claims
+   ("Verse N quoted: …") are the reliable boundary markers. Consult the root
    text whenever the correspondence is not self-evident from the title.
 
 5. **Assign a disposition to every node from step 1.** Spine nodes → Slot map rows. Coarse
@@ -207,7 +211,7 @@ claims, etc.). This paragraph is what a later reader needs to trust the table.>
 8. **Verify (gate, mandatory).**
 
    ```
-   python3 4-SYSTEM/Skills/spine-map/verify_spine_map.py $CLAIMS/raw/spine-map/<registered-id>.md
+   python3 $SKILL/verify_spine_map.py $CLAIMS/raw/spine-map/<registered-id>.md
    ```
 
    Fix every ERROR and re-run until zero remain; review each WARN and either fix it or note

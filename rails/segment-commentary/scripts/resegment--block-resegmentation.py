@@ -23,24 +23,24 @@ Setup:
 
 Usage:
     # basic run (commentary-id inferred from filename):
-    python3 4-SYSTEM/Skills/block-resegmentation/scripts/resegment.py \\
-        "0-INBOX/segmented/bo-kunpal.md"
+    python3 4-SYSTEM/Skills/segment-commentary/scripts/resegment--block-resegmentation.py \\
+        "0-INBOX/temp/segmented/<commentary-id>.md"
 
     # explicit id:
-    python3 4-SYSTEM/Skills/block-resegmentation/scripts/resegment.py \\
-        "0-INBOX/segmented/bo-kunpal.md" --commentary-id kunpal
+    python3 4-SYSTEM/Skills/segment-commentary/scripts/resegment--block-resegmentation.py \\
+        "0-INBOX/temp/segmented/<commentary-id>.md" --commentary-id <commentary-id>
 
     # resume interrupted run (skips windows already staged):
-    python3 ... "0-INBOX/segmented/bo-kunpal.md" --commentary-id kunpal
+    python3 ... "0-INBOX/temp/segmented/<commentary-id>.md" --commentary-id <commentary-id>
 
     # force reprocess all windows:
-    python3 ... "0-INBOX/segmented/bo-kunpal.md" --commentary-id kunpal --force
+    python3 ... "0-INBOX/temp/segmented/<commentary-id>.md" --commentary-id <commentary-id> --force
 
     # apply already-staged ops without new LLM calls:
-    python3 ... "0-INBOX/segmented/bo-kunpal.md" --commentary-id kunpal --apply-only
+    python3 ... "0-INBOX/temp/segmented/<commentary-id>.md" --commentary-id <commentary-id> --apply-only
 
     # integrity check only, write nothing:
-    python3 ... "0-INBOX/segmented/bo-kunpal.md" --commentary-id kunpal --dry-run
+    python3 ... "0-INBOX/temp/segmented/<commentary-id>.md" --commentary-id <commentary-id> --dry-run
 """
 
 import argparse
@@ -63,7 +63,7 @@ RETRY_BACKOFF_BASE     = 8     # seconds; grows exponentially per attempt
 MAX_BACKOFF            = 120   # cap on a single wait
 
 TEMP_BASE   = "0-INBOX/temp"
-OUTPUT_BASE = "0-INBOX/resegmented"
+OUTPUT_BASE = "0-INBOX/temp/resegmented"
 
 # ── prompts ───────────────────────────────────────────────────────────────────
 

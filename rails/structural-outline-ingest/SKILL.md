@@ -1,6 +1,17 @@
 ---
 name: structural-outline-ingest
-description: Extract the structural outline of a text and write it to texts/<text-id>/work/outline.md. Optional step — useful for texts whose author (or the source edition) provides an explicit or inferable structural division beyond plain chapter/verse numbering.
+description: >
+  Extract the structural outline of one source (root text, commentary, translation
+  or reference) and write it as a citable rail at $SECTIONS_RAW/outline/<source-id>.md.
+  One source at a time; run it before any verse-package work on that text.
+
+  This is the **prose-outline** route to a text's structure — for a source whose
+  divisions are stated separately from the running prose (a table of contents, an
+  editor's synopsis, titled/numbered sections, adhikara labels), or must be inferred
+  from topic transitions. A Tibetan text that announces its own divisions *inline*
+  (sa bcad) uses `toc-generate` instead; a vault running that pipeline already has
+  this structure in the QC-clean tree at $SECTIONS_RAW/toc-tree/<id>.md and does not
+  need this skill for that source.
 profile: rails-vault
 supersedes:
   - data-pipeline/skills/structural-outline-ingest/SKILL.md
@@ -11,57 +22,67 @@ supersedes:
 
 # structural-outline-ingest
 
-> **OPTIONAL step.** Most root texts in this repo's pipeline need nothing
-> beyond the `^N-0` / `^N-N-0` chapter and section headings that
-> `format-*-root-text` and `add-toc` already produce. Run this skill only
-> when you want a separate, prose-annotated study outline — a structural
-> tree with translator-facing notes on what each chapter/section is *doing*
-> — in addition to the plain heading structure.
+> **Locations.** `$SOURCES`, `$COMMENTARIES`, `$SECTIONS`, `$SECTIONS_RAW` and
+> `$LOCAL_WIKI` resolve per repo — see `rails/PROFILES.md`. Block ID and heading
+> rules are in `rails/CONVENTIONS.md`.
 
-This skill reads a single text (root text or, in a future commentary/
-translation pipeline, a commentary) and produces a structural outline file at
-`$WORK/outline.md`.
+> **Which skill do you want?** This one, when the source's structure is stated
+> **separately** from its prose, or must be inferred. `toc-generate`, when a
+> Tibetan text announces its divisions **inline** (*sa bcad*) — that pipeline
+> produces a QC-verified tree rail at `$SECTIONS_RAW/toc-tree/<id>.md` which
+> already carries this structure, so do not run both on the same source.
+> `add-toc`, when the file already has headings and only needs a navigable index.
+
+This skill reads a single source from `$SOURCES/` and produces an individual
+outline file at `$SECTIONS_RAW/outline/<source-id>.md`. It is **Phase 1** of the
+rails compilation cycle — structural outlines must exist before verse packages
+can be built.
+
+The output is a **rail**: a citable, descriptive file under `$RAILS/`, not a
+scratch working file. Everything in it is attributed to the source it came from.
 
 The output is **not** a summary of every verse. It is a structural tree with
 translator-facing study notes: what each chapter and section is *doing*, who
 the implied audience is, and what cultural or doctrinal context a translator
-would lose without the note. Verse-level content does not belong here.
+would lose without the note. Verse-level content belongs in verse packages, not
+here.
 
 ---
 
 ## When to run this skill
 
-Run once per text (or per source, if the pipeline is later extended to
-commentaries). Recommended order when multiple sources exist for the same
-text:
+Run once per source, **before** beginning verse packages for that chapter.
+Recommended order when multiple sources exist for the same text:
 
 1. The root text itself, if the author provides explicit divisions (check for numbered or titled sections).
 2. Any commentary or secondary source with a well-developed traditional outline.
 3. Any other available source, in order of how developed its own structural markers are.
 
-*Note:* this repo's pipeline currently processes root texts one at a time
-(see the plan's "Confirmed decisions" — root texts only, no
-translations/commentaries yet). A downstream synthesis step that combines
-multiple sources' outlines into one consensus outline (analogous to a
-"combined-outline-compiler") is out of scope for this repo today; if you have
-only one source, its outline file **is** the final outline.
+After running this skill on two or more sources for the same chapter, run the
+**combined-outline synthesis** step (`section-summary-combined`, or the
+equivalent compiler registered in your vault) to synthesise them into
+`$SECTIONS/<node-id>.md`. If only one source exists, its outline file **is** the
+outline for that chapter until a second one arrives.
 
 ---
 
 ## Input
 
-The user provides a **text ID** — `texts/<text-id>/`. Confirm the source file
-before proceeding:
+The user provides a **source ID** — the registered short ID of the source being
+outlined. Resolve it to a file under `$SOURCES/` and confirm before proceeding:
 
-| Source | File |
+| Source type | File |
 |---|---|
-| The root text under annotation | `texts/<text-id>/raw.md` or the latest `$WORK/*.md` |
-| A secondary commentary/source (if the pipeline is extended) | wherever it was provided |
+| Root text | `$SOURCE_TEXTS/<filename>.md` |
+| Commentary | `$COMMENTARIES/<filename>.md` |
+| Existing translation | `$TRANSLATIONS/<filename>.md` |
+| Reference / secondary literature | `$REFERENCES/<filename>.md` |
 
-If the source is ambiguous, ask the user to confirm the file before
-proceeding.
+Each vault registers its own source IDs (see its `vault-annex.md`). If the
+source is ambiguous, or the ID is not registered, ask the user to confirm the
+file before proceeding — do not guess.
 
-**Output path:** `$WORK/outline.md`
+**Output path:** `$SECTIONS_RAW/outline/<source-id>.md`
 
 ---
 
@@ -119,8 +140,9 @@ block or list — the markdown heading structure itself encodes the tree.
 ```
 
 Verse ranges use the block ID format without the caret: `1-1`, `6-33`. Use
-`^N-0` / `^N-M-0` / `^N-M-P-0` heading anchors per
-`docs/reference/conventions.md` — for chapters where the range is not yet
+`^N-0` / `^N-M-0` / `^N-M-P-0` heading anchors per `rails/CONVENTIONS.md` §2
+(the full decimal path plus the reserved `-0` slot, no segment cap) — for
+chapters where the range is not yet
 confirmed, omit the range and add `[Ed: range unconfirmed]` in the study
 note.
 
@@ -144,28 +166,30 @@ every structural node gets a note.
 2. **Implied audience**: who the author seems to be addressing at this point — renunciates, general practitioners, scholars, beginners? Some texts shift audience mid-text.
 3. **Cultural or doctrinal context**: what a translator must know to represent this section faithfully. Think: what would be invisible to a reader without the relevant background, or lost in a language without these concepts?
 4. **What would be missed without this note**: one concrete example of a translation or adaptation error this study note prevents.
-5. **Associated concepts line**: cross-references to key terms relevant to this section, on their own line at the end of the note.
+5. **Associated concepts line**: Local-Wiki wiki links to the sense IDs relevant to this section, on their own line at the end of the note.
 6. **Citation**: the source passage that grounds the note's claims.
 
 **Prose rules:**
 - English throughout
-- Original-language terms italicised on first use
-- Present tense for analytical claims ("Kunzang Pelden reads this as…"); past tense for historical statements
-- **Do not** summarise verses — that belongs elsewhere. Write about what the *section* is doing, not what each verse says.
+- Original-language terms italicised on first use: *bodhicitta*, *sa bcad*, *maṅgala*
+- After first use, use the Local-Wiki wiki-link form: `[[bodhicitta (awakening mind)]]` — one link per attested sense ID in `$LOCAL_WIKI/`
+- Present tense for analytical claims ("<commentator> reads this as…"); past tense for historical statements
+- **Do not** summarise verses — that belongs in verse packages. Write about what the *section* is doing, not what each verse says.
 - **Do not** exceed four paragraphs per study note. Concision is a feature.
 
-**Citation format:**
+**Citation format** — always a path under `$SOURCES/` plus the block ID:
 ```
-(texts/<text-id>/raw.md#^block-id)
+($SOURCES/Commentaries/<filename>.md#^block-id)
 ```
-or, when citing another source in the same working directory:
 ```
-($WORK/<filename>.md#^block-id)
+($SOURCES/Text/<filename>.md#^block-id)
 ```
 
-If the source passage does not yet have a block ID (i.e., the file hasn't
-been through a format skill yet), cite the chapter and section as closely as
-possible and add `[Ed: block ID pending]`.
+Every claim in a study note cites a specific `$SOURCES/` file. A rail never
+cites another rail, and never cites the model's own knowledge. If the source
+passage does not yet have a block ID (the file hasn't been through a format
+skill yet), cite the chapter and section as closely as possible, add
+`[Ed: block ID pending]`, and keep `ingest_status: draft`.
 
 ---
 
@@ -173,7 +197,9 @@ possible and add `[Ed: block ID pending]`.
 
 If you already know from other sources that *this* source's structural
 division diverges from another available source, mark it in the study note
-with ⚑ and a brief note.
+with ⚑ and a brief note. This is not required at this stage — divergences are
+fully resolved in the combined-outline synthesis step — but flagging known
+divergences now makes that step faster.
 
 *Example (from the Bodhicaryāvatāra tradition)*:
 > Prajñākaramati treats verses 1-1 through 1-14 as a single undivided unit ⚑; Tibetan commentators subdivide this range into two or three sections.
@@ -182,7 +208,7 @@ with ⚑ and a brief note.
 
 ## Step 6 — Write the output file
 
-Write the complete file to `$WORK/outline.md`.
+Write the complete file to `$SECTIONS_RAW/outline/<source-id>.md`.
 
 ### Frontmatter template
 
@@ -192,7 +218,7 @@ source_id: [text-id or a short identifier for the secondary source]
 source_type: root-text | commentary | translation | reference
 language: [language name]
 lang_tag: [tag]
-file: texts/<text-id>/raw.md
+file: $SOURCES/[folder]/[filename].md
 outline_basis: explicit | implicit
 chapters_covered: [1, 2, 3]   # list only chapters whose outline is complete in this file
 ingest_date: [ISO date]
@@ -200,10 +226,16 @@ ingest_status: draft | partial | complete
 ---
 ```
 
-`ingest_status`:
+`ingest_status` — how far *this* outline file has been taken:
 - `draft` — structure is roughed in but study notes are thin or uncited
 - `partial` — some chapters complete, others stubbed
-- `complete` — all chapters processed, all study notes cited
+- `complete` — all chapters processed, all study notes cited; ready for the combined-outline synthesis step
+
+`ingest_status` is the LLM's own record of coverage and it may set it. A vault
+that also carries a `status:` field on rails follows the vault rule for that
+field: `status: complete` is set by a **domain specialist**, never by the LLM,
+and only a `status: complete` rail may be used to generate a transformation.
+Leave `status: draft` on anything you write.
 
 ### Full file template
 
@@ -218,7 +250,7 @@ ingest_status: draft | partial | complete
 does. Who is being addressed. What the colophon, if present at the opening,
 tells us about transmission context.]
 
-Associated concepts: [...]
+Associated concepts: [[maṅgala (auspicious opening)]] · [[śāstra (treatise)]]
 ([citation])
 
 ---
@@ -229,7 +261,7 @@ Associated concepts: [...]
 audience. Cultural context a translator needs. What would be lost without
 this note.]
 
-Associated concepts: [...]
+Associated concepts: [[bodhicitta (awakening mind)]] · [[bodhisattva (awakening being)]]
 ([citation])
 
 ---
@@ -238,7 +270,7 @@ Associated concepts: [...]
 
 [Study note.]
 
-Associated concepts: [...]
+Associated concepts: [[sugata (gone to bliss)]] · [[maṅgala (auspicious opening)]]
 ([citation])
 
 ---
@@ -247,7 +279,7 @@ Associated concepts: [...]
 
 [Study note.]
 
-Associated concepts: [...]
+Associated concepts: [[term (disambiguating gloss)]] · …
 ([citation])
 
 ---
@@ -274,6 +306,8 @@ Before finishing, verify:
 - [ ] Verse ranges are in `chapter-verse` format (e.g. `1-1`, not `I.1` or `v.1`)
 - [ ] Heading anchors are `^N-0` / `^N-M-0` style, never `^TOC-N`
 - [ ] No verse-by-verse content summaries in any note
+- [ ] Output written to `$SECTIONS_RAW/outline/<source-id>.md` — a rail, not a scratch file
+- [ ] Every citation points at a file under `$SOURCES/`; no rail cites another rail
 - [ ] `ingest_status` reflects actual completeness
 
 ---
@@ -321,16 +355,18 @@ file, mark every such division `[Ed: editorial grouping]`.
 - **DON'T** impose your own structural divisions — report the source's divisions
 - **DON'T** use `####` for editor-imposed groupings; use prose and `[Ed: ...]` instead
 - **DON'T** mark `ingest_status: complete` unless every chapter has cited study notes
+- **DON'T** start verse packages for a chapter until at least two outline files for that chapter exist and `ingest_status` is at least `partial` for both
 
 ---
 
 ## Provenance
 
-Adapted from `bodhisattvacharyavatara-rails/4-SYSTEM/Skills/structural-outline-ingest/SKILL.md`.
-Output path changed from `$SECTIONS_RAW/[source-id].md` to
-`$WORK/outline.md`; the vault-specific source-ID table
-(`kunzang-pelden`, `minyak-kunzang-sonam`, `prajnakaramati`, `root-text` →
-fixed vault file paths) is replaced with the generic per-text contract, with
-BCA-tradition specifics kept as labelled examples. The Gemini Gem variant
-(`Gem-structural-outline-ingest.md`) is not carried over — this repo targets
-Claude Code directly, not a standalone Gemini Gem session.
+The vault-specific source-ID table (four named commentaries → fixed vault file
+paths) is replaced with the generic per-source contract, with tradition
+specifics kept as labelled examples; heading anchors are now `^N-0` /`^N-M-0` /
+`^N-M-P-0` per `rails/CONVENTIONS.md` §2 (the original used none), and paths use
+the logical names in `rails/PROFILES.md`. The rails-vault semantics of the
+original are kept intact: the output is a citable rail under `$SECTIONS_RAW/`,
+it is Phase 1 of the compilation cycle, and every study note cites `$SOURCES/`.
+The Gemini Gem variant (`Gem-structural-outline-ingest.md`) is not carried over —
+this repo targets Claude Code directly, not a standalone Gemini Gem session.

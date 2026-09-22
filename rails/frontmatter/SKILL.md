@@ -53,10 +53,11 @@ Pick the variant by the file's `file_type`:
 4. **Omit what you do not know.** An empty or absent field is a truthful signal that
    someone still needs to supply it; a guess is not.
 
-Where a field's controlled vocabulary lives (language tags, `verse_id_format` values,
-the full schema per type) depends on the repo — see `rails/PROFILES.md`. In a Rails
-vault it is `$SOURCES/About Sources.md`; in the library pipeline it is
-`docs/reference/frontmatter-schema.md`.
+The controlled vocabulary for each field — language tags, `verse_id_format`
+values, the full schema per type — lives in the vault's own sources guideline,
+`$SOURCES/About Sources.md` (§4 for the schemas, §9 for commentary
+`verse_id_format`, §12 for language tags). Registered per-vault ID deviations
+are declared in the vault annex (`rails/CONVENTIONS.md` §7).
 
 ---
 
@@ -64,33 +65,27 @@ vault it is `$SOURCES/About Sources.md`; in the library pipeline it is
 
 The fullest schema — verse ID format, chapter and verse counts, source description, external IDs.
 
-This skill populates the standard YAML frontmatter for a root text file
-(`file_type: root-text`) under `texts/<text-id>/`. It extracts all available
-metadata from the file's title, colophon, and opening lines, then writes the
-complete frontmatter block according to the spec in
-`docs/reference/frontmatter-schema.md`.
+Populates the standard YAML frontmatter for a root-text file
+(`file_type: root-text`) in `$SOURCE_TEXTS/`. It extracts all available metadata
+from the file's title, colophon, and opening lines, then writes the complete
+frontmatter block according to the vault's own schema
+(`$SOURCES/About Sources.md` §4).
 
 ### Instructions
 
-When asked to add or generate frontmatter for a root text file:
-
-1. **Read the file.** Use the Read tool on the target file. Focus on the title line, the opening verse or prose, and the colophon (publication information found at the beginning or end).
-2. **Determine the language and script.** Identify the primary language (Sanskrit, Tibetan, Chinese, Pāli, etc.) and the script in use (Devanāgarī, Unicode Tibetan, etc.). Assign the correct `lang_tag`.
-3. **Extract all available fields** (see template below). Only include external ID fields (`bdrc_work_id`, `dsbc_url`, etc.) when the values are known from the file itself — never invent them.
+1. **Read the file.** Focus on the title line, the opening verse or prose, and the colophon (publication information, found at the beginning or the end). Do not read the entire body.
+2. **Determine the language and script.** Identify the primary language (Sanskrit, Tibetan, Chinese, Pāli, …) and the script in use. Assign the correct `lang_tag` from the table in `$SOURCES/About Sources.md` §12 — note Sanskrit is **`sk`**, not `sa`.
+3. **Extract all available fields** (see the template below). Only include external ID fields (`bdrc_work_id`, `dsbc_url`, …) when the values are visible in the file itself — never invent them.
 4. **Determine `verse_id_format`.** Inspect the file structure:
-   - If verses are numbered by chapter and verse → `chapter-verse`
-   - If verses carry a single sequential number → `verse`
-   - If the text has books, chapters, and verses → `book-chapter-verse`
-5. **Count or estimate** `chapters` and `total_verses` if the file makes them clear. Leave empty if uncertain.
-6. **Populate `related_commentaries` and `related_translations`** only if corresponding files already exist in this repo. Out of scope for most runs — this pipeline currently handles root texts in isolation; leave these fields out unless a related file genuinely exists under `texts/`.
-7. **Write the frontmatter** using the Edit tool to insert or replace the YAML block at the top of the file.
+   - Verses numbered by chapter and verse → `chapter-verse`
+   - Verses carrying a single sequential number → `verse`
+   - Text with books, chapters, and verses → `book-chapter-verse`
+   - A registered per-vault deviation (`rails/CONVENTIONS.md` §7) → the value the vault annex declares for it
+5. **Count or estimate** `chapters` and `total_verses` if the file makes them clear. Omit if uncertain.
+6. **Populate `related_commentaries` and `related_translations`** only if corresponding files already exist in `$SOURCES/`. Use full vault paths.
+7. **Write the frontmatter** by inserting or replacing the YAML block at the top of the file.
 
 ### Frontmatter Template
-
-See `docs/reference/frontmatter-schema.md` for the authoritative, required-vs-optional
-breakdown (this template is a superset useful during extraction; not every
-field is required — check the schema doc before treating a missing field as
-an error):
 
 ```yaml
 ---
@@ -100,22 +95,22 @@ date:                         # date or century of composition, e.g. "8th centur
 language:                     # full language name, e.g. Sanskrit / Tibetan / Chinese
 script:                       # script name, e.g. Devanāgarī / Unicode Tibetan
 file_type: root-text
-lang_tag:                     # e.g. sa / bo / zh / pi
+lang_tag:                     # ISO tag from §12, e.g. sk / bo / zh / pi
 chapters:                     # integer — omit if unknown
 total_verses:                 # integer — omit if unknown
 verse_id_format:              # chapter-verse | verse | book-chapter-verse
-source_description:           # REQUIRED — e.g. "Transcribed from Vaidya 1960 critical edition"
+source_description:           # REQUIRED — e.g. "Transcribed from [editor year] critical edition"
 source_url:                   # URL if sourced digitally — leave blank if none
 dsbc_url:                     # DSBC entry URL — omit if not applicable
-bdrc_work_id:                 # e.g. WA1KG13126 — omit if unknown
+bdrc_work_id:                 # e.g. WA######## — omit if unknown
 bdrc_instance_id:             # omit if unknown
 gretil_url:                   # GRETIL URL — omit if not applicable
 cbeta_id:                     # Chinese Buddhist canon — omit if not applicable
 suttacentral_id:              # Pāli texts — omit if not applicable
 acip_id:                      # Tibetan ACIP — omit if not applicable
 other_ids:                    # VIAF, Wikidata, etc. — omit if none
-related_commentaries:         # list of paths — omit if none yet
-related_translations:         # list of paths — omit if none yet
+related_commentaries:         # list of vault paths — omit if none yet
+related_translations:         # list of vault paths — omit if none yet
 ---
 ```
 
@@ -123,40 +118,33 @@ related_translations:         # list of paths — omit if none yet
 
 ```yaml
 ---
-title: Bodhicaryāvatāra
-author: Śāntideva
-date: 8th century CE
-language: Sanskrit
-script: Devanāgarī
+title: [Root text title]
+author: [Author]
+date: [century or year of composition]
+language: [language]
+script: [script]
 file_type: root-text
-lang_tag: sa
-chapters: 10
-total_verses: 913
+lang_tag: [tag]
+chapters: [N]
+total_verses: [N]
 verse_id_format: chapter-verse
-source_description: "Transcribed from Vaidya 1960 critical edition"
-source_url: https://www.dsbcproject.org/canon-text/content/71
-dsbc_url: https://www.dsbcproject.org/canon-text/content/71
-bdrc_work_id: WA1KG13126
+source_description: "Transcribed from [editor year] critical edition"
+source_url: [url — omit if none]
+related_commentaries:
+  - 1-SOURCES/Commentaries/[commentary]-[tag].md
+related_translations:
+  - 1-SOURCES/Translations/[translation]-[tag].md
 ---
 ```
 
 ### Rules & Edge Cases
 
-- **`source_description` is required.** Every root text file must have it. If no publication data is visible, use a minimal description such as `"Source unknown — to be verified"`.
+- **`source_description` is required.** Every root-text file must have it. If no publication data is visible, use a minimal description such as `"Source unknown — to be verified"`.
 - **Do not hallucinate external IDs.** If a BDRC, GRETIL, DSBC, or other ID is not visible in the file, omit that field entirely.
-- **One script per file.** If the file contains an alternative script (e.g., IAST alongside Devanāgarī), note the discrepancy with `[Ed: ...]` — do not add a second script tag.
-- **`lang_tag` defaults**: Sanskrit → `sa`, Tibetan → `bo`, Chinese → `zh`, Pāli → `pi`. For editions in alternative scripts append the suffix (e.g., `sa-iast`). Confirm against `docs/reference/frontmatter-schema.md`.
-- **Omit empty optional fields.** Do not leave placeholder values like `null` or `""` for optional fields. Either populate them or remove the key entirely.
-- **`related_commentaries` / `related_translations`** — list only files that already exist. Do not pre-populate with anticipated future files.
-
----
-
-### Provenance
-
-Adapted from `bodhisattvacharyavatara-rails/4-SYSTEM/Skills/root-text-frontmatter/SKILL.md`.
-The reference to `$SYSTEM/docs/source-formatting.md § 4` is replaced with
-`docs/reference/frontmatter-schema.md`, this repo's authoritative frontmatter
-spec.
+- **One script per file.** If the file contains an alternative script (e.g. IAST alongside Devanāgarī), note the discrepancy with `[Ed: …]` — do not add a second script tag.
+- **`lang_tag` follows the vault's own table** (`$SOURCES/About Sources.md` §12). For editions in an alternative script, append the script suffix (`sk-iast`, `bo-wy`).
+- **Omit empty optional fields.** Do not leave placeholder values like `null` or `""`. Either populate a field or remove the key entirely.
+- **`related_commentaries` / `related_translations`** — list only files that already exist in the vault. Do not pre-populate with anticipated future files.
 
 ---
 

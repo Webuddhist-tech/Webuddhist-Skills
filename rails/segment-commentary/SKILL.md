@@ -50,6 +50,22 @@ which runs first. Every bundled script enforces this with a no-loss assertion:
 **output minus whitespace must equal input minus whitespace**, or it aborts and
 writes nothing. Do not weaken that assertion.
 
+
+**Language scope — Tibetan.** Every rule set below (terminal particles, shad and
+double-shad boundaries, syllable caps counted by tsheg, the objection/reply and
+enumeration markers, the verse-pāda detector) is specific to classical Tibetan.
+The *architecture* — deterministic pre-pass, windowed LLM judgment, script-applied
+whitespace-only edit, no-loss gate — is language-neutral and is what to reuse.
+A Pāli, Sanskrit, Chinese or English commentary needs its own boundary rule set
+written for that language before any of these scripts will give sensible output;
+do not run the Tibetan rules on another script and hand-fix the result.
+
+**Dependencies.** Phase 1 is stdlib-only. **Phases 2 and 3 call the Gemini API**
+and will not run without them: `pip install google-genai`, plus a key in the
+`GEMINI_API_KEY` environment variable (`resegment.py` also reads a repo-root
+`.env` automatically). `$SKILL/scripts/list_models.py` lists the models the key
+can reach. The QC checkers and every Phase-1 script make no API calls.
+
 ---
 
 ## Phase 1 — Segment continuous prose into blocks
@@ -60,9 +76,9 @@ For a commentary that is one unbroken run, or has paragraphs far too long to cit
 
 **Task:** Insert block boundaries into a Tibetan commentary so each block is a citation-sized unit (a prose sentence or two, one verse stanza, or one quotation) — without adding, removing, reordering, or re-spelling any character of the source.
 
-The boundaries follow the text's own functional signals: quotation frames, objection/answer markers, sa-bcad enumerations, sentence-final particles, and verse meter. Most of this is done deterministically by the scripts in `scripts/`; you only hand-finish what the rules cannot resolve.
+The boundaries follow the text's own functional signals: quotation frames, objection/answer markers, sa-bcad enumerations, sentence-final particles, and verse meter. Most of this is done deterministically by the scripts in `$SKILL/scripts/`; you only hand-finish what the rules cannot resolve.
 
-**Scope and the citation chain.** This skill operates on files in `$COMMENTARIES/`. Per `$SYSTEM/CLAUDE.md` §6, the only permitted edits to a source file are structural (block boundaries, block IDs, navigation, factual `[Ed:...]` notes). Inserting a paragraph break is structural; rewording, glossing, or "fixing" the text is interpretation and is forbidden here. If the text needs OCR repair, that belongs to `format-commentary`, which runs first. Every script here enforces this with a no-loss assertion: the output minus whitespace must equal the input minus whitespace, or it aborts and writes nothing.
+**Scope and the citation chain.** This skill operates on files in `$COMMENTARIES/`. Per the permission rule in `rails/PROFILES.md`, the only permitted edits to a source file are structural (block boundaries, block IDs, navigation, factual `[Ed:...]` notes). Inserting a paragraph break is structural; rewording, glossing, or "fixing" the text is interpretation and is forbidden here. If the text needs OCR repair, that belongs to `format-commentary`, which runs first. Every script here enforces this with a no-loss assertion: the output minus whitespace must equal the input minus whitespace, or it aborts and writes nothing.
 
 ---
 
@@ -110,7 +126,7 @@ All scripts share `--dry-run` (validate, write nothing) and a `--report` TSV. Pa
 Some commentary files arrive already carrying scaffolding from an earlier pass: standalone OCR index numbers (a line that is just `1`, `2`, `3`…), Obsidian block / verse IDs (`^0-1`, `^1-2`, `^1-2-0`), markdown heading markers (`##`, `###`), and line breaks that wrap verses and split sentences across lines. Segmentation re-derives boundaries from continuous prose, so this scaffolding must be removed **before** Stage 1. If a file is already plain, under-segmented running text, skip this stage.
 
 ```
-python3 scripts/preclean_commentary.py \
+python3 $SKILL/scripts/preclean_commentary.py \
     "$COMMENTARIES/<file>.md" \
     "$WORK/<file>.preclean.md" \
     --report "$WORK/<file>.preclean.tsv"
@@ -129,7 +145,7 @@ Frontmatter (the leading `--- … ---` block) is preserved verbatim and excluded
 
 **Stage 1 — deterministic boundary detection (script)**
 
-`scripts/segment_commentary.py` inserts a paragraph break at every high-confidence *functional* boundary, and only there:
+`$SKILL/scripts/segment_commentary.py` inserts a paragraph break at every high-confidence *functional* boundary, and only there:
 
 - `terminal-particle` — a clause-final particle (`འོ`/`ནོ`/`དོ`/`སོ`/`ཏོ`/`གོ`/`ལོ`…) plus `།` ends a prose sentence. Broad catch-all; runs last so more specific markers claim a position first.
 - `quote-close` — explicit closers (`ཞེས་སོ། །`, `ཅེས་སོ། །`, `ཞེས་གསུངས་སོ། །`, `ཞེས་པའོ། །`, `ཞེས་བྱ་བའོ། །`…) end a citation.
@@ -144,15 +160,15 @@ After the rule pass it enforces a syllable cap: any segment still longer than `-
 Two ways to run it:
 
 ```
-## (a) cap-based — finer control, every over-cap block flagged for review:
-python3 scripts/segment_commentary.py \
+# (a) cap-based — finer control, every over-cap block flagged for review:
+python3 $SKILL/scripts/segment_commentary.py \
     "$WORK/<file>.preclean.md" \
     "$WORK/<file>.segmented.md" \
     --report "$WORK/<file>.segreport.tsv" \
     --max-syllables 40
 
-## (b) structural — closest match to the canonical block layout:
-python3 scripts/segment_commentary.py \
+# (b) structural — closest match to the canonical block layout:
+python3 $SKILL/scripts/segment_commentary.py \
     "$WORK/<file>.preclean.md" \
     "$WORK/<file>.structural.md" \
     --report "$WORK/<file>.segreport.tsv" \
@@ -168,8 +184,8 @@ The Stage-1 output goes to `$WORK/` — never overwrite the source until boundar
 **Batch mode.** To process an entire directory in parallel:
 
 ```
-python3 scripts/batch_segment.py \
-    "$SOURCES/Commentaries" "$WORK/segmented" \
+python3 $SKILL/scripts/batch_segment.py \
+    "$COMMENTARIES" "$WORK/segmented" \
     --preclean --max-syllables 40
 ```
 
@@ -179,10 +195,10 @@ It runs Stage 0 (with `--preclean`) then Stage 1 per file across all CPUs, skips
 
 **Stage 2 — semantic refinement**
 
-Most of the Stage-1 residue is mechanical and is handled by `scripts/stage2_refine.py`. Run it first, then hand-review only what it leaves behind.
+Most of the Stage-1 residue is mechanical and is handled by `$SKILL/scripts/stage2_refine.py`. Run it first, then hand-review only what it leaves behind.
 
 ```
-python3 scripts/stage2_refine.py \
+python3 $SKILL/scripts/stage2_refine.py \
     "$WORK/<file>.segmented.md" \
     "$WORK/<file>.stage2.md" \
     --max-syllables 40 \
@@ -205,10 +221,10 @@ Passing `--source` adds a second no-loss assertion against the **original source
 - Keep a `…ལས།` attribution line and its closing `ཞེས་སོ། །` on their own blocks (format-commentary §3).
 - When a passage genuinely cannot be cut without breaking sense, leave it whole. Over-long is safer than wrong.
 
-If you write any bespoke refinement code, read `scripts/segment_commentary.py` first — two facts save rewrites:
+If you write any bespoke refinement code, read `$SKILL/scripts/segment_commentary.py` first — two facts save rewrites:
 
 - **TSV index ≠ paragraph index.** The TSV numbers segments as the script counts them internally; `merge_short_segments` then merges short adjacent segments, so TSV row N does not map to output paragraph N.
-- **Use the script's `_squeeze`** (the whitespace-translate table in `segment_commentary.py` / `stage2_refine.py`, not `re.sub(r'\s+','',s)`) for any no-loss check, or you may see phantom mismatches. If a mismatch appears, first test `squeeze(source) == squeeze(stage1_output)` to see whether it predates your change.
+- **Use the script's `_squeeze`** (the whitespace-translate table in `$SKILL/scripts/segment_commentary.py` / `stage2_refine.py`, not `re.sub(r'\s+','',s)`) for any no-loss check, or you may see phantom mismatches. If a mismatch appears, first test `squeeze(source) == squeeze(stage1_output)` to see whether it predates your change.
 
 After Stage 2, re-run a no-loss check against the **original source** (the `--source` flag does this automatically) before proceeding.
 
@@ -237,22 +253,6 @@ After Stage 2, re-run a no-loss check against the **original source** (the `--so
 
 ---
 
-### Provenance
-
-Ported verbatim 2026-08-01 from
-`bodhisattvacharyavatara-rails/4-SYSTEM/Skills/commentary-segmentation/`
-(SKILL.md + `scripts/preclean_commentary.py`, `segment_commentary.py`,
-`stage2_refine.py`, `batch_segment.py`), where it is in production use.
-Vault paths map onto this repo as: `$COMMENTARIES/` →
-`corpora/<corpus-id>/source/commentaries/`; the cited `$SYSTEM/CLAUDE.md` §6
-source-edit rule corresponds to this repo's "source/ is never modified after
-ingest" rule (CLAUDE.md, per-corpus contract) — segment into `work/` copies
-during ingest, then promote. The no-loss assertion (output minus whitespace ==
-input minus whitespace) is the property that makes this safe to run at all;
-do not remove it.
-
----
-
 ## Phase 2 — Re-paragraph a one-clause-per-line commentary
 
 For a commentary that arrives with one clause per line. An LLM decides BY MEANING which adjacent lines form one sense unit — not by grammar rules or particle matching.
@@ -263,16 +263,10 @@ For a commentary that arrives with one clause per line. An LLM decides BY MEANIN
 **by meaning, decided by the LLM**, not by hard grammar rules — while changing not one
 word or character of the source.
 
----
-
-### What changed from the old skill
-
-This replaces the earlier rule-based `block-resegmentation-linewise`. The old version
-merged lines only when a **grammatical signal** fired (connector particles
-`དང་།/ཤིང་།/སྟེ།`, verse-stanza shape, enumeration heads). That was rejected as too
-mechanical. The new version lets the **LLM judge sense units from content and context**,
-targeting paragraphs of about 2–4 lines. The plumbing (windowing, staging, validation,
-apply, integrity gate) is unchanged.
+**Precondition — the file really is one clause per line.** If the source is
+running prose, this is a Phase 1 file, not a Phase 2 file. If it is prose that
+*should* be reflowed one clause per line first, use `format-commentary`'s
+`shad_linebreak.py` (reflow at shad, whitespace-only) and then come back here.
 
 ---
 
@@ -334,9 +328,9 @@ lines must be consecutive, must not cross a heading, and no line is used twice.
 ### Script — `resegment.py`
 
 ```
-## one file:
+# one file:
 python3 $SKILL/scripts/resegment.py \
-    "$SOURCES/commentaries/Raw/BCAC14_GDR_bo.toc.md" --commentary-id BCAC14_GDR_bo
+    "$COMMENTARIES/<commentary-id>.toc.md" --commentary-id <commentary-id>
 ```
 
 **Setup:** `pip install google-genai`; key from `GEMINI_API_KEY` env **or** repo-root
@@ -362,6 +356,32 @@ python3 $SKILL/scripts/resegment.py \
 
 Resumable (re-run skips staged windows); `--apply-only` re-applies staged decisions
 without new LLM calls.
+
+---
+
+### QC pass — `qc_check.py`
+
+`$SKILL/scripts/qc_check.py` is the deterministic, report-only companion to
+`resegment.py`. It makes no API calls and no edits: it scans every block of a
+`.reseg.md` and writes `<id>.qc.md` next to it listing blocks worth a human look.
+
+```
+python3 $SKILL/scripts/qc_check.py "$WORK/resegmented/<id>.reseg.md"
+
+# tune the over-length threshold (syllables):
+python3 $SKILL/scripts/qc_check.py "$WORK/resegmented/<id>.reseg.md" --over-length 60
+```
+
+| Flag | Means |
+|---|---|
+| `CONNECTOR_ENDING` | block ends in a connector particle (`དང་། ཞིང་། ཅིང་། ཤིང་། ནས། ལས། སྟེ། ཏེ། དེ། པས། ལ།`) — the sentence likely continues; the block may need merging forward |
+| `OBJECTION_REPLY_FUSED` | block contains both an objection (`ཅེ་ན།/ཞེ་ན།/སྙམ་ན།`) and a reply (`འོ་ན།`) — two thoughts in one block |
+| `OVER_LENGTH` | block exceeds `--over-length` syllables (default 60) — may hide a boundary |
+| `SHORT_FRAGMENT` | block under 4 syllables — possible stray fragment |
+
+It always exits 0. Read the report, then fix boundaries by re-running
+`resegment.py` on the affected file — never by hand-editing the `.reseg.md`,
+which would sidestep the integrity gate.
 
 ---
 
@@ -400,9 +420,9 @@ via script, preserving every character of the source.
 ### Pipeline position
 
 ```
-commentary-segmentation Stage 1     ← rule-based boundary detection
+Phase 1, Stage 1                    ← rule-based boundary detection
          ↓
-[TOC inclusion by friend]           ← headings inserted into segmented file
+[TOC ingest — `toc-generate`]        ← headings inserted into segmented file
          ↓
 block-resegmentation                ← THIS SKILL: semantic merge/split
 ```

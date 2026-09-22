@@ -9,8 +9,8 @@ the windowed block-resegmentation skill, mid-line splitting is out of scope here
 so QC reports rather than repairs.)
 
 Usage:
-    python3 4-SYSTEM/Skills/block-resegmentation-linewise/scripts/qc_check.py \\
-        "0-INBOX/resegmented/<id>.reseg.md"
+    python3 4-SYSTEM/Skills/segment-commentary/scripts/qc_check.py \\
+        "0-INBOX/temp/resegmented/<id>.reseg.md"
 
     # tune the over-length threshold (syllables):
     python3 ... "<id>.reseg.md" --over-length 60
@@ -25,7 +25,7 @@ Checks:
     SHORT_FRAGMENT        block under 4 syllables — possible stray fragment.
 
 Output:
-    0-INBOX/resegmented/<id>.qc.md   QC report (flags + block previews)
+    0-INBOX/temp/resegmented/<id>.qc.md   QC report (flags + block previews)
     Exit code 0 always (report-only).
 """
 

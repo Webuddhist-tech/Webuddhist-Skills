@@ -1,6 +1,6 @@
 ---
 name: json-to-commentary
-description: Convert tipitaka.org Atthakatha and Tiká JSON exports into properly formatted Markdown commentary files for 1-SOURCES/Commentaries/. Handles heading hierarchy, continuous ^1-V verse IDs, root-text transclusions from inline verse references, and gatha stanza grouping.
+description: Convert tipitaka.org Atthakatha and Tiká JSON exports into properly formatted Markdown commentary files for $COMMENTARIES/. Handles heading hierarchy, continuous ^1-V verse IDs, root-text transclusions from inline verse references, and gatha stanza grouping.
 profile: any
 supersedes:
   - 21-taras-rails/4-SYSTEM/Skills/json-to-commentary/SKILL.md
@@ -11,7 +11,14 @@ supersedes:
 # JSON to Commentary
 
 Converts tipitaka.org Atthakathā / Ṭīkā JSON exports into Markdown commentary files
-that follow `4-SYSTEM/Guidelines/source-formatting.md`, placing output in `$COMMENTARIES/`.
+that follow `$SYSTEM/CLAUDE.md` §5–5b and `$SOURCES/About Sources.md` §5,
+placing output in `$COMMENTARIES/`.
+
+**Never emit the deprecated `^TOC-N` style** for any heading anchor. Headings
+take the full decimal path plus the `-0` slot (`^N-0`, `^N-N-0`, …);
+`rails/CONVENTIONS.md` §6. A parser expecting `^N-0` does not recognise a
+`^TOC-N` anchor, so the file silently ends up with no table of contents and no
+error.
 
 Source files covered:
 
@@ -47,12 +54,15 @@ Commentary paragraph text. ^1-V                   ← two-level verse ID
 
 ## Running the converter
 
-**Standard run** (bypasses .pyc cache — required on this mounted filesystem):
+**Standard run.** The inline `exec` form below bypasses the `.pyc` cache and
+strips any trailing null bytes from the source — both are worth keeping when
+the repo sits on a network or synced filesystem, where a stale `.pyc` or a
+null-padded read is a real failure mode:
 
 ```python
 python3 -c "
 import sys, pathlib, types, os
-os.chdir('path/to/abhidhamma-rails')  # set to vault root
+os.chdir('<vault root>')
 src = pathlib.Path('4-SYSTEM/Skills/json-to-commentary/scripts/converters/tipitaka_org_atthakatha.py').read_bytes().rstrip(b'\x00').decode('utf-8')
 mod = types.ModuleType('conv')
 exec(compile(src, 'tipitaka_org_atthakatha.py', 'exec'), mod.__dict__)
@@ -64,7 +74,7 @@ mod.convert_json_to_commentary(
 
 Output goes to `$WORK/` for review. Once verified, move to `$COMMENTARIES/`.
 
-> **Important — null bytes:** Files written through the Cowork mounted filesystem are sometimes padded with null bytes. The `read_bytes().rstrip(b'\x00')` call in the run snippet handles this automatically. If running the converter produces a `SyntaxError: source code string cannot contain null bytes`, strip them first:
+> **Important — null bytes:** A file written through a network or synced filesystem is sometimes padded with trailing null bytes. The `read_bytes().rstrip(b'\x00')` call in the run snippet handles this automatically. If running the converter produces a `SyntaxError: source code string cannot contain null bytes`, strip them first:
 > ```python
 > python3 -c "
 > import pathlib

@@ -72,8 +72,10 @@ that a bare verse line can't.
 
 | Input | Required | Description |
 |---|---|---|
-| **Commentary** | ✓ | Path to a Tibetan commentary in `$COMMENTARIES/Transcluded/` that transcludes the root via `![[…#^verse-id]]` markers (e.g. `BCAC14_NTS_bo_segmented.md` = Ngulchu Thokme; `BCAC19_KS_bo.md` = Khenpo Zhenga). One commentary per run — do not silently mix commentaries; if a verse is unclear from this one, say so rather than reaching for another. |
-| **Translation** | ✓ | Path to the English translation file to audit (e.g. `$TRANSLATIONS/translation-ai/bo-en-translation/bca-en-plain.md`, or a graded `$TRANSFORMATIONS/.../bca-en-<grade>.md`). |
+| **`<commentary>`** | ✓ | Path to one commentary under `$COMMENTARIES/` that transcludes the root via `![[…#^verse-id]]` markers. **One commentary per run** — do not silently mix commentaries; if a verse is unclear from this one, say so rather than reaching for another. |
+| **`<translation>`** | ✓ | Path to the translation file to audit, under `$TRANSFORMATIONS/Translations/<track>/`. |
+| **`<track>`** | ✓ | The translation track's folder name. Everything this skill writes lives under `$TRANSFORMATIONS/Translations/<track>/`. |
+| **`<report>`** | derived | `$TRANSFORMATIONS/Translations/<track>/commentary-fact-check-report.md`, unless the caller names another path. |
 | **Scope** | ✓ | A chapter number, `colophon`, or an explicit verse range (e.g. `1-1 to 1-5`). Never default to "the whole text" — pick a bounded scope so each verse gets a full term-alignment pass. |
 
 Report file: `<translation-dir>/commentary-fact-check-report-<commentary-id>-<translation-name>.md`
@@ -88,7 +90,7 @@ different commentaries never overwrite each other). Create on first use.
 
 ```bash
 python3 $SKILL/scripts/extract_commentary.py \
-    <commentary-path> --json /tmp/commentary.json
+    <commentary-path> --json $WORK/commentary.json
 ```
 
 Splits the file on its transclusion markers, attributing the Tibetan prose (and
@@ -105,7 +107,7 @@ before concluding the English is wrong, and note any confirmed shift in the repo
 
 ```bash
 python3 $SKILL/scripts/extract_translation.py \
-    <translation-path> --chapter <N> --json /tmp/translation.json
+    <translation-path> --chapter <N> --json $WORK/translation.json
 ```
 
 #### Step 3 — Term-by-term audit (the core method)
@@ -158,7 +160,7 @@ them. Report anything the second pass adds.
 Create the report file if absent with a header and an empty progress table:
 
 ```markdown
-## BCA Translation — Commentary Fact-Check
+# <Track> Translation — Commentary Fact-Check
 
 - **Commentary (ground truth):** `<commentary-path>`
 - **Translation audited:** `<translation-path>`
@@ -168,17 +170,17 @@ Method: strict term-by-term alignment against the commentary's own glosses
 self-check, not a scholarly sign-off — a domain specialist reviews before this is
 treated as final (an LLM never marks its own output complete).
 
-### Progress
+## Progress
 
 | Scope checked |
 |---|
 ```
 
-Append a `### Chapter <N>` (or range) subsection. Include, per verse, the ERROR and
+Append a `## Chapter <N>` (or range) subsection. Include, per verse, the ERROR and
 MISMATCH rows (not the full alignment table — keep the report readable), then:
 
 ```markdown
-#### Chapter <N> — verses <a>–<b>
+### Chapter <N> — verses <a>–<b>
 
 | Verse | Verdict | Tibetan (Wylie) | Commentary gloss | English | Fix |
 |---|---|---|---|---|---|
@@ -192,7 +194,7 @@ Never overwrite an earlier subsection; append and extend the progress row.
 #### Step 4a — Verify the write landed
 
 Re-read the report back (a fresh read) and confirm the new subsection is present as
-written. This project's file mount has shown intermittent write/sync glitches; if
+written; if
 the re-read is missing or stale, redo the write once, then tell the user plainly if
 it still doesn't stick (suggest the file may be open in Obsidian or under a sync
 conflict).
@@ -222,7 +224,7 @@ so they can act without opening the file. Offer to apply the fixes.
 Re-assembles the grounding for each flagged verse before touching it, applies only unambiguous corrections, and re-verifies afterwards.
 
 Turns a commentary-fact-check report's ⚠ rows into actual edits in
-`bca-en-<grade>.md`, then re-verifies the fix by re-running `commentary-fact-check`
+`<translation>`, then re-verifies the fix by re-running `commentary-fact-check`
 on the same range. This exists because `commentary-fact-check` deliberately never
 edits the translation — "let the user or a follow-up editing pass fix the
 translation file itself" — and doing that follow-up pass by hand, verse by verse,
@@ -241,11 +243,11 @@ not decided by the LLM.
 
 | Input | Required | Description |
 |---|---|---|
-| **Grade** | ✓ | `beginner`, `general`, or `advanced` — must match a grade that already has a `commentary-fact-check-report-<grade>.md` with at least one ⚠ row in scope. |
-| **Scope** | recommended | A chapter number, `colophon`, or explicit verse range (e.g. `2-1 to 2-20`). If omitted, use every ⚠ row in the grade's report that hasn't yet been resolved (see the Fix Log in Output). |
-| **Report file** | fixed | `$TRANSFORMATIONS/Translations/bo-en-translation/commentary-fact-check-report-<grade>.md` — the source of every ⚠ row this skill acts on. If it doesn't exist, stop: nothing to fix. |
-| **Commentary source** | fixed | `$COMMENTARIES/Transcluded/BCAC19_KS_bo.md` — re-read (or reuse the cached `/tmp/ks_commentary.json` from the parent skill) to ground each fix. Same restriction as the parent skill: this file only, no other commentary. |
-| **Target translation** | fixed | `$TRANSFORMATIONS/Translations/bo-en-translation/bca-en-<grade>.md` — the file this skill edits. |
+| **`<track>`** | ✓ | The translation track to fix. It must already have a `<report>` with at least one ⚠ row in scope. A track that publishes several graded variants (`beginner`, `general`, `advanced`, …) is several tracks for this skill's purposes: one run per variant, each with its own report and its own fix log. |
+| **Scope** | recommended | A chapter number, `colophon`, or explicit verse range (e.g. `2-1 to 2-20`). If omitted, use every ⚠ row in the track's report that hasn't yet been resolved (see the Fix Log in Output). |
+| **Report file** | derived | `$TRANSFORMATIONS/Translations/<track>/<report>` — the source of every ⚠ row this skill acts on. If it doesn't exist, stop: nothing to fix. |
+| **Commentary source** | ✓ | `<commentary>` — re-read (or reuse the cached `$WORK/commentary.json` from the parent skill) to ground each fix. Same restriction as the parent skill: this file only, no other commentary. |
+| **Target translation** | ✓ | `$TRANSFORMATIONS/Translations/<track>/<translation>` — the file this skill edits. |
 
 ---
 
@@ -253,27 +255,27 @@ not decided by the LLM.
 
 | Location | Action |
 |---|---|
-| `$TRANSFORMATIONS/Translations/bo-en-translation/bca-en-<grade>.md` | Edited in place — only the specific flagged line(s) for each MECHANICAL fix. Nothing else in the file changes. |
-| `$TRANSFORMATIONS/Translations/bo-en-translation/commentary-fact-check-fixes-log-<grade>.md` | Created (first run) or appended (later runs) — a dated changelog of every fix applied and every fix skipped. |
-| `$TRANSFORMATIONS/Translations/bo-en-translation/commentary-fact-check-report-<grade>.md` | Updated by re-invoking `commentary-fact-check` on the same range (that skill's own re-check-replaces-subsection behavior applies here, not a separate write path owned by this skill). |
+| `$TRANSFORMATIONS/Translations/<track>/<translation>` | Edited in place — only the specific flagged line(s) for each MECHANICAL fix. Nothing else in the file changes. |
+| `$TRANSFORMATIONS/Translations/<track>/commentary-fact-check-fixes-log.md` | Created (first run) or appended (later runs) — a dated changelog of every fix applied and every fix skipped. |
+| `$TRANSFORMATIONS/Translations/<track>/<report>` | Updated by re-invoking `commentary-fact-check` on the same range (that skill's own re-check-replaces-subsection behavior applies here, not a separate write path owned by this skill). |
 
 ---
 
 ### Output file format
 
-`commentary-fact-check-fixes-log-<grade>.md`:
+`commentary-fact-check-fixes-log.md`:
 
 ```markdown
-## BCA English Translation — Fact-Check Fix Log — <grade>
+# <Track> Translation — Fact-Check Fix Log
 
 Method: mechanical fixes only, applied from ⚠ rows in
-commentary-fact-check-report-<grade>.md and grounded in BCAC19_KS_bo.md. Judgment
+<report> and grounded in <commentary>. Judgment
 calls are listed but never auto-applied. This is a draft editing pass, not a
-scholarly sign-off — a domain specialist should review before treating any grade
+scholarly sign-off — a domain specialist should review before treating any track
 as final, per this vault's standing rule that an LLM never marks its own
 translation output complete.
 
-### Run — <date> — Chapter <N> (or range)
+## Run — <date> — Chapter <N> (or range)
 
 #### Applied
 
@@ -291,24 +293,24 @@ translation output complete.
 
 #### Re-verification
 
-Ran `commentary-fact-check` on <grade> / Chapter <N> after applying fixes.
+Ran `commentary-fact-check` on <track> / Chapter <N> after applying fixes.
 Result: <pass count>/<total>, <remaining ⚠ count> — see
-`commentary-fact-check-report-<grade>.md#chapter-<n>` for the fresh verdict table.
+`<report>#chapter-<n>` for the fresh verdict table.
 ```
 
 ---
 
 ### Rules
 
-1. **Source of truth is the report, not a fresh re-read of the commentary from scratch.** Only act on rows already marked ⚠ in `commentary-fact-check-report-<grade>.md` for the requested scope. Do not go looking for new discrepancies — that's the parent skill's job.
+1. **Source of truth is the report, not a fresh re-read of the commentary from scratch.** Only act on rows already marked ⚠ in `<report>` for the requested scope. Do not go looking for new discrepancies — that's the parent skill's job.
 2. **Minimal edit only.** Change only the span the report's note identifies as wrong (a name, a number, a dropped clause, an inconsistent rendering). Never rewrite a verse's phrasing, meter, or register beyond what the discrepancy requires. This is an edit, not a retranslation.
-3. **Every edit is grounded in `BCAC19_KS_bo.md`**, via the specific commentary passage the report already cited, or a fresh read of that verse's passage if the report's note doesn't quote enough to act on directly. Never invent a fix from parametric knowledge.
+3. **Every edit is grounded in `<commentary>`**, via the specific commentary passage the report already cited, or a fresh read of that verse's passage if the report's note doesn't quote enough to act on directly. Never invent a fix from parametric knowledge.
 4. **MECHANICAL vs JUDGMENT-CALL triage is mandatory before editing anything.** A row is MECHANICAL only if the commentary unambiguously supports exactly one correction (wrong/omitted named entity, wrong number or enumeration, dropped content the commentary marks essential, a locked term rendered inconsistently with its own established usage elsewhere in the file). A row is JUDGMENT-CALL if the "fix" requires picking between two defensible options the commentary doesn't itself adjudicate (e.g. two acceptable English names, a register preference). JUDGMENT-CALL rows are never edited — log them for the human.
 5. **One verse, one targeted edit.** Match the exact existing line (text + `^verse-id`) before replacing it, the same way `extract_translation.py` parses it. If the line can't be matched exactly (file has drifted since the report was written), stop and flag that verse as skipped — do not guess which line it is.
 6. **Never touch a verse the report didn't flag ⚠ for the requested scope**, even if something looks off while reading past it. Report it to the human instead; that's a new finding for `commentary-fact-check`, not this skill's job.
-7. **Always re-verify after editing.** Once all applicable fixes in scope are applied, re-run `commentary-fact-check` for that same grade/scope before reporting success. A fix that doesn't clear the discrepancy on re-check is not done — log it and say so.
+7. **Always re-verify after editing.** Once all applicable fixes in scope are applied, re-run `commentary-fact-check` for that same track/scope before reporting success. A fix that doesn't clear the discrepancy on re-check is not done — log it and say so.
 8. **Never set `status: complete` on anything.** This skill produces drafts for human review, same as its parent skill and `translation-qa`.
-9. **Do not modify any file in `$SOURCES/`.** Only `bca-en-<grade>.md`, the fixes log, and (via re-invoking `commentary-fact-check`) that grade's report file are ever written.
+9. **Do not modify any file in `$SOURCES/`.** Only `<translation>`, the fixes log, and (via re-invoking `commentary-fact-check`) that track's report file are ever written.
 10. **Append, dated. Never overwrite** an earlier run's section in the fixes log.
 
 ---
@@ -317,7 +319,7 @@ Result: <pass count>/<total>, <remaining ⚠ count> — see
 
 #### Step 1 — Load the report and select scope
 
-Open `commentary-fact-check-report-<grade>.md`. Collect every ⚠ row within the
+Open `<report>`. Collect every ⚠ row within the
 requested scope (or every unresolved ⚠ row in the whole file if scope was
 omitted — cross-check against the fixes log's "Applied" tables from prior runs to
 know what's already resolved). If there are zero ⚠ rows in scope, stop and tell
@@ -326,7 +328,7 @@ the user there is nothing to fix.
 #### Step 2 — Re-assemble grounding for each flagged verse
 
 For each ⚠ verse: get the commentary passage (reuse cached
-`/tmp/ks_commentary.json` from a prior `commentary-fact-check` run in this session
+`$WORK/commentary.json` from a prior `commentary-fact-check` run in this session
 if present and still valid, otherwise regenerate it with
 `$SKILLS/commentary-fact-check/scripts/extract_commentary.py`), and get
 the current English line via
@@ -341,22 +343,22 @@ anything — this becomes the Applied/Skipped split in the fixes log.
 #### Step 4 — Apply MECHANICAL fixes
 
 For each MECHANICAL verse, construct the corrected line (minimal edit per Rule 2)
-and replace the exact existing `<text> ^<verse-id>` line in `bca-en-<grade>.md`
+and replace the exact existing `<text> ^<verse-id>` line in `<translation>`
 with it. Do this one verse at a time; do not batch-replace across the file with a
 find-and-replace that could match unintended text (e.g. a name that also appears
 correctly elsewhere).
 
 #### Step 5 — Write the fixes log
 
-Create `commentary-fact-check-fixes-log-<grade>.md` if it doesn't exist yet (header
+Create `commentary-fact-check-fixes-log.md` if it doesn't exist yet (header
 from the Output file format above). Append a new `## Run — <date> — <scope>`
 section with the Applied table, the Skipped table, and a result line, per Rule 10.
 
 #### Step 6 — Re-verify
 
 Invoke `commentary-fact-check` (read and follow
-`$SKILLS/commentary-fact-check/SKILL.md`) for the same grade and scope.
-This appends a fresh verdict subsection to `commentary-fact-check-report-<grade>.md`
+`$SKILLS/commentary-fact-check/SKILL.md`) for the same track and scope.
+This appends a fresh verdict subsection to `<report>`
 per that skill's own re-check-replaces-subsection rule. Record the outcome (pass
 count, any ⚠ that persisted) in this run's fixes-log entry under
 "Re-verification."
@@ -378,8 +380,8 @@ the discrepancy is resolved.
 - [ ] Each edit matched the exact existing line before replacing it; no guessed line matches.
 - [ ] No verse outside the requested ⚠ scope was touched.
 - [ ] Fixes log created/appended (never overwritten) with Applied + Skipped tables.
-- [ ] `commentary-fact-check` re-run on the same grade/scope after edits; result recorded.
-- [ ] No `status: complete` set anywhere; no file outside `bca-en-<grade>.md`, the fixes log, and that grade's report file was modified.
+- [ ] `commentary-fact-check` re-run on the same track/scope after edits; result recorded.
+- [ ] No `status: complete` set anywhere; no file outside `<translation>`, the fixes log, and that track's report file was modified.
 - [ ] User told: fixes applied, judgment calls skipped (with brief reasons), and the re-verification outcome.
 
 ---

@@ -18,7 +18,7 @@ Assesses the quality of a Tibetan OCR output by calculating its perplexity again
 | Input | Description | Path / Format |
 |---|---|---|
 | `input-file` | A `.txt` file containing raw Tibetan OCR output to evaluate | Any path; typically `$WORK/` or `$SOURCES/` |
-| `model-file` | The KenLM ARPA model file | Must be downloaded once from [HuggingFace: openpecha/BoKenlm-syl-v0.4](https://huggingface.co/openpecha/BoKenlm-syl-v0.4). Default expected location: `4-SYSTEM/models/BoKenlm-syl-v0.4.arpa` |
+| `model-file` | The KenLM ARPA model file | Must be downloaded once from [HuggingFace: openpecha/BoKenlm-syl-v0.4](https://huggingface.co/openpecha/BoKenlm-syl-v0.4). Default expected location: `$SYSTEM/models/BoKenlm-syl-v0.4.arpa` |
 
 ## Output
 
@@ -66,15 +66,17 @@ Interpretation:
    pip install kenlm --break-system-packages
    ```
 
-2. **Locate the model file.** Check the path provided by the user, or the default `4-SYSTEM/models/BoKenlm-syl-v0.4.arpa`. If not found, stop and instruct the user to download it:
+2. **Locate the model file.** Check the path provided by the user, or the default `$SYSTEM/models/BoKenlm-syl-v0.4.arpa`. If not found, stop and instruct the user to download it:
    ```
    # From https://huggingface.co/openpecha/BoKenlm-syl-v0.4
-   # Download BoKenlm-syl-v0.4.arpa and place in 4-SYSTEM/models/
+   # Download BoKenlm-syl-v0.4.arpa and place in $SYSTEM/models/
+   # The .arpa model is large binary data, not source — add $SYSTEM/models/
+   # to .gitignore rather than committing it.
    ```
 
-3. **Run the scoring script.** Execute `4-SYSTEM/Skills/tibetan-ocr-quality/scripts/score_ocr.py`:
+3. **Run the scoring script.** Execute `$SKILL/scripts/score_ocr.py`:
    ```
-   python 4-SYSTEM/Skills/tibetan-ocr-quality/scripts/score_ocr.py <input-file> [--model <model-path>]
+   python3 $SKILL/scripts/score_ocr.py <input-file> [--model <model-path>]
    ```
 
 4. **Report the result.** Present the perplexity score and a brief interpretation to the user.

@@ -15,8 +15,11 @@ The skill works in two phases:
                        IDs, no heading syntax, no rewriting of prose.
 
   Phase 2 (this)   -- take the ORIGINAL file + the annotation and do
-                       everything mechanical: assign `toc-N` / `toc-N-M` block
-                       IDs from depth, insert a heading line (## or ###)
+                       everything mechanical: assign `^N-0` / `^N-M-0` heading
+                       block IDs from depth (the convention in
+                       rails/CONVENTIONS.md section 2 -- NOT the `^toc-N`
+                       namespace of the standalone outline block, which is
+                       section 4), insert a heading line (## or ###)
                        immediately before each topic's body line, and then
                        PROVE that no existing prose was altered before writing
                        -- to a NEW file. The source file is never modified.
@@ -51,6 +54,12 @@ Annotation format
   ]
 }
 
+Depth limit
+-----------
+Only depth 1 (main topic, `##`) and depth 2 (sub-topic, `###`) are supported.
+Anything deeper aborts: collapse it into its nearest depth-2 ancestor, or use
+the full toc-generate pipeline (Phases 0-E), which has no depth limit.
+
 See example-annotation.json in this folder for a worked example.
 
 Exit status is non-zero on any error (ambiguous/missing anchor, bad depth,
@@ -71,9 +80,9 @@ class TocError(Exception):
     """Any condition that should abort with a clear message."""
 
 
-# A heading line this script is allowed to have inserted: "## ... ^toc-N" or
-# "### ... ^toc-N-M"
-_HEADING_RE = re.compile(r"^(##|###)\s.*\s\^toc-\d+(?:-\d+)?\s*$")
+# A heading line this script is allowed to have inserted: "## ... ^N-0" or
+# "### ... ^N-M-0"  (rails/CONVENTIONS.md section 2)
+_HEADING_RE = re.compile(r"^(##|###)\s.*\s\^\d+(?:-\d+)?-0\s*$")
 
 
 def heading_prefix(depth: int) -> str:
@@ -90,8 +99,11 @@ def heading_prefix(depth: int) -> str:
 
 def assign_block_ids(depths: list[int]) -> list[str]:
     """
-    depth 1 -> '1', '2', '3', ...
-    depth 2 under main topic N -> 'N-1', 'N-2', ...
+    Heading anchors per rails/CONVENTIONS.md section 2: the decimal path with
+    the reserved `-0` heading slot appended.
+
+    depth 1 -> '1-0', '2-0', '3-0', ...
+    depth 2 under main topic N -> 'N-1-0', 'N-2-0', ...
     A depth-2 section may not appear before any depth-1 section.
     """
     c1 = 0
@@ -103,7 +115,7 @@ def assign_block_ids(depths: list[int]) -> list[str]:
         if d == 1:
             c1 += 1
             c2 = 0
-            ids.append(str(c1))
+            ids.append(f"{c1}-0")
         else:  # d == 2
             if c1 == 0:
                 raise TocError(
@@ -111,7 +123,7 @@ def assign_block_ids(depths: list[int]) -> list[str]:
                     f"main topic (depth 1)"
                 )
             c2 += 1
-            ids.append(f"{c1}-{c2}")
+            ids.append(f"{c1}-{c2}-0")
     return ids
 
 
@@ -137,7 +149,7 @@ def render(source: str, annot: dict) -> tuple[str, dict]:
     if any(_HEADING_RE.match(ln) for ln in source.splitlines()):
         raise TocError(
             "input already contains toc-generator heading markers "
-            "(a line matching '## ... ^toc-N' or '### ... ^toc-N-M'). "
+            "(a line matching '## ... ^N-0' or '### ... ^N-M-0'). "
             "Pass the ORIGINAL, untouched source file as --input, not a "
             "previously generated *.toc.md output."
         )
@@ -159,13 +171,13 @@ def render(source: str, annot: dict) -> tuple[str, dict]:
     for sec, block_id, depth in zip(sections, block_ids, depths):
         title = (sec.get("heading_title") or "").strip()
         if not title:
-            raise TocError(f"section ^toc-{block_id} missing heading_title")
+            raise TocError(f"section ^{block_id} missing heading_title")
         body_ctx = sec.get("body_start_context") or ""
         if not body_ctx:
-            raise TocError(f"section ^toc-{block_id} missing body_start_context")
+            raise TocError(f"section ^{block_id} missing body_start_context")
 
-        idx = find_unique_line(lines, body_ctx, f"section ^toc-{block_id}")
-        heading_line = f"{heading_prefix(depth)} {title} ^toc-{block_id}"
+        idx = find_unique_line(lines, body_ctx, f"section ^{block_id}")
+        heading_line = f"{heading_prefix(depth)} {title} ^{block_id}"
         edits_for(idx).headings.append(heading_line)
         if depth == 1:
             n1 += 1

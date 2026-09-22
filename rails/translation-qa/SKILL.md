@@ -1,6 +1,6 @@
 ---
 name: translation-qa
-description: MQM-based quality check of a Hindi (or any-language) translation file or track against the source text, the 2-RAILS/ verse packages, and the track's requirements + termbase. Use whenever asked to QA, check, evaluate, grade, score, review, or "rate" a translation in 3-TRANSFORMATIONS/Translations/ (or a draft translated_*.md), to compare two candidate translations of the same verses, or to decide whether a translation is ready to move from status:draft to status:complete. Produces a qa-report.md with per-verse MQM error annotations (dimension + severity + suggested fix) and an aggregate scorecard with a pass/fail gate. Especially suited to zero-shot output, which reads fluently but hides omissions, mistranslations, and broken verse IDs.
+description: MQM-based quality check of a translation file or track in any target language, against the source text, the 2-RAILS/ verse packages, and the track's requirements + termbase. Use whenever asked to QA, check, evaluate, grade, score, review, or "rate" a translation in 3-TRANSFORMATIONS/Translations/ (or a draft translated_*.md), to compare two candidate translations of the same verses, or to decide whether a translation is ready to move from status:draft to status:complete. Produces a qa-report.md with per-verse MQM error annotations (dimension + severity + suggested fix) and an aggregate scorecard with a pass/fail gate. Especially suited to zero-shot output, which reads fluently but hides omissions, mistranslations, and broken verse IDs.
 profile: rails-vault
 supersedes:
   - 21-taras-rails/4-SYSTEM/Skills/translation-qa/SKILL.md
@@ -9,7 +9,7 @@ supersedes:
 
 # translation-qa — MQM quality check for translation output
 
-This skill grades an already-written translation against its sources. It does **not** rewrite the translation; it reports what passes, what fails, exactly where, and how to fix it, so a reviewer can act and a domain specialist can sign off. It is the QA companion to `zeroshot-translate` (Mode 1) (and any future `translate-section`).
+This skill grades an already-written translation against its sources. It does **not** rewrite the translation; it reports what passes, what fails, exactly where, and how to fix it, so a reviewer can act and a domain specialist can sign off. It is the QA companion to every generator skill in the repo — `zeroshot-translate`, `graded-translate`, `verse-translate`, `translate-commentary`, `plan-day-generate` — and to any future generator.
 
 The method is **MQM (Multidimensional Quality Metrics)**: instead of a holistic "rate it out of 5", every problem is located, classified by dimension, and assigned a severity. The score is the sum of weighted penalties — but the **error list is the real product**; the number is just its total.
 
@@ -32,8 +32,8 @@ The LLM never sets `status: complete` on its own output — it reports; a domain
 
 | Input | Required? | Where to get it |
 |---|---|---|
-| **Translation file(s)** | Yes | The file under test, e.g. `$TRANSFORMATIONS/Translations/hi-plain/hi-plain-ch2.md`, or a draft `translated_*.md`. For comparison, two files. |
-| **Source text** | Yes | `$SOURCE_TEXTS/BCAV08_SH_sk.md` (Sanskrit root) and/or `$TRANSLATIONS/bo-བློ་ལྡན་ཤེས་རབ།.md` (Tibetan basis named in the file's `root_text:` frontmatter). |
+| **Translation file(s)** | Yes | The file under test, e.g. `$TRANSFORMATIONS/Translations/<lang>-<audience>/Chapter-02.md`, or a draft `translated_*.md`. For comparison, two files. |
+| **Source text** | Yes | The root text named in the translation's own `root_text:` frontmatter, plus any pivot or basis file named in its `context_packages:`. Resolve those names against `$SOURCE_TEXTS/` and `$TRANSLATIONS/`; if the translation names none, stop and ask which source it was made from rather than guessing. |
 | **Verse rails** | Preferred | `$VERSES/<verse-id>.md` — the disambiguated restatement is the authority for accuracy. If a verse rail is not `status: complete`, fall back to the source and say so in the report. |
 | **Track requirements** | Yes | `$TRANSFORMATIONS/Translations/<track>/requirements.md` — the register/style contract. |
 | **Track termbase** | Yes | `$TRANSFORMATIONS/Translations/<track>/termbase.md` — the one-rendering-per-keyword contract. |
@@ -87,11 +87,16 @@ MQM score = 100 − (Σ weighted penalties / word_count) × 100
 Run the bundled script first. It decides the things that need no judgement — verse coverage, mislabeled/duplicate/missing block IDs, leftover `UNTRANSLATED`, stray Latin characters, CRLF — and maps each to an MQM dimension + severity.
 
 ```bash
-python3 4-SYSTEM/Skills/translation-qa/mqm_mechanical_checks.py \
+python3 $SKILL/scripts/mqm_mechanical_checks.py \
     <translation.md> \
-    --source $SOURCE_TEXTS/BCAV08_SH_sk.md \
+    --source <the root text named in the translation's root_text:> \
     --json $WORK/qa-stage0-<name>.json
 ```
+
+The script's block-ID pattern accepts every ID shape the vaults use: one
+segment (`^583`), two (`^1-1`), three or more (`^1-2-3`), letter zones (`^I-4`,
+`^a-2`) and letter sub-namespaces (`^1-0a-1`). An ID whose last segment is `0`
+is treated as a heading anchor and never counted as a verse.
 
 Always pass `--source` (omission detection depends on it, especially for files that inline verses rather than transclude them). Carry every Stage-0 finding into the report verbatim — these are facts, not opinions.
 
@@ -103,6 +108,7 @@ For each verse, assemble the bundle — source verse + rail restatement (or sour
 2. **Terminology** — each keyword rendered as `termbase.md` dictates, and consistently throughout.
 3. **Style/Register & Audience** — matches `requirements.md` for this track.
 4. **Fluency** — reads as correct, natural target-language.
+5. **Proper nouns and titles** — every personal name, place name, epithet and title appears in its formal target-language form, not an ad-hoc transliteration or a casual short form; the same name is spelled identically at every occurrence in the file; cited scripture titles are given in full, not truncated, and carry the target language's own title punctuation consistently throughout; and every name or title that the track's `termbase.md` fixes is rendered as the termbase fixes it. A name that drifts between two spellings in one file is `Terminology`, Major; a name or title given in a form no source supports is `Accuracy/Addition`, Major; inconsistent or missing title punctuation is `LocaleConvention`, Minor.
 
 Each annotation: `{verse_id, span, dimension, severity, note, suggested_fix, cite}` where `cite` is the source/rail line the judgement rests on. A verse with no problems produces no annotation.
 
@@ -125,9 +131,9 @@ Combine Stage 0 + Stage 1, compute counts and score, apply the gate, and **appen
 
 | Verse | Dimension | Severity | Note | Suggested fix | Cite |
 |---|---|---|---|---|---|
-| 8-72 | Accuracy/Omission | Critical | verse absent from translation | translate ^8-72 | $SOURCE_TEXTS/BCAV08_SH_sk.md#^8-72 |
+| 8-72 | Accuracy/Omission | Critical | verse absent from translation | translate ^8-72 | <root-text>.md#^8-72 |
 | 5-78 | Markup/BlockID | Major | body tagged ^5-77 (duplicate); ^5-78 missing | retag → ^5-78 | — |
-| 3-19 | Accuracy/Omission | Major | कामधेनु dropped; generalized | add कामधेनु | $VERSES/3-19.md |
+| 3-19 | Accuracy/Omission | Major | a named image in the source is dropped and generalised | restore the image | $VERSES/3-19.md |
 | 8-129 | Fluency | Minor | stray comma, choppy clause | smooth the clause | — |
 
 ### Top fixes
@@ -153,4 +159,4 @@ Run Stages 0–2 on each file, then present the two scorecards side by side and 
 - **Report, don't rewrite.** Suggest fixes; do not edit the translation.
 - **Gate is hard.** Any Critical or Major ⇒ stays `draft`. Only a domain specialist sets `complete`.
 - **Append, dated.** Never overwrite earlier QA runs in `qa-report.md`.
-- When the generator skill (`zeroshot-translate` (Mode 1)) changes its rules, update this skill's Style/Register and Terminology checks to match.
+- When **any generator skill** changes its rules — `zeroshot-translate`, `graded-translate`, `verse-translate`, `translate-commentary`, `plan-day-generate` — update this skill's Style/Register and Terminology checks to match.

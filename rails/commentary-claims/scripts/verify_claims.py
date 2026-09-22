@@ -1,45 +1,44 @@
 #!/usr/bin/env python3
 """verify_claims.py — deterministic verification for a tree-guided-claims output file.
 
-The comparison report at ``3-TRANSFORMATIONS/Wikipedia/tara21/claims/_comparison-report.md``
-found that the vault's earlier tree-scaffolded claims run — presented as a third,
-independent extraction — was Sonnet's category-scaffolded output re-bucketed under the
-tree, with Sonnet's transcription errors and a wrong `claim_count` inherited unchanged. Its
-"Recommendation" section names five concrete guards a genuine re-run needs. This script is
-the automated half of four of them (the fifth, "never re-bucket", is a matter of how the
-extraction is *run* — see ``tree-guided-claims/SKILL.md`` Procedure Step 4 — and is not
-something a static checker over the finished file can detect: a sufficiently careful copy
-could still pass every check below).
+A tree-scaffolded claims run that is in fact an earlier pass re-bucketed under the tree
+inherits that pass's transcription errors and its stale ``claim_count`` while looking like
+an independent confirmation of them. ``commentary-claims`` Strategy 1 states five guards
+against that; this script is the automated half of four of them (the fifth, "never
+re-bucket", is a matter of how the extraction is *run* — see that skill's Procedure Step 4
+— and is not something a static checker over the finished file can detect: a sufficiently
+careful copy could still pass every check below).
 
 Checks performed, in this order:
 
-1. **Quote containment.** Every claim's ``**བོད་ཡིག:**`` string (NFC + tsheg/shad-stripped,
-   matching the comparison report's own method) must be a literal substring of its cited
+1. **Quote containment.** Every claim's ``**Original:**`` string (the legacy label
+   ``**བོད་ཡིག:**`` is still accepted) is NFC-normalised and tsheg/shad-stripped, and must
+   then be a literal substring of its cited
    block. Ellipsis-joined fragments (``…`` or ``...``) are tested individually — a claim
    quoting two non-contiguous phrases from the same block is legitimate; a claim quoting
    one real phrase and one invented one is not, and splitting is what catches the latter.
 2. **`claim_count` recomputation.** The frontmatter's declared count must equal the number
    of regular (non-tension) claim headings actually present. Tension entries (⚑) are
-   reported separately and are never folded into this count — the double-counting the
-   report found in ``opus``/``sonnet`` (``claims + tensions``) does not recur here because
-   the two are simply never added together.
+   reported separately and are never folded into this count — the ``claims + tensions``
+   double-counting seen in earlier runs does not recur here because the two are simply never
+   added together.
 3. **ID-collision scan.** Every claim ID must match the ``c-<decimal-with-dashes>-<n>``
    scheme, no two claims may share an ID, and no claim ID's de-prefixed form may coincide
-   with any node's own decimal — the load-bearing property that kept ``1.1`` from meaning
-   both a claim and a section in the earlier run.
+   with any node's own decimal — the load-bearing property that keeps ``1.1`` from meaning
+   both a claim and a section.
 4. **`stated`-referent validation.** Every ``Referent: ... (stated)`` tag must name a
    Grounding-index entry whose verbatim name actually occurs inside *that claim's own*
-   quoted Tibetan — not merely somewhere in the source. The report's own audit found 7 of
-   14 ``(stated)`` tags on one file failing this exact test.
+   quoted original-language string — not merely somewhere in the source. This is the check
+   that keeps the Grounding index verifiable.
 5. **Citation sanity + coverage summary** (partial, reported as info, not hard issues): every
    cited block ID must exist in the source; a plain cited-vs-uncited block count is
    reported so a human can cross-check it against the file's own "Segments yielding no
    claim" prose — free-text range parsing is too fragile to gate on automatically, so this
    is a prompt for review, not a pass/fail claim.
 
-Deliberately standalone: no import of the ``kangyur_wiki`` package, so this runs with the
-Python already on the system, independent of the pipeline's venv — consistent with every
-other script under ``4-SYSTEM/Skills/*/scripts/``.
+Deliberately standalone: standard library only, so it runs with the Python already on the
+system, independent of any pipeline venv — consistent with every other script bundled with
+a skill.
 
 Usage
 -----
@@ -207,7 +206,7 @@ def parse_claims_file(text: str) -> ParsedClaimsFile:
             field_m = _FIELD_RE.match(raw.strip())
             if field_m:
                 name, value = field_m.group(1).strip().lower(), field_m.group(2).strip()
-                if name in ("བོད་ཡིག", "bo", "bod yig"):
+                if name in ("original", "བོད་ཡིག", "bo", "bod yig"):
                     current.bo_text = value
                 elif name == "referent":
                     current.referent_raw = value

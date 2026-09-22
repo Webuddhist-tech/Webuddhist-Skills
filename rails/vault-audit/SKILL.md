@@ -1,6 +1,6 @@
 ---
 name: vault-audit
-description: Read-only weekly audit of vault integrity. Checks skills sync, frontmatter completeness, citation chain, status consistency, stale inbox files, and dead wiki links. Writes a dated report to 0-INBOX/. Never modifies vault files.
+description: Read-only weekly audit of vault integrity. Eight checks: skill registration and frontmatter, rail and output frontmatter completeness, citation-chain integrity, status consistency, stale inbox files, dead wiki links, file placement, and unfilled template placeholders. Writes a dated report to $INBOX/. Never modifies vault files.
 profile: rails-vault
 supersedes:
   - 21-taras-rails/4-SYSTEM/Skills/vault-audit/SKILL.md
@@ -25,7 +25,7 @@ None. The skill operates on the vault as a whole.
 One report file at:
 
 ```
-$WORK/vault-audit-<YYYY-MM-DD>.md
+$INBOX/vault-audit-<YYYY-MM-DD>.md
 ```
 
 Where `<YYYY-MM-DD>` is today's date. If a report already exists for today, append a `-2` suffix rather than overwriting.
@@ -68,13 +68,23 @@ total_issues: <N>
 
 ## 5. Stale inbox files
 
-<✓ No files older than 7 days in $WORK/.>
+<✓ No files older than 7 days in $INBOX/.>
 <OR list of files with their modification dates>
 
 ## 6. Dead wiki links
 
 <✓ No issues found.>
 <OR list of issues>
+
+## 7. File placement
+
+<✓ No issues found.>
+<OR list of issues>
+
+## 8. Unfilled template placeholders
+
+<✓ No issues found.>
+<OR list of files still carrying [text-slug] / [name of text]>
 ```
 
 ---
@@ -97,10 +107,12 @@ total_issues: <N>
 1. List every immediate subdirectory of `4-SYSTEM/Skills/` that contains a `SKILL.md`.
 2. For each such directory `<skill-name>`:
    a. Check whether `4-SYSTEM/Skills/SKILLS-CATALOG.md` contains a section heading `### \`<skill-name>\``.
-   b. Check whether `.claude/commands/<skill-name>.md` exists.
+   b. Check whether the skill is registered for slash-command discovery by **either** mechanism: a stub at `.claude/commands/<skill-name>.md`, **or** a native skill at `.claude/skills/<skill-name>/SKILL.md`. Either satisfies this check; neither is a failure.
+   c. Check whether `$SKILLS/<skill-name>/SKILL.md` opens with YAML frontmatter carrying at least `name:` and `description:`. Without it the skill cannot be discovered or triggered automatically, however good it is.
 3. Flag each missing entry as a checkbox item:
    - `- [ ] \`<skill-name>\`: missing from SKILLS-CATALOG.md`
-   - `- [ ] \`<skill-name>\`: missing .claude/commands/<skill-name>.md`
+   - `- [ ] \`<skill-name>\`: not registered — add .claude/commands/<skill-name>.md or .claude/skills/<skill-name>/`
+   - `- [ ] \`<skill-name>\`: SKILL.md has no \`name:\`/\`description:\` frontmatter — it cannot be discovered`
 4. Also check the reverse: for every entry in SKILLS-CATALOG.md marked `[exists]`, verify a corresponding `4-SYSTEM/Skills/<skill-name>/SKILL.md` actually exists. Flag any catalog entry pointing to a nonexistent skill folder.
 
 ### Check 2 — Frontmatter completeness
@@ -138,10 +150,10 @@ For every file in `$TRANSFORMATIONS/` (excluding About, requirements, termbase, 
 
 ### Check 5 — Stale inbox files
 
-List every file in `$WORK/` with a modification date older than 7 days. For each:
-- `- [ ] \`$WORK/<filename>\` — last modified <date>. Review: promote to permanent location or delete.`
+List every file in `$INBOX/` (including `$WORK/`) with a modification date older than 7 days. For each:
+- `- [ ] \`$INBOX/<filename>\` — last modified <date>. Review: promote to permanent location or delete.`
 
-Do not flag files in `$WORK/raw-data/` — those are intentionally long-lived staging inputs.
+Do not flag files in `$INBOX/raw-data/` — those are intentionally long-lived staging inputs.
 
 ### Check 6 — Dead wiki links
 
@@ -170,18 +182,29 @@ For every file in `$VERSES/` whose name does not match `^\d+-\d+\.md`:
 Collect the set of unique filenames under any `$TRANSFORMATIONS/*/Verses/` directory (e.g. `1-1.md`, `6-33.md`). For each filename that does not have a corresponding file at `$VERSES/<filename>`:
 - `- [ ] \`$VERSES/<filename>\`: verse rail missing — transformation(s) exist but no rail has been authored. Do not generate further transformations from this verse until the rail is complete.`
 
+### Check 8 — Unfilled template placeholders
+
+A vault created from the template carries placeholders that must be replaced before the vault means anything. They are easy to leave behind, because nothing breaks when they stay.
+
+Search the vault README, `$SYSTEM/CLAUDE.md`, the vault annex (whatever it is named) and any agent-instruction file for the literal strings `[text-slug]`, `[name of text]`, and `> **Using this template:**`.
+
+For each file that still contains one:
+- `- [ ] \`<path>\`: still contains template placeholder \`<placeholder>\` — fill in or delete before the vault is used.`
+
+Report `✓ No issues found.` once every placeholder is gone.
+
 ### Write the report
 
-1. Collect all flagged issues across all seven checks.
+1. Collect all flagged issues across all eight checks.
 2. Set `total_issues:` in the frontmatter to the total count of checkbox items.
-3. Write the report to `$WORK/vault-audit-<YYYY-MM-DD>.md`.
+3. Write the report to `$INBOX/vault-audit-<YYYY-MM-DD>.md`.
 4. Do not write or modify any other file.
 
 ---
 
 ## Completion check
 
-- [ ] All seven checks have been executed
+- [ ] All eight checks have been executed
 - [ ] Every flagged issue includes the exact file path and line number where applicable
 - [ ] Every section has either a list of checkbox items or `✓ No issues found.`
 - [ ] `total_issues:` frontmatter field reflects the correct count

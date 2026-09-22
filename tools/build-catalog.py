@@ -31,6 +31,9 @@ GROUPS = [
  ("Wiki article production",
                       ["article-subject-filter","wiki-article-inventory","wiki-article-from-claims",
                        "gemini-article-polish"]),
+ ("Plans", ["plan-scaffold","plan-schedule","plan-day-generate","plan-day-translate",
+                    "plan-day-qa","plan-day-package"]),
+ ("Publishing",     ["translation-alignment-check","translation-upload"]),
  ("Authoring skills", ["create-skill"]),
 ]
 

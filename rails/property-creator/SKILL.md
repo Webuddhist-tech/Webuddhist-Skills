@@ -40,7 +40,6 @@ When asked to run this skill on a specific file (e.g., "add properties to
 
 ## Provenance
 
-Adapted from `bodhisattvacharyavatara-rails/4-SYSTEM/Skills/property-creator/SKILL.md`.
 Minimal changes: the Obsidian `update_frontmatter` tool reference is
 generalised to "edit the file's YAML frontmatter block" (no such dedicated
 tool exists in this environment), and a broken Obsidian-pasted-image example

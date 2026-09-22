@@ -8,12 +8,13 @@ supersedes:
 
 # article-subject-filter
 
-This is Step 7 of the keyword-extraction pipeline
-(`4-SYSTEM/Guidelines/keyword-extraction-methodology.md` §Step 7). The mechanical
-article-viability gate (Step 6) answers "is there enough claim material?"; this skill answers
-"is this an encyclopedic *subject*?" It prevents two failure modes: non-subjects (body parts,
-directions, generic vocabulary) getting standalone articles, and one subject appearing as
-several queue rows (དགྲ/དགྲ་བོ/དགྲ་ཡི) getting parallel articles. Because the pipeline runs with
+This is Phase 7 of the keyword-extraction pipeline
+(`$SKILLS/keyword-extract/references/keyword-extraction-methodology.md` §3 Phase 7). The
+mechanical article-viability gate (`keyword-extract` Phase 6) answers "is there enough claim
+material?"; this skill answers "is this an encyclopedic *subject*?" It prevents two failure
+modes: non-subjects (body parts, directions, generic vocabulary) getting standalone articles,
+and one subject appearing as several queue rows (Tibetan example: དགྲ/དགྲ་བོ/དགྲ་ཡི) getting
+parallel articles. Because the pipeline runs with
 **no intermediate human review** (single review at the end, over finished articles), correct
 output is a complete audit trail: every input term accounted for under exactly one disposition,
 every verdict carrying a one-line reason — nothing silently dropped, nothing silently merged.
@@ -22,44 +23,44 @@ every verdict carrying a one-line reason — nothing silently dropped, nothing s
 
 ## Inputs
 
-- **The article queue** — `$WORK/AI_translation/keyword-extraction/output/article_queue.json`
-  (gate v1 output: `rule` header + `article_queue` list; each row has `term`, `en_glosses`,
-  `variants`, the three signal blocks, `root_text_blocks`, `rank`).
-- **The Tibetan term registry** —
-  `$WORK/AI_translation/keyword-extraction/output/tibetan_term_registry.json` (variant and
-  synonym sets per term, used as merge evidence).
-- **The methodology doc** — `4-SYSTEM/Guidelines/keyword-extraction-methodology.md` §Step 7
-  (verdict definitions and the editorial rules: one subject = one article; hub-and-spoke for
-  the 21 Tārās).
-- **Available merge targets** — the consolidated topic pages in `$CLAIMS/` (`tara-01` …
-  `tara-21`, `origin`, `structure`, `benefits`): section-material claims route to these (or to
-  a planned standalone subject from this same run).
+- **The article queue** — `$KEYWORDS/article-queue.json` (`keyword-extract` Phase 6 output:
+  `gate` header + `queue` list; each row has `term_id`, `lemma`, `english_renderings`,
+  `variants`, `claims`, `spread`, `composite`, `rank`, plus the `gate_failures` list).
+- **The source-term registry** — `$KEYWORDS/source-term-registry.json` (variant and synonym
+  sets per term, used as merge evidence).
+- **The methodology doc** — `$SKILLS/keyword-extract/references/keyword-extraction-methodology.md`
+  §3 Phase 7 (verdict definitions and the editorial rules: one subject = one article;
+  hub-and-spoke for a family of related spoke subjects around a hub subject).
+- **Available merge targets** — the consolidated topic pages in `$CLAIMS/` (one per registered
+  spine slot, plus the global topics): section-material claims route to these (or to a planned
+  standalone subject from this same run).
 
 If any input file is missing, stop and report — do not reconstruct a queue from the `.md`
 table.
 
 ## Output
 
-Two new files, alongside (never replacing) the Step 6 outputs:
+Two new files, alongside (never replacing) the `keyword-extract` Phase 6 outputs:
 
-- `$WORK/AI_translation/keyword-extraction/output/article_subjects.json`
-- `$WORK/AI_translation/keyword-extraction/output/article_subjects.md`
+- `$KEYWORDS/article-subjects.json`
+- `$KEYWORDS/article-subjects.md`
 
-All prior step outputs (`article_queue.*`, `ranked_keywords.*`, `tibetan_term_registry.json`)
+All prior phase outputs (`$KEYWORDS/article-queue.json`, `$KEYWORDS/source-term-registry.json`,
+`$KEYWORDS/frequency-matrix.json`, and the run scratch under `$WORK/keyword-extraction/<run>/`)
 are left byte-for-byte unchanged.
 
 ---
 
 ## Output file format
 
-`article_subjects.json`:
+`article-subjects.json`:
 
 ```json
 {
   "rule": {
     "name": "subject-filter v1",
     "verdicts": ["standalone", "section-material", "glossary"],
-    "input": "article_queue.json (gate v1, N terms)",
+    "input": "article-queue.json (gate v1, N terms)",
     "date": "YYYY-MM-DD"
   },
   "subjects": [
@@ -78,8 +79,8 @@ are left byte-for-byte unchanged.
     {
       "subject": "ཞལ།",
       "verdict": "section-material",
-      "reason": "Body part, not a subject; iconographic detail of the Tārā forms.",
-      "target": "tara-articles:iconography",
+      "reason": "Body part, not a subject; iconographic detail of the deity forms.",
+      "target": "<hub-family>-articles:iconography",
       "merged_terms": [],
       "queue_ranks": [10],
       "pooled_claim_count": 35,
@@ -97,7 +98,7 @@ are left byte-for-byte unchanged.
 }
 ```
 
-`article_subjects.md`: a human-readable report with the same date/rule header, then three
+`article-subjects.md`: a human-readable report with the same date/rule header, then three
 tables (Standalone subjects / Section material with targets / Glossary-only), a Merges table
 (`merged term → subject head, reason`), and the conservation line at the end. Borderline
 verdicts are marked ⚑ in their table row.
@@ -107,8 +108,8 @@ verdicts are marked ⚑ in their table row.
 ## Rules
 
 1. **Read-only toward prior outputs.** Never modify or overwrite any existing file under
-   `$WORK/AI_translation/keyword-extraction/output/`. This skill only adds the two
-   `article_subjects.*` files. A re-run overwrites only its own two outputs.
+   `$KEYWORDS/` or `$WORK/keyword-extraction/`. This skill only adds the two
+   `article-subjects.*` files. A re-run overwrites only its own two outputs.
 2. **Conservation of terms.** Every queue term appears exactly once in the output — either as
    a subject head (whose verdict is standalone, section-material, or glossary) or inside one
    subject's `merged_terms`. The four counters are disjoint:
@@ -119,37 +120,37 @@ verdicts are marked ⚑ in their table row.
    appear without one. Reasons are English, specific ("body part, not a subject" — not
    "unsuitable").
 4. **Merge only identical subjects.** Merge rows only when they name the *same encyclopedic
-   subject*: lemma variants (དགྲ/དགྲ་བོ/དགྲ་ཡི), verbal/nominal forms (ཕྱག་འཚལ/ཕྱག་འཚལ་བ), spelling
-   or phrase forms of one mantra element (ཧཱུྃ/ཡི་གེ་ཧཱུཾ). Never merge doctrinally distinct terms
-   however close (ཤེས་རབ vs ཡེ་ཤེས; བདུད vs གདོན stay separate). When in doubt, do not merge —
+   subject*: lemma variants (Tibetan examples: དགྲ/དགྲ་བོ/དགྲ་ཡི), verbal/nominal forms
+   (ཕྱག་འཚལ/ཕྱག་འཚལ་བ), spelling or phrase forms of one mantra element (ཧཱུྃ/ཡི་གེ་ཧཱུཾ). Never merge
+   doctrinally distinct terms however close (ཤེས་རབ vs ཡེ་ཤེས; བདུད vs གདོན stay separate). When in doubt, do not merge —
    flag ⚑ borderline with the reason instead.
 5. **Pooled counts are provisional.** `pooled_claim_count` for a merged subject is the sum of
    member rows' counts and may double-count claims mentioning several forms; the authoritative
    pool is formed at claims-consolidation time by claim-ID union. Record the caveat in the
    `.md` header.
 6. **Section material names its target.** Every `section-material` verdict must carry a
-   `target`: an existing `$CLAIMS/` page, a standalone subject from this same run, or
-   the collective `tara-articles:iconography` (material for the 21 Tārā articles' iconography
-   sections).
+   `target`: an existing `$CLAIMS/` page, a standalone subject from this same run, or a
+   collective target of the form `<hub-family>-articles:<section>` (material for the
+   iconography sections of a whole family of spoke articles, say).
 7. **Judge subjecthood, not material volume.** The gate already decided sufficiency; claim
    counts must not influence the verdict (a 100-claim body part is still section material; a
    20-claim deity is still standalone).
 8. **No human interaction mid-run.** Under the review-at-end model, do not pause to ask about
    borderline cases — decide, mark ⚑ `borderline: true`, and record the reason so the final
    review can overturn it cheaply.
-9. **Language.** Analysis, reasons, and headers in English; terms in Tibetan script exactly as
-   they appear in the queue (final tsheg/shad preserved).
+9. **Language.** Analysis, reasons, and headers in English; terms in the source language's
+   own script exactly as they appear in the queue (for Tibetan, final tsheg/shad preserved).
 
 ---
 
 ## Procedure
 
-1. Load `article_queue.json`; record its term count. Load `tibetan_term_registry.json` for
-   variant sets. List `$CLAIMS/*.md` to know the existing merge targets.
+1. Load `$KEYWORDS/article-queue.json`; record its term count. Load
+   `$KEYWORDS/source-term-registry.json` for variant sets. List `$CLAIMS/*.md` to know the existing merge targets.
 2. **Normalization (merge) pass.** Compare all queue rows pairwise for subject identity using:
    shared lemma modulo case particles and verbal endings; honorific/plain equivalents;
-   registry variant-set overlap; identical `en_glosses` plus overlapping `root_text_blocks`
-   as supporting (never sufficient) evidence. For each cluster choose the head: the citation
+   registry variant-set overlap; identical `english_renderings` plus overlapping root-text
+   block IDs as supporting (never sufficient) evidence. For each cluster choose the head: the citation
    (lemma) form; tie-break by best (lowest) queue rank. Record every non-head row in `merged`
    with its reason.
 3. **Verdict pass.** For each subject head, apply the tests in order:
@@ -157,16 +158,18 @@ verdicts are marked ⚑ in their table row.
       named forms, classes of beings (གནོད་སྦྱིན, དྲི་ཟ, རོ་ལངས), cosmological entities (རི་རབ),
       named persons/gods (བརྒྱ་བྱིན, ཚངས་པ), doctrinal categories (ཕ་རོལ་ཕྱིན་པ, སྡུག་བསྔལ), mantra
       and its named elements (ཏུ་ཏྟཱ་ར, སྭཱ་ཧཱ), text-specific epithets with their own commentary
-      literature (མྱུར་མ, ཏུ་རེ).
+      literature. (The examples are Tibetan; the classes are language-independent.)
    b. *Section-material* — an attribute, body part, implement, color, direction, posture, or
       action whose claims describe *another* subject (ཞལ, ཞབས, གཡས/གཡོན, མཐིལ, ཁྲོ་གཉེར as a
       feature). Assign `target` per Rule 6.
    c. *Glossary* — generic vocabulary neither of the above.
    Write the one-line reason as the verdict is made, not retrospectively.
 4. **Hub-and-spoke consistency check.** Verify the standalone list is coherent with the
-   editorial rules: the 21 Tārā names/epithets resolve to their spoke articles (not to one
-   merged "Tārā" row); སྒྲོལ་མ remains the hub subject.
-5. Write `article_subjects.json`, then render `article_subjects.md` from it (never the other
+   editorial rules: where the corpus has a family of closely-related subjects (the named
+   forms of one deity, say), each member's name/epithet resolves to its own spoke article
+   rather than collapsing into one merged row, and the family's general term remains the hub
+   subject.
+5. Write `article-subjects.json`, then render `article-subjects.md` from it (never the other
    way around).
 6. **Self-verification.** Recompute conservation from the written JSON: every input term
    found exactly once; counts match the `conservation` block; no verdict lacks a reason; no
@@ -176,9 +179,9 @@ verdicts are marked ⚑ in their table row.
 
 ## Completion check
 
-- [ ] `article_subjects.json` and `article_subjects.md` written; no other file in
-      `output/` modified
-- [ ] Conservation holds: every `article_queue.json` term appears exactly once (head or
+- [ ] `$KEYWORDS/article-subjects.json` and `$KEYWORDS/article-subjects.md` written; no other
+      file under `$KEYWORDS/` or `$WORK/keyword-extraction/` modified
+- [ ] Conservation holds: every `article-queue.json` term appears exactly once (head or
       merged), and the `conservation` arithmetic matches
 - [ ] Every subject has a verdict ∈ {standalone, section-material, glossary} and a one-line
       reason; every merge has a reason
@@ -186,3 +189,15 @@ verdicts are marked ⚑ in their table row.
 - [ ] No doctrinally distinct terms merged; doubtful merges left unmerged and flagged ⚑
 - [ ] Borderline verdicts marked ⚑ `borderline: true` with reasons — none escalated to the
       human mid-run
+
+---
+
+## Dependencies
+
+No network, no API key, no third-party packages. This skill reads two JSON files produced by
+`keyword-extract` and lists `$CLAIMS/`; everything else is model judgment.
+
+## After this skill
+
+`wiki-article-inventory` takes the `standalone` subjects and checks each one against the
+target Wikipedia.

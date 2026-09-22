@@ -11,23 +11,24 @@ Why this exists
 Nothing in the normal generation path enforces vocabulary consistency across
 verses: each verse (or each chunk, if using a batch/API translation script)
 is generated more or less independently. A term correctly rendered in verse
-1-1 can silently drift to a different French word by verse 1-30 with nothing
-flagging it. This script is the mechanical check that catches that drift,
+1-1 can silently drift to a different target-language word by verse 1-30 with
+nothing flagging it. This script is the mechanical check that catches that
+drift,
 so it doesn't have to rely on a human re-reading 900+ verses by eye.
 
 Method
 ------
-1. Parse the track's termbase.md table into {bo_lemma: locked_fr_rendering}.
-   A row's source-lemma column may list several bo variants separated by
-   " / "; each variant is registered separately, pointing to the same
-   rendering. The rendering column may carry a parenthetical gloss, e.g.
-   "bodhicitta (l'esprit d'eveil)" or "voeu (samvara)" -- both the head word
-   and the glossed alternative are extracted as acceptable surface forms,
-   since either may legitimately appear depending on sentence position.
+1. Parse the track's termbase.md table into
+   {source_lemma: locked_target_rendering}. A row's source-lemma column may
+   list several variants separated by " / "; each variant is registered
+   separately, pointing to the same rendering. The rendering column may carry
+   a parenthetical gloss, e.g. "bodhicitta (the awakening mind)" -- both the
+   head word and the glossed alternative are extracted as acceptable surface
+   forms, since either may legitimately appear depending on sentence position.
 
 2. For each verse rail under 2-RAILS/Verses/<id>.md in scope, read the
    frontmatter concepts_in_verse: list (and, as a fallback signal,
-   concepts_in_commentary:) to get the bo lemmas the rail says are load-
+   concepts_in_commentary:) to get the source lemmas the rail says are load-
    bearing for that verse. Only lemmas that also exist in the termbase are
    checked -- the termbase is deliberately partial (built verse-by-verse as
    rails are produced), so a concept with no termbase entry yet is skipped,
@@ -40,12 +41,12 @@ Method
    as covered.
 
 4. For each (verse, expected termbase lemma) pair, check whether any of the
-   lemma's registered French surface forms appears in that verse's
+   lemma's registered target-language surface forms appears in that verse's
    translated text, in two tiers:
      - EXACT  : the literal surface form (accent/case-insensitive) appears.
      - LOOSE  : an article-stripped, crudely-depluralized version of the
-       form appears -- catches ordinary French inflection (le Sugata vs
-       les Sugatas, du corps vs au corps) so it isn't reported as drift.
+       form appears -- catches ordinary inflection in an article-and-plural
+       language so it isn't reported as drift.
    Anything that matches neither tier is a MISSING and is worth a human
    look -- it may be a legitimate paraphrase choice, or it may be real
    vocabulary drift.
@@ -53,15 +54,15 @@ Method
 Usage
 -----
     python check_termbase_consistency.py \\
-        --termbase "3-TRANSFORMATIONS/Translations/fr-scholarly/termbase.md" \\
-        --translation "3-TRANSFORMATIONS/Translations/fr-scholarly/BCA-Chapitre1-Vers1-9-pilote.md" \\
+        --termbase "3-TRANSFORMATIONS/Translations/<track>/termbase.md" \\
+        --translation "3-TRANSFORMATIONS/Translations/<track>/<file>.md" \\
         --rails-dir "2-RAILS/Verses" \\
         --verses 1-1 1-2 1-3 1-4 1-5 1-6 1-7 1-8 1-9
 
 Omit --verses to check every verse rail found in --rails-dir that also
 appears as a block in --translation.
 
-Run from the vault root (bodhisattvachartavatara-rails/).
+Run from the vault root.
 """
 
 from __future__ import annotations
@@ -291,7 +292,7 @@ def run(termbase_path, translation_path, rails_dir, verses):
           f"{n_miss} possible drift/miss{'es' if n_miss != 1 else ''}).")
 
     if misses:
-        print("\nDetail on misses (verify by eye -- may be legitimate French "
+        print("\nDetail on misses (verify by eye -- may be a legitimate "
               "paraphrase, or may be real drift):")
         for vid, lemma, forms in misses:
             snippet = verse_blocks.get(vid, "").strip().replace("\n", " ")

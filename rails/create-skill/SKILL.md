@@ -70,10 +70,17 @@ Four files written or modified:
 
 Create the directory `4-SYSTEM/Skills/<skill-name>/` and write `SKILL.md` using the template below. Fill every placeholder. Do not leave template placeholder text in the output.
 
+Three things decide whether the skill will actually be usable:
+
+- **Frontmatter is mandatory.** A `SKILL.md` with no `name:` and `description:` cannot be discovered or triggered — it is invisible, however good it is. Put the trigger phrases in the `description:`, because that is the text a model matches a request against.
+- **`profile:` says where the skill can run.** `rails-vault` needs a vault's folder layout; `any` works anywhere; `vault-local` means it is specific to one text and must never be synced into another vault or the shared library.
+- **Bundle everything the skill needs.** Scripts go in `<skill-name>/scripts/`, prompts in `prompts/`, copy-me files in `templates/`, background reading in `references/`. A skill that points at a document elsewhere in a vault breaks the moment it is installed somewhere that lacks it. The only things a skill may assume are the folder layout and the vault's own annex.
+
 ```markdown
 ---
 name: <skill-name>
-description: <purpose — one sentence, terse>
+description: <what it does, then the phrases a user would say when they want it — these are what trigger the skill, so write the way people actually ask>
+profile: rails-vault | any | vault-local
 ---
 
 # <skill-name>
@@ -176,6 +183,14 @@ Open `4-SYSTEM/CLAUDE.md` and find the quick-reference table in §12. Append a n
 ```
 
 If `commonly-used` is **no**, skip this step.
+
+### Step 5a — Decide where the skill really belongs
+
+Before finishing, ask whether this skill is specific to *one text* or generic to the method.
+
+If it is generic, it belongs in the **shared skill library**, not only in this vault — otherwise the next vault re-implements it and the two copies drift. Mark it `profile: rails-vault` or `any` and say it should be contributed upstream.
+
+If it is genuinely text-specific — it names this text's chapters, its commentators, its liturgy — mark it `profile: vault-local` so a sync never exports or overwrites it. Being text-specific is a legitimate choice, not a failure; being text-specific *by accident*, because a path or a name was hard-coded that did not need to be, is the failure. Check for that before you decide.
 
 ### Step 6 — Self-verification
 

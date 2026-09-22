@@ -1,6 +1,6 @@
 ---
 name: multilevel-summary
-description: Generate an audience-targeted summary of a verse or chapter of the Bodhisattvacaryāvatāra by extracting meanings from the traditional commentary tradition and calibrating language, length, and fidelity to the specified audience.
+description: Generate an audience-targeted summary of a verse or chapter from the verse and section rails, calibrating language, length, and fidelity to the specified audience.
 profile: rails-vault
 supersedes:
   - bodhisattvacharyavatara-rails/4-SYSTEM/Skills/multilevel-summary/SKILL.md
@@ -8,9 +8,11 @@ supersedes:
 
 # multilevel-summary
 
-This skill produces a summary of a verse or a full chapter, grounded exclusively in the traditional commentaries preserved in `$COMMENTARIES/`. The summary is calibrated to one of three audiences — kids, general, or academic — each with its own priority ranking for fidelity, language register, and length. The output is saved to `$TRANSFORMATIONS/Adaptations/multilevel-summaries/` and ends with Obsidian segment-links pointing back to the specific commentary blocks used.
+This skill produces a summary of a verse or a full chapter, grounded exclusively in the rails compiled from the traditional commentaries: `$VERSES/<verse-id>.md` for verse scope and `$SECTIONS/<node-id>.md` for chapter scope. The summary is calibrated to one of three audiences — kids, general, or academic — each with its own priority ranking for fidelity, language register, and length. The output is saved to `$TRANSFORMATIONS/Adaptations/multilevel-summaries/<audience>/` and ends with Obsidian segment-links pointing back to the specific blocks the rails cite.
 
-The skill prevents free-floating paraphrase: every claim in the summary must be traceable to a commentary block. Nothing is added from parametric knowledge.
+The skill prevents free-floating paraphrase: every claim in the summary must be traceable through a rail to a commentary block. Nothing is added from parametric knowledge.
+
+**Read the rails, not the sources.** A transformation cites `$RAILS/`; it never reaches past the rails into `$SOURCES/`. The one exception is the fallback in Rule 3 below, which is explicitly marked in the output when it is used.
 
 ---
 
@@ -19,10 +21,11 @@ The skill prevents free-floating paraphrase: every claim in the summary must be 
 | Field | Description | Example |
 |---|---|---|
 | `scope-type` | `verse` or `chapter` | `verse` |
-| `scope-id` | Verse ID (`chapter-verse`) or chapter number/name | `1-1` or `1` or `བྱང་ཆུབ་སེམས་ཀྱི་ཕན་ཡོན།` |
+| `scope-id` | Verse ID (in the root text's `verse_id_format`) or chapter number / chapter title | `1-1`, or `1`, or the chapter's own title |
 | `audience` | `kids`, `general`, or `academic` | `general` |
+| `root-text` | The root text this vault addresses, **per `$SYSTEM/Guidelines/vault-annex.md`**. Used only to transclude the verse; never re-interpreted here. | per annex |
 
-If the chapter is given by name rather than number, resolve the number from the chapter heading in `$TRANSLATIONS/bo-བློ་ལྡན་ཤེས་རབ།.md` before proceeding.
+If the chapter is given by name rather than number, resolve the number from the chapter heading (`## N. … ^N-0`) in the root text named in the vault annex before proceeding.
 
 If any required input is missing, ask the human before starting — do not assume.
 
@@ -32,7 +35,7 @@ If any required input is missing, ask the human before starting — do not assum
 
 **Verse scope:**
 ```
-$TRANSFORMATIONS/Adaptations/multilevel-summaries/<audience>/verse-<chapter-verse>.md
+$TRANSFORMATIONS/Adaptations/multilevel-summaries/<audience>/verse-<verse-id>.md
 ```
 
 **Chapter scope:**
@@ -48,12 +51,19 @@ If the file already exists, read it first and update in place, preserving any ma
 
 ```markdown
 ---
+transformation_type: adaptation
+track: multilevel-summaries/<audience>
 scope: verse | chapter
 scope_id: <e.g. 1-1 or 1>
 audience: kids | general | academic
+context_packages:
+  - 2-RAILS/Verses/<verse-id>.md          # or 2-RAILS/Sections/<node-id>.md
 commentaries_used:
   - <registered_id>
   - <registered_id>
+covers_verses: <single id, or first–last for a chapter>
+generation_date: <YYYY-MM-DD>
+note:                                     # set only when the Rule 3 fallback was used
 status: draft
 ---
 
@@ -61,7 +71,7 @@ status: draft
 
 ## Root Text
 
-![[$TRANSLATIONS/bo-བློ་ལྡན་ཤེས་རབ།.md#^<verse-id>]]
+![[1-SOURCES/Text/<lang>-root-text.md#^<verse-id>]]
 
 *(For chapter scope: transclude the chapter heading block and the first verse only, then note the full verse range covered.)*
 
@@ -73,9 +83,9 @@ status: draft
 
 ## Sources
 
-<List of Obsidian block-links to every commentary passage used, one per line, in the format:>
+<List of Obsidian block-links to every commentary passage the rail cites, one per line, in the format:>
 
-- [[$COMMENTARIES/<commentary-file>.md#^<block-id>]] (<registered_id>)
+- [[1-SOURCES/Commentaries/<commentary-file>.md#^<block-id>]] (<registered_id>)
 ```
 
 ---
@@ -98,28 +108,30 @@ Write the summary according to the priority weights for the specified audience. 
 |---|---|
 | 5 | Truth to the commentaries — every claim must trace to a commentary block. No interpretive liberties. |
 | 3 | Not too long — aim for 150–250 words. Include the main point of each major commentary but do not elaborate every sub-division. |
-| 2 | Easy language — prefer plain English or clear modern prose over technical terminology. Translate technical Tibetan/Sanskrit terms on first use. |
+| 2 | Easy language — prefer plain English or clear modern prose over technical terminology. Translate technical original-language terms on first use. |
 
 ### academic (scholar or advanced student)
 
 | Priority | Criterion |
 |---|---|
 | 5 | Truth to the commentaries — cite specific commentators by registered ID for each claim. Note divergences. |
-| 4 | Classical language — use established Dharma terminology (Tibetan/Sanskrit terms in IAST/Wylie with English gloss in parentheses on first use). Match the register of scholarly Buddhist studies writing. |
+| 4 | Classical language — use established Dharma terminology (original-language terms in the vault's standard romanisation, with an English gloss in parentheses on first use). Match the register of scholarly Buddhist studies writing. |
 | 3 | Not too long — aim for 200–350 words. Be comprehensive but not exhaustive; refer to the source blocks for full elaboration. |
 
 ---
 
 ## Rules
 
-1. **Root text source is `bo-བློ་ལྡན་ཤེས་རབ།`** — the Tibetan Kangyur translation at `$TRANSLATIONS/bo-བློ་ལྡན་ཤེས་རབ།.md`. Transclude from this file. Do not use the Sanskrit root text as the primary verse source.
-2. **Commentary passages are found via transclusion markers** — scan each commentary file for `![[$TRANSLATIONS/bo-བློ་ལྡན་ཤེས་རབ།.md#^<verse-id>]]`. The explanation blocks immediately follow this marker, up to the next transclusion marker or section heading.
-3. **Summary content comes only from commentary blocks** — no parametric Buddhist knowledge. If no commentary discusses a verse, state that explicitly in the summary and leave the Sources list empty for that verse.
-4. **All source links go in the Sources section** — use Obsidian block-links (`[[...#^block-id]]`). Do not inline citations in the summary text itself (keep it readable for the audience).
-5. **For chapter scope, cover the chapter in aggregate** — do not produce a verse-by-verse list. Synthesise the overarching theme and key teachings the commentaries draw out across the chapter. You may group verses thematically if the commentaries suggest that structure.
-6. **Divergences are noted at academic level; simplified or omitted at general level; omitted at kids level** — at academic level mark divergences with ⚑ and name the commentators on each side.
-7. **Do not mark `status: complete`** — only a human contributor sets that field. Always write `status: draft`.
-8. **Illustrations (kids only)** — a short bracketed note `[Illustration idea: ...]` may follow the summary if an image would help a child picture the teaching, but only when the commentary itself suggests a concrete image or the teaching has an obvious visual correlate. Never invent doctrine to make an illustration work.
+1. **The rail is the source.** For verse scope read `$VERSES/<verse-id>.md`; for chapter scope read `$SECTIONS/<node-id>.md` for the chapter's node and, where the chapter's verses have packages, their `$VERSES/` files too. The rail's Traditional Interpretation, Synthesis, Divergences and AI Overview are what the summary compresses. Record every rail you read in `context_packages:`.
+2. **Root text per the vault annex.** The Root Text section transcludes the root text that `$SYSTEM/Guidelines/vault-annex.md` names for this vault. Where the annex names more than one source language, use the one it marks primary. Transclude — never copy the verse text in.
+3. **Fallback when no rail exists.** If there is no rail file for the scope, and only then, scan `$COMMENTARIES/` directly: for each commentary, find the verse's transclusion anchor `![[…#^<verse-id>]]` and collect the blocks that follow it up to the next transclusion anchor or the next heading. Some commentaries group several consecutive transclusions and comment after the last one — scan forward through *all* consecutive transclusion lines to the first line of prose, and treat that prose as belonging to every verse in the run. When this fallback is used, the output **must** carry `status: draft` and a frontmatter `note:` saying which scope had no rail and that the summary was taken from the commentaries directly. Say so in the body too. The proper fix is to build the rail with `verse-context` / `section-summary` and regenerate.
+4. **Summary content comes only from the rail (or, under Rule 3, the cited commentary blocks)** — no parametric Buddhist knowledge. If nothing discusses the verse, state that explicitly in the summary and leave the Sources list empty for that verse.
+5. **All source links go in the Sources section** — use Obsidian block-links with full literal paths (`[[1-SOURCES/Commentaries/<file>.md#^<block-id>]]`). Do not inline citations in the summary text itself (keep it readable for the audience).
+6. **For chapter scope, cover the chapter in aggregate** — do not produce a verse-by-verse list. Synthesise the overarching theme and key teachings the rails draw out across the chapter. You may group verses thematically where the section rail suggests that structure.
+7. **Divergences are noted at academic level; simplified or omitted at general level; omitted at kids level** — at academic level mark divergences with ⚑ and name the commentators on each side, exactly as the rail attributes them.
+8. **Do not mark `status: complete`** — only a human contributor sets that field. Always write `status: draft`.
+9. **Illustrations (kids only)** — a short bracketed note `[Illustration idea: ...]` may follow the summary if an image would help a child picture the teaching, but only when the commentary itself suggests a concrete image or the teaching has an obvious visual correlate. Never invent doctrine to make an illustration work.
+10. **Do not generate from an incomplete rail without saying so.** If the rail exists but is not `status: complete`, you may still summarise it, but set `status: draft` and record the rail's status in `note:`.
 
 ---
 
@@ -127,38 +139,39 @@ Write the summary according to the priority weights for the specified audience. 
 
 ### For verse scope
 
-1. Read `$TRANSLATIONS/bo-བློ་ལྡན་ཤེས་རབ།.md` and locate the block `^<chapter-verse>`. Record the verse text.
-2. For each commentary file in `$COMMENTARIES/` (skip the `dup/` subfolder):
-   a. Search for the transclusion marker `![[$TRANSLATIONS/bo-བློ་ལྡན་ཤེས་རབ།.md#^<chapter-verse>]]`.
-   b. If found, collect all block IDs that follow this marker up to the next transclusion marker (`![[...#^...]]`) or the next heading (`##` or `###`). These are the commentary's explanation blocks for this verse.
-   c. Record the commentary's `registered_id` (from its frontmatter) and all collected block IDs.
-3. If no commentary addresses the verse, write a summary noting this and stop. Set `status: draft`.
-4. Read the collected commentary blocks in full.
+1. Read `$SYSTEM/Guidelines/vault-annex.md` and note the root text and the registered commentary IDs.
+2. Open `$VERSES/<verse-id>.md`.
+   a. If it exists: read the Traditional Interpretation (per-commentary paraphrases, Synthesis, Divergences), the AI Overview, and the Disambiguated Restatement. Collect every `(1-SOURCES/Commentaries/<file>.md#^<block>)` citation it carries, together with each commentary's `registered_id`. Note the rail's `status:`.
+   b. If it does not exist: apply the Rule 3 fallback and record that you did.
+3. Locate the block `^<verse-id>` in the root text and record the verse text (for the transclusion line and for your own reading — not to be copied into the output).
+4. If nothing addresses the verse, write a summary noting this and stop. Set `status: draft`.
 5. Draft the **Summary** section according to the audience priority rules for the specified audience.
 6. Draft the **Sources** section: one Obsidian block-link per collected block, labelled with the `registered_id`.
-7. Fill the YAML frontmatter. List only `registered_id` values for commentaries that actually had blocks for this verse.
-8. Write the file to `$TRANSFORMATIONS/Adaptations/multilevel-summaries/<audience>/verse-<chapter-verse>.md`.
+7. Fill the YAML frontmatter: `transformation_type: adaptation`, `track: multilevel-summaries/<audience>`, `context_packages:` listing every rail read, `commentaries_used:` listing only the `registered_id` values that actually had blocks for this verse, `covers_verses:`, `generation_date:`, `status: draft`, and `note:` where Rule 3 or Rule 10 applies.
+8. Write the file to `$TRANSFORMATIONS/Adaptations/multilevel-summaries/<audience>/verse-<verse-id>.md`.
 
 ### For chapter scope
 
-1. Read `$TRANSLATIONS/bo-བློ་ལྡན་ཤེས་རབ།.md`. Identify the chapter heading `## N.` and collect the block IDs of all verses in that chapter (`^N-1` through `^N-last`).
-2. For each verse in the chapter, run steps 2–3 from the verse procedure above, accumulating all commentary blocks across all verses.
-3. Read all collected blocks. Identify the major themes and structural divisions the commentaries draw out across the chapter.
+1. Read the vault annex as above. Identify the chapter heading `## N. … ^N-0` in the root text and collect the block IDs of all verses in that chapter.
+2. Open `$SECTIONS/<node-id>.md` for the chapter's outline node and read its per-commentary summaries and English translation. Then open every `$VERSES/<verse-id>.md` that exists for the chapter's verses and read them. Accumulate the citations across all of them. Where neither a section rail nor any verse rail exists, apply the Rule 3 fallback for the chapter and record it.
+3. Read all collected material. Identify the major themes and structural divisions the rails draw out across the chapter.
 4. Draft the **Summary** as a chapter-level synthesis (not a verse-by-verse list) according to the audience priority rules.
 5. Draft the **Sources** section listing all commentary blocks used, grouped by `registered_id`.
-6. Fill the YAML frontmatter with the chapter number as `scope_id`.
+6. Fill the YAML frontmatter with the chapter number as `scope_id`, the chapter's verse range as `covers_verses:`, and every rail read in `context_packages:`.
 7. Write the file to `$TRANSFORMATIONS/Adaptations/multilevel-summaries/<audience>/chapter-<N>.md`.
 
 ---
 
 ## Completion check
 
-- [ ] `scope`, `scope_id`, `audience`, and `commentaries_used` are set in frontmatter; `status: draft`
-- [ ] Root Text section transcludes (does not copy) the verse or chapter opening from `bo-བློ་ལྡན་ཤེས་རབ།.md`
-- [ ] Every claim in the Summary traces to a block in `$COMMENTARIES/`
+- [ ] `transformation_type: adaptation`, `track:`, `scope`, `scope_id`, `audience`, `context_packages`, `commentaries_used`, `covers_verses`, `generation_date` are set in frontmatter; `status: draft`
+- [ ] Every rail read is listed in `context_packages:`
+- [ ] Root Text section transcludes (does not copy) the verse or chapter opening from the root text the vault annex names
+- [ ] Every claim in the Summary traces to a rail, and through it to a block in `$COMMENTARIES/`
+- [ ] If the Rule 3 commentary-scan fallback was used, `note:` says so and the body says so
 - [ ] Summary length and register match the audience priority table (kids ≤ 150 w, general ≤ 250 w, academic ≤ 350 w)
 - [ ] Kids summaries: concrete language, illustration note present if applicable
 - [ ] Academic summaries: divergences flagged with ⚑, commentators named by `registered_id`
-- [ ] Sources section lists every commentary block used as an Obsidian block-link
+- [ ] Sources section lists every commentary block used as an Obsidian block-link with a full literal path
 - [ ] No parametric Buddhist knowledge introduced without a source block citation
 - [ ] File written to the correct path under `$TRANSFORMATIONS/Adaptations/multilevel-summaries/`

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Lint a verse-translation file for rails-to-verse-translation (Step 7).
+"""Lint a verse-translation file for verse-translate (Step 7).
 
 Checks structure (verse count, numbering contiguity, lines per verse, caesura,
 terminal mark, line-ending whitespace), termbase compliance (locked renderings

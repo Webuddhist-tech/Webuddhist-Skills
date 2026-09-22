@@ -3,8 +3,9 @@ name: tag-inline-toc
 description: >
   Identify inline structural announcement phrases (sa bcad) in a formatted
   text file, wrap the announced terms in wikilinks, and insert standalone
-  markdown heading lines with block IDs per 4-SYSTEM/Pipelines/wikipedia/docs/reference/conventions.md.
-  Run after a format-*-root-text skill, before promotion to annotated.md.
+  markdown heading lines with block IDs per rails/CONVENTIONS.md section 5.
+  Run after a format-*-root-text skill, on a working copy in $WORK/ — the
+  result replaces the canonical file under $SOURCES/ only after human review.
 
   Trigger this skill when the user says things like:
   "tag the inline TOC", "add wikilinks to the outline phrases",
@@ -19,6 +20,10 @@ supersedes:
 ---
 
 # tag-inline-toc
+
+> **Locations.** `$SKILL` is this skill's own directory. `$SOURCES` and `$WORK`
+> resolve per repo — see `rails/PROFILES.md`. The wikilink convention this skill
+> implements is `rails/CONVENTIONS.md` §5.
 
 > **OPTIONAL step.** Run this skill only for texts that contain inline
 > structural announcements (*sa bcad* or an equivalent pattern in another
@@ -38,10 +43,9 @@ doing **two things**:
    through `######`) with a block ID immediately before each section-body
    paragraph.
 
-This implements the convention in `4-SYSTEM/Pipelines/wikipedia/docs/reference/conventions.md`
-("Inline TOC phrases — wikilink tagging"). The output is saved to
-`$WORK/` and is **not** yet `annotated.md`; human review is
-required before it is promoted.
+This implements the convention in `rails/CONVENTIONS.md` §5 ("Inline TOC
+wikilinks"). The output is saved to `$WORK/` and is **not** yet the canonical
+file under `$SOURCES/`; human review is required before it replaces that file.
 
 ---
 
@@ -71,7 +75,7 @@ in this skill is the Phase-2 renderer.
 ### Flow
 
 ```
-  $WORK/segmented.md
+  the canonical file under $SOURCES/  (read-only input)
        │
        ▼  PHASE 1 — model, reading for meaning
    1. Frame:      identify the top-level division + chapter boundaries (TOC of the TOC)
@@ -86,7 +90,7 @@ in this skill is the Phase-2 renderer.
    5. Render:     assign block IDs from depth, insert headings, wrap wikilinks by anchored
                   exact match, PROVE existing prose is unchanged, then write.
        ▼
-  $WORK/tagged-segmented.md
+  $WORK/tagged-<filename>.md
 ```
 
 Because block IDs are assigned by code, depth-skipping and numbering bugs are
@@ -111,7 +115,7 @@ substrings that already exist.
 
 | Field | Description |
 |---|---|
-| Input file | Path to a formatted text file — typically `$WORK/segmented.md` |
+| Input file | Path to a formatted text file — normally the canonical file under `$SOURCES/`, or a working copy of it under `$WORK/` |
 
 The input file must already have:
 - YAML frontmatter (at minimum `title:`, `author:`, `file_type:`, `language_tag:`)
@@ -217,7 +221,7 @@ no tree yet. One record per candidate. Worked example:
 
 ```json
 {
-  "source_file": "$WORK/segmented.md",
+  "source_file": "$SOURCES/<filename>.md",
   "candidates": [
     {
       "line": 4999,
@@ -270,7 +274,7 @@ contract; full schema: `scripts/annotation.schema.json`, worked example:
 
 ```json
 {
-  "source_file": "$WORK/segmented.md",
+  "source_file": "$SOURCES/<filename>.md",
   "sections": [
     { "depth": 1, "heading_title": "<term>", "body_start_context": "<verbatim line>", "restatement": "<verbatim prefix>" },
     { "depth": 2, "heading_title": "<term>", "body_start_context": "<verbatim line>", "restatement": "<verbatim prefix>",
@@ -368,10 +372,10 @@ chapters' sections in document order into one annotation file:
 ### Step 5 — Render + verify (Phase 2, the script)
 
 ```bash
-python3 skills/tag-inline-toc/scripts/tag_inline_toc.py render \
-    --input  $WORK/segmented.md \
-    --annot  $WORK/segmented.md.annotation.json \
-    --output $WORK/tagged-segmented.md
+python3 $SKILL/scripts/tag_inline_toc.py render \
+    --input  "$SOURCES/<filename>.md" \
+    --annot  "$WORK/<filename>.annotation.json" \
+    --output "$WORK/tagged-<filename>.md"
 ```
 
 The script assigns block IDs, inserts headings, wraps wikilinks by anchored
@@ -385,14 +389,14 @@ report and fails non-zero on any problem:
 
 Re-check any tagged file at any time:
 ```bash
-python3 skills/tag-inline-toc/scripts/tag_inline_toc.py verify \
-    --input <input-file> --tagged $WORK/tagged-segmented.md
+python3 $SKILL/scripts/tag_inline_toc.py verify \
+    --input <input-file> --tagged "$WORK/tagged-<filename>.md"
 ```
 
 Then report to the user: the render counts, the output path, and every node
-you marked `"review"`. The output stays in `$WORK/` — it is
-**not** `annotated.md`. Human review is required before promotion to
-`annotated.md`.
+you marked `"review"`. The output stays in `$WORK/` — it is **not** the
+canonical file. Human review is required before it replaces the file under
+`$SOURCES/`.
 
 ---
 
@@ -405,7 +409,7 @@ you marked `"review"`. The output stays in `$WORK/` — it is
 5. **Verbatim spans only.** Every `text`/`children`/`name`/`context`/`term`/`restatement` is exact bytes from the source.
 6. **Heading title is the short section name**, not the full ordinal phrase. **Wrap only the minimal structural term.**
 7. **Chapter label lines and editorial locator markers are never tagged**; the sa bcad after a marker is.
-8. **Output goes to `$WORK/`**, never overwrites `raw.md` or `annotated.md` directly.
+8. **Output goes to `$WORK/`**, never overwrites the canonical file under `$SOURCES/` directly. Promoting the tagged copy over that file is a human decision, taken after review.
 
 ---
 
@@ -416,29 +420,29 @@ you marked `"review"`. The output stays in `$WORK/` — it is
 - [ ] Step 3: artifact reviewed once; look-alikes dropped; counts vs named children confirmed
 - [ ] Step 4: per-chapter join+reconstruction into one annotation; ambiguities marked `"review"`
 - [ ] Step 5: `tag_inline_toc.py render` exited 0 with a prose-integrity VERIFIED report
-- [ ] Output written to `$WORK/tagged-<filename>`; review nodes reported to the user
+- [ ] Output written to `$WORK/tagged-<filename>.md` — the canonical file under `$SOURCES/` untouched; review nodes reported to the user
 
 ---
 
 ## Provenance
 
-Adapted from `bodhisattvacharyavatara-rails/4-SYSTEM/Skills/tag-inline-toc/`.
-Paths changed from `$WORK/segmentation/` / `$WORK/` to
-`$WORK/`; `tag_inline_toc.py`'s default output-path helper
-(`derive_output_path`) changed from a hardcoded `$WORK/temp` constant to
-"same directory as `--input`". Marked OPTIONAL per this repo's pipeline —
-most texts will not have inline sa-bcad structural announcements.
+The hard-coded vault paths it used for its working files (`0-INBOX/segmentation/`
+and `0-INBOX/temp/`) are now the logical name `$WORK/`, resolved per repo from
+`rails/PROFILES.md`; `tag_inline_toc.py`'s default output-path helper
+(`derive_output_path`) changed from that hard-coded temp constant to "same
+directory as `--input`". The conventions document it cites is now
+`rails/CONVENTIONS.md` §5. Marked OPTIONAL — most texts have no inline
+*sa bcad* structural announcements at all.
 
 ---
 
-## Provenance
+## Provenance — the earlier library-pipeline port
 
 Ported verbatim 2026-08-01 from
 `webuddhist-library-data-pipeline/skills/tag-inline-toc/` (SKILL.md +
 `scripts/find_sa_bcad.py`, `tag_inline_toc.py`, `annotation.schema.json`,
-`example-annotation.json`, `example-candidates.json`). The
-`4-SYSTEM/Pipelines/wikipedia/docs/reference/conventions.md` it cites resolves to this repo's own
-`4-SYSTEM/Pipelines/wikipedia/docs/reference/conventions.md`.
+`example-annotation.json`, `example-candidates.json`). The conventions
+document it cited there is now `rails/CONVENTIONS.md` §5.
 
 ### Change on 2026-08-01 — line-number anchors
 
@@ -447,8 +451,9 @@ Ported verbatim 2026-08-01 from
 the context string. `find_unique_line` is unchanged and still handles the
 context-only form, so every existing annotation renders identically.
 
-The reason is the tara21 corpus. Its sixteen commentaries are prose
-`བསྟོད་འགྲེལ` whose sa-bcad body openers are near-universally `དང་པོ་ནི།`,
+The reason is corpora of the following shape (a worked example: a
+sixteen-commentary corpus of prose `བསྟོད་འགྲེལ` on one praise text). Their
+sa-bcad body openers are near-universally `དང་པོ་ནི།`,
 `གཉིས་པ་ནི།`, `དེ་ལ་གསུམ།` — lines that recur up to forty times in one file with
 no unique substring anywhere on them. Under the context-only contract those
 sections are simply unannotatable: the model has nothing it can legally copy.

@@ -38,20 +38,20 @@ Setup:
 
 Usage:
     # basic run (commentary-id inferred from filename):
-    python3 4-SYSTEM/Skills/commentary-resegment/scripts/resegment.py \\
-        "1-SOURCES/commentaries/commentaries_with_toc/BCAC14_GDR_bo.toc.md"
+    python3 4-SYSTEM/Skills/segment-commentary/scripts/resegment.py \\
+        "1-SOURCES/Commentaries/<commentary-id>.toc.md"
 
     # explicit id:
-    python3 ... "<file>" --commentary-id BCAC14_GDR_bo
+    python3 ... "<file>" --commentary-id <commentary-id>
 
     # resume an interrupted run (staged windows are skipped):
-    python3 ... "<file>" --commentary-id BCAC14_GDR_bo
+    python3 ... "<file>" --commentary-id <commentary-id>
 
     # re-apply already-staged ops without new LLM calls (e.g. after hand-editing a window):
-    python3 ... "<file>" --commentary-id BCAC14_GDR_bo --apply-only
+    python3 ... "<file>" --commentary-id <commentary-id> --apply-only
 
     # integrity check only, write nothing:
-    python3 ... "<file>" --commentary-id BCAC14_GDR_bo --dry-run
+    python3 ... "<file>" --commentary-id <commentary-id> --dry-run
 """
 
 import argparse
@@ -73,7 +73,7 @@ RETRY_BACKOFF_BASE     = 8     # seconds; grows exponentially per attempt
 MAX_BACKOFF            = 120   # cap on a single wait
 
 TEMP_BASE   = "0-INBOX/temp"
-OUTPUT_BASE = "0-INBOX/resegmented"
+OUTPUT_BASE = "0-INBOX/temp/resegmented"
 
 # Lines ending in a sentence-final particle + shad are safe window-cut points:
 # a merge never crosses a sentence boundary, so cutting here loses no grouping.

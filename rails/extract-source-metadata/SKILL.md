@@ -51,13 +51,16 @@ for that `file_type` — this skill extracts, it does not decide the schema.
 
 The deep pass. Traditional colophons follow recognisable formulae; this mode reads them rather than pattern-matching for names.
 
-This skill extracts structured metadata from a source file (typically a
-Derge-catalog-style file, e.g. filenames starting with `D`, under
-`texts/<text-id>/`) by analysing the first and last 200 syllables of the
-text. It uses the LLM to identify the author, title, language, and other
-colophon information, then writes the extracted metadata into the YAML
-frontmatter (Properties) of the **same file**, leaving the filename and body
-content unchanged.
+This mode extracts structured metadata from a source file by analysing the
+first and last 200 syllables of the text. It uses the LLM to identify the
+author, title, language, and other colophon information, then writes the
+extracted metadata into the YAML frontmatter (Properties) of the **same file**,
+leaving the filename and body content unchanged.
+
+**Catalogue IDs are optional.** Where the filename itself encodes a catalogue
+number — a Derge `D####`, a Taishō number, a Tōhoku number — record it in the
+matching frontmatter field. Where it does not, omit that field and carry on;
+nothing about this mode depends on a catalogue-style filename.
 
 This skill prevents the common failure mode of manually guessing metadata or
 reading entire large files when the relevant information is concentrated in
@@ -69,8 +72,9 @@ the title block and colophon.
 
 | Input | Description | Required |
 |---|---|---|
-| `file_path` | Path to a source file under `texts/<text-id>/` whose filename starts with `D` (e.g. `D3872.txt`) | yes |
-| `batch` | If `true`, process all `D*` files found under `texts/` sequentially. Overrides `file_path`. | no (default: `false`) |
+| `file_path` | Path to the source file | yes |
+| `file_type` | `root-text`, `commentary`, `translation` or `reference` — **taken from context**: the folder the file sits in, the caller's instruction, or the file's existing frontmatter. Never assumed. If it cannot be determined, ask. | yes |
+| `batch` | If `true`, process a caller-supplied set of files sequentially. Overrides `file_path`. | no (default: `false`) |
 
 If neither `file_path` nor `batch: true` is provided, ask the user which
 file(s) to process.
@@ -88,9 +92,8 @@ populated with the extracted metadata. The filename and body content are
 The following fields are written into the file's YAML frontmatter block. If
 a frontmatter block already exists, update only these fields; leave any
 other existing fields untouched. If no frontmatter block exists, prepend
-one. See `docs/reference/frontmatter-schema.md` for how these fields map
-onto this repo's root-text schema once the file is promoted toward
-`annotated.md`.
+one. The `frontmatter` skill owns the full schema for each `file_type`; this
+mode only fills in what the text's own head and tail state.
 
 ```yaml
 ---
@@ -98,11 +101,12 @@ title:                        # exact title of the work in original script
 title_in_english:             # English translation of the title
 author:                       # author name in original script
 author_in_english:            # romanized/English author name
-file_type: root-text
-language: Tibetan             # or Sanskrit, Chinese, etc.
-lang_tag: bo                  # tag: bo, sa, zh, en, etc.
-source_description: ""        # to be filled by user later
-derge_catalog_id:             # original D-number, e.g. D3872
+file_type:                    # from context — root-text | commentary | translation | reference
+language:                     # e.g. Tibetan, Sanskrit, Chinese
+lang_tag:                     # tag from About Sources §12 — bo, sk, zh, pi, en …
+source_description: ""        # to be filled by a human later
+colophon:                     # the colophon transcribed, or a short summary of what it states
+derge_catalog_id:             # only when the filename carries one — omit otherwise
 ---
 ```
 
@@ -117,10 +121,11 @@ The body content of the file is **not modified**.
 3. **Do not read the middle of the text.** The skill must work without loading the full file body into the LLM context. Read only the head and tail regions.
 4. **The LLM analyses only the extracted syllable regions.** From the colophon region, extract: author name, translator name (if present), place of composition (if present), and any closing dedication or attribution. From the title region, extract: formal title and Sanskrit/alternate title (if present).
 5. **The `lang_tag` is determined from the text content**, not assumed. Verify from the opening lines (look for language-declaration markers, e.g. Tibetan `རྒྱ་གར་སྐད་དུ།` / `བོད་སྐད་དུ།`).
-6. **The `derge_catalog_id` is extracted from the original filename** (e.g. `D3872` from `D3872.txt`).
+6. **A catalogue ID is extracted from the original filename only when it carries one** (e.g. `D3872` from `D3872.txt` → `derge_catalog_id`). It is an optional field, not a precondition: a file with an ordinary filename is processed exactly the same way, with the field omitted.
 7. **Do not rename or move the file.** Only the frontmatter of the existing file is updated.
 8. **Do not modify the body content of the file.** Only the YAML frontmatter block is written or updated.
 9. **If the LLM cannot confidently identify the author**, set `author: unknown` in frontmatter and report this to the user.
+10. **`file_type` comes from context, never from a default.** The folder the file sits in, the caller's instruction, or the file's existing frontmatter decide it. Writing `root-text` onto a commentary sends every downstream schema check the wrong way.
 
 ---
 
@@ -128,9 +133,9 @@ The body content of the file is **not modified**.
 
 #### Step 1 — Validate the input file
 
-1. Confirm the file exists at the given path under `texts/<text-id>/`.
-2. Confirm the filename starts with `D`.
-3. Extract the Derge catalog ID from the filename (e.g. `D3872`).
+1. Confirm the file exists at the given path.
+2. Establish its `file_type` from context (folder, caller, existing frontmatter). If it is genuinely unclear, ask rather than defaulting.
+3. If the filename carries a catalogue ID (e.g. `D3872`), extract it; otherwise skip this step.
 
 #### Step 2 — Extract syllable regions
 
@@ -183,7 +188,7 @@ catalog ID.
 #### Step 6 — Batch mode (if applicable)
 
 If `batch: true`:
-1. List all files matching `D*.txt` and `D*.md` under `texts/`.
+1. Take the caller-supplied file list (or glob), which must name a real folder in this repo — a catalogue-style filename pattern is one possible glob, not a requirement.
 2. For each file, execute Steps 1–5.
 3. At the end, report a summary table: filename → author → title.
 
@@ -195,17 +200,12 @@ If `batch: true`:
 - [ ] Exactly 200 syllables extracted from each end (or full text if shorter)
 - [ ] Middle of the text was not read into LLM context
 - [ ] Frontmatter has all fields populated (or marked `unknown`)
-- [ ] `derge_catalog_id` in frontmatter matches the original filename
+- [ ] `file_type` taken from context, not defaulted
+- [ ] A catalogue ID field is present only where the filename actually carries one, and matches it
 - [ ] Filename is unchanged
 - [ ] Body content of the file is unmodified
 
 ---
-
-### Provenance
-
-Adapted from `bodhisattvacharyavatara-rails/4-SYSTEM/Skills/colophon-metadata-extractor/SKILL.md`.
-`$COMMENTARIES/raw/` references replaced with the `texts/<text-id>/`
-per-text contract.
 
 ---
 
@@ -213,8 +213,8 @@ per-text contract.
 
 The general fallback. Run after mode 1, for fields still empty.
 
-This skill defines the standard procedure for extracting metadata from a
-source text under `texts/<text-id>/` and adding it as frontmatter properties.
+This mode defines the standard procedure for extracting metadata from a source
+text under `$SOURCES/` and adding it as frontmatter properties.
 
 ### Context
 Source texts (especially traditional Tibetan and Chinese texts, like
@@ -231,11 +231,12 @@ analyze the middle of the text**.
 3. **Apply Properties:** Edit only the YAML frontmatter block at the top of the file — never rewrite the whole document — to add the extracted metadata.
 
 ### Recommended Properties
-When extracting, aim to populate the following properties (see
-`docs/reference/frontmatter-schema.md` for the full root-text schema):
+When extracting, aim to populate the following properties (the `frontmatter`
+skill owns the full schema for each `file_type`):
 - `title`: The formal title of the work.
 - `author`: The author or composer.
 - `translator`: The translator, if applicable.
+- `colophon`: The colophon transcribed, or a short factual summary of what it states. This is the one field that preserves the evidence the other fields were read from, so a later reader can check them without reopening the source.
 - `source_description`: A brief description of the source material derived from the colophon.
 
 ### Example: extracting from a Tibetan file's title and colophon
@@ -244,7 +245,7 @@ If a user asks you to add properties to a Tibetan-language source file:
 2. Look at the top-most lines to identify the title.
 3. Look at the bottom-most lines to identify the colophon.
 4. Ignore the rest of the text body.
-5. Edit the YAML frontmatter block to add `title`, `author`, and
+5. Edit the YAML frontmatter block to add `title`, `author`, `colophon` and
    `source_description` based on what you found.
 
 ### Important Note
@@ -257,13 +258,3 @@ and safe.
 - **Do not hallucinate:** If a specific piece of information (like an English translation) is not available in the title or colophon, do not invent it. Either skip that property or leave it empty.
 - **Efficiency:** Stick strictly to the title and colophon to keep processing fast and focused.
 
----
-
-### Provenance
-
-Adapted from `bodhisattvacharyavatara-rails/4-SYSTEM/Skills/source-property-extractor/SKILL.md`.
-References to the `1-Human-Sources`/`1-SOURCES` folders are replaced with the
-`texts/<text-id>/` per-text contract. The original skill instructed calling
-an Obsidian `update_frontmatter` tool; this repo has no such tool, so the
-instruction is generalised to "edit only the YAML frontmatter block" using
-the standard file-editing tool available in this environment.

@@ -62,7 +62,7 @@ The sibling of `dharmamitra-translate` for languages DharmaMitra's `cat-translat
 
 The output is a **machine baseline**: `track_type: machine-baseline`, `rails_used: none`, `status: draft`, never cited by any other `$TRANSFORMATIONS/` output, never promoted past draft by an LLM.
 
-This is the 21-taras-rails fork of the Liturgy-rails skill (imported 2026-09-17). The corpus drivers of the Liturgy version (`gm_corpus.py`, `gm_launch.py`, `gm_titles.py`, `gm_names.py`) were **not** imported — this vault serves one text and has no title registry; they remain in `Liturgy-rails/.claude/skills/gemini-translate/scripts/` if a corpus is ever needed here. Everything the DharmaMitra skill says under **This vault's conventions** (track layout, `<source stem>-<tag>.md`, transclusion layout, `--headings`, preserved frontmatter, no stamping pass, warning in the `note:` key, upload via `translation-upload`) applies here unchanged.
+This engine assumes a vault that serves **one text**. A collection vault translating many short texts at once needs corpus drivers this skill does not carry — a title registry and a batch launcher — because its unit of work is the corpus, not the file. Everything Engine 2 states under **Conventions** (track layout, output filename, transclusion layout, the headings flag, preserved frontmatter, the warning in the `note:` key, and publishing via `translation-upload`) applies here unchanged.
 
 ---
 
@@ -192,11 +192,11 @@ Correct output is a track folder whose translation file carries one target-langu
 
 The failure mode it prevents: silently mixing machine output into the vault's cited translation chain. Everything this skill writes is labelled `track_type: machine-baseline`, `rails_used: none`, and is explicitly ineligible to be cited by any `$TRANSFORMATIONS/` output or marked `complete`.
 
-This is the 21-taras-rails fork of the Liturgy-rails skill (imported 2026-09-17). What differs from the Liturgy version is marked `FORK(21-taras-rails)` in `scripts/dm_translate.py` and summarised in **This vault's conventions** below.
+The behaviour that is specific to a single-text vault — the default track root, the rendered filename rule, the warning written into the `note:` key, and heading handling — is marked `SINGLE-TEXT VAULT` in `$SKILL/scripts/dm_translate.py` and summarised under **Conventions** below. A collection vault overrides those four points and leaves the rest.
 
 ---
 
-### This vault's conventions (read first)
+### Conventions (read first)
 
 | Topic | Rule here |
 |---|---|
