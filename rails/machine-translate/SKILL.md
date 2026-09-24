@@ -220,7 +220,7 @@ This is the 21-taras-rails fork of the Liturgy-rails skill (imported 2026-09-17)
 | **Source language** | Which `input_*` field the blocks fill: `tibetan` (default), `sanskrit`, `chinese`, `pali`. | no |
 | **Style instruction** | Free-form prose read **verbatim** by the API model. Lives at `<track>/style.md`; seeded on first run and human-editable thereafter. | no |
 | **Context header** | A work-neutral preamble prepended to every call's `context`; the per-text `Work: <title> (author: …)` line is derived from the source's frontmatter and appended at call time. Lives at `<track>/context-header.md`. | no |
-| **Glossary** *(optional)* | A file of `source term<TAB>target rendering` lines. Entries whose source term appears in the current block are added to that call's context. | no |
+| **Glossary** *(optional)* | A file of `source term<TAB>target rendering[<TAB>block ids]` lines. Entries whose source term appears in the current batch are added to that call's context. The optional third column scopes a line to those block IDs, for a term whose rendering depends on the verse (དབང: "power" at 1-10, "empowerment" at 2-3); two unscoped renderings of one term trigger a warning. Build it from a graded-translate termbase with `graded-translate/scripts/termbase_to_glossary.py`. **It is a hint, not a constraint** — see Rule 13. | no |
 | **Extra frontmatter** *(optional)* | `--extra-fm <file.json>`: keys to seed or override on render (researched `title`, `text_id`, `imported_from`, …). | no |
 
 If the target language is not stated in the user's request, ask before running. Do not default to English silently.
@@ -330,6 +330,9 @@ A batch is also closed at a **heading boundary** — sections are never mixed �
 8. **Respect the rate limit — it is a DAILY quota** (400 requests per day, observed 2026-08-27). Count calls, not blocks; `--dry-run` prints the call count without spending any. A daily 429 aborts immediately; short-burst 429s back off 20 s → 180 s. Never run several instances in parallel.
 9. **The ledger is append-only.** Never hand-edit it. To change a rendering, edit `style.md` and re-run that block with `--force --only <id>`; the newest record wins at render time.
 10. **Report a partial run as partial.** `blocks_translated` / `blocks_total` must match reality.
+11. **Network failures that retrying cannot fix stop at once.** A proxy refusing the connection (`Tunnel connection failed: 403` — typical inside a Cowork/Claude sandbox, whose egress policy may not include dharmamitra.org) and a TLS certificate failure (`CERTIFICATE_VERIFY_FAILED`, typical of python.org builds on macOS) now abort the run immediately with an explanation, instead of six back-off retries. For the first, run the command from a terminal with direct internet access (the ledger resumes where the sandbox stopped) or allowlist the host; for the second, `pip3 install --upgrade certifi` — the script uses certifi's CA bundle automatically when `SSL_CERT_FILE` is not set.
+12. **Sandbox runs.** From a Claude/Cowork session the call may be blocked by the session's network policy even though your own machine can reach DharmaMitra. That is expected; hand the exact command to the user to run locally.
+13. **The glossary does not enforce terminology.** It is appended to the context as a suggestion. Measured on the Twenty-One Tārās: the glossary-primed English draft was ~88% identical to the unprimed zero-shot draft and still used "zombies" and "yakṣas" where the glossary said vetāla and yaksas. Enforce locked terms afterwards with `graded-translate` Phase 2 (and check with its Phase 3 script).
 
 ---
 
