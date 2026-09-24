@@ -212,6 +212,29 @@ status: draft
 
 ---
 
+## 8. Translation track folder layout
+
+The current translation is the only note at the top of its track folder; the evidence
+behind it goes in `reports/`, and machine drafts live in their own track folders.
+A reader should never have to guess which file to use.
+
+```
+3-TRANSFORMATIONS/Translations/
+├── 00-INDEX-current-translations.md   ← one row per language: current file, draft, checks, what's left
+├── <lang>-<grade>/
+│   ├── <source stem>-<lang>-<grade>.md  ← the current translation (edited in place, draft N)
+│   └── reports/                       ← fact-check reports, consensus, fixes logs,
+│                                         back-translation and consistency checks, comparisons
+├── Dharmamitra/<tag>/                 ← machine drafts (machine-translate); raw, never edited by hand
+└── Gemini/<tag>/
+```
+
+- Skills that write a report about a translation write it to `<translation-dir>/reports/`
+  and link it from the translation's frontmatter (§7) by its full vault path.
+- A new draft replaces the text in place (§7 records the history); never add a second
+  "final" copy next to it.
+- Update the index row when a translation's draft number, checks or status change.
+
 ## Provenance
 
 Consolidated from `webuddhist-library-data-pipeline/docs/reference/conventions.md`

@@ -76,7 +76,7 @@ that a bare verse line can't.
 | **Translation** | ✓ | Path to the English translation file to audit (e.g. `$TRANSLATIONS/translation-ai/bo-en-translation/bca-en-plain.md`, or a graded `$TRANSFORMATIONS/.../bca-en-<grade>.md`). |
 | **Scope** | ✓ | A chapter number, `colophon`, or an explicit verse range (e.g. `1-1 to 1-5`). Never default to "the whole text" — pick a bounded scope so each verse gets a full term-alignment pass. |
 
-Report file: `<translation-dir>/commentary-fact-check-report-<commentary-id>-<translation-name>.md`
+Report file: `<translation-dir>/reports/commentary-fact-check-report-<commentary-id>-<translation-name>.md`
 (one file per commentary×translation pair, so audits of the same text against
 different commentaries never overwrite each other). Create on first use.
 
@@ -265,7 +265,7 @@ two of Drakpa Gyaltsen's seven "errors" were contradicted by the three other
 commentaries checked, and one (Vindhya at 1-17) split 2–2.
 
 When two or more commentaries have Phase 1 reports for the same translation, build
-`<translation-dir>/commentary-fact-check-consensus-<translation-name>.md`:
+`<translation-dir>/reports/commentary-fact-check-consensus-<translation-name>.md`:
 
 1. List every issue any report raised (ERROR or MISMATCH), one row per issue.
 2. For each commentary mark ✗ (says the English is wrong), ✓ (its gloss supports the
@@ -309,7 +309,7 @@ not decided by the LLM.
 
 | Input | Required | Description |
 |---|---|---|
-| **Report** | ✓ | The Phase 1 report for one commentary (`<translation-dir>/commentary-fact-check-report-<commentary-id>-<translation-name>.md`) or, when several were checked, the Phase 1b consensus table. The source of every flagged row this skill acts on. If it doesn't exist, stop: nothing to fix. |
+| **Report** | ✓ | The Phase 1 report for one commentary (`<translation-dir>/reports/commentary-fact-check-report-<commentary-id>-<translation-name>.md`) or, when several were checked, the Phase 1b consensus table. The source of every flagged row this skill acts on. If it doesn't exist, stop: nothing to fix. |
 | **Scope** | recommended | A chapter number, `colophon`, or explicit verse range (e.g. `2-1 to 2-20`). If omitted, use every flagged row in the report that hasn't yet been resolved (see the Fix Log in Output). |
 | **Commentary source** | fixed | The commentary the report cites (with a consensus table, the commentaries it lists) — re-read, or reuse `/tmp/commentary.json` from Phase 1, to ground each fix. No commentary the report did not cite. |
 | **Target translation** | fixed | The translation file named in the report header — the file this skill edits. |
@@ -321,7 +321,7 @@ not decided by the LLM.
 | Location | Action |
 |---|---|
 | `<translation>.md` | Edited in place — only the specific flagged line(s) for each MECHANICAL fix. Nothing else in the file changes. |
-| `<translation-dir>/commentary-fact-check-fixes-log-<translation-name>.md` | Created (first run) or appended (later runs) — a dated changelog of every fix applied and every fix skipped. |
+| `<translation-dir>/reports/commentary-fact-check-fixes-log-<translation-name>.md` | Created (first run) or appended (later runs) — a dated changelog of every fix applied and every fix skipped. |
 | the report / consensus file | Updated by re-invoking `commentary-fact-check` on the same range (that skill's own re-check-replaces-subsection behavior applies here, not a separate write path owned by this skill). |
 
 ---
