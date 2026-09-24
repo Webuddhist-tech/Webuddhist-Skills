@@ -178,6 +178,13 @@ def main(argv=None):
         if p.exists() and not a.force:
             raise SystemExit(f"{p} exists — pass --force to rebuild it from the decisions file")
 
+    kept = 0
+    if out_g.exists():       # a rebuild must not wipe the Phase 2 text already written back
+        old = load_json(out_g)
+        for vid, v in g.items():
+            t = (old.get(vid) or {}).get(f"{L}_text")
+            if t:
+                v[f"{L}_text"] = t; kept += 1
     out_tb.write_text(json.dumps(tb, ensure_ascii=False, indent=2), encoding="utf-8")
     out_g.write_text(json.dumps(g, ensure_ascii=False, indent=1), encoding="utf-8")
     load_json(out_tb); load_json(out_g)
@@ -212,6 +219,8 @@ def main(argv=None):
     print(f"termbase   : {out_tb}  ({len(tb)} entries, {len(only)} {L}-only, {len(fl)} flagged)")
     print(f"grade file : {out_g}  ({len(g)} verses, {sum(len(v['keywords']) for v in g.values())} keywords)")
     print(f"review     : {out_md}")
+    if kept:
+        print(f"kept       : {kept} verses' {L}_text from the previous grade file")
     print("next       : validate_grade_file.py --lang", L, "; check_termbase_consistency.py --lang", L,
           "--grade-file … --translation <machine draft> (baseline → _meta.baseline); termbase_to_glossary.py --lang",
           L, "--scope-all")

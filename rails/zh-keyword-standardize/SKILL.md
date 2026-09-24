@@ -193,7 +193,10 @@ python3 $SKILL/scripts/build_zh_termbase.py \
 It refuses to build when a base term has no decision, a rendering or source is
 empty, a `new_entry`'s Tibetan is not in its verse, or a keyword points at a missing
 term. `zh_evidence` counts, for each term, how many of its verses already contain
-the rendering in the reference and in the machine draft.
+the rendering in the reference and in the machine draft. A rebuild keeps any `zh_text` already
+written into the grade file by Phase 2, so a changed decision never wipes the draft.
+After changing a decision once a draft exists, re-run Phase 3 (drift check). The
+old word may still be in the text.
 
 ### Step 6 — Validate, baseline, glossary
 
