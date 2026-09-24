@@ -428,6 +428,10 @@ general → intermediate keeps the Sanskrit and may add a qualifier
 (`पुण्य` → `पुण्य / कुशल`); general → advanced adds the technical Sanskrit in
 parentheses (`शून्यता` → `शून्यता (सर्वधर्मनिःस्वभावता)`). Keep values 1–5 words.
 
+Liturgy (general): mantra syllables and Sanskrit title lines in Devanagari (ॐ तारे तुत्तारे तुरे स्वाहा);
+avoid जिन / जिनपुत्र for a general reader (they read as Jain) — बुद्ध / बोधिसत्त्व. With no attested Hindi
+translation, build the word list with `keyword-standardize` (§Hindi).
+
 ### Vietnamese (`vi`)
 
 | Grade | Style |

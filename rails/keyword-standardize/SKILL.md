@@ -3,7 +3,7 @@ name: keyword-standardize
 description: >
   Standardise the target-language keywords of a block-ID'd Tibetan text before it is
   translated, when no human translation in that language exists to attest against
-  (Chinese, Vietnamese, …). Reuse the Tibetan side of an existing termbase. Gather
+  (Chinese, Vietnamese, Hindi, …). Reuse the Tibetan side of an existing termbase. Gather
   evidence (a classical canon version, a related language's word list, standard
   Buddhist terms, a machine draft) and lay it out term by term. Then choose one
   rendering per locked Tibetan term, with its source and reason, in one editable
@@ -229,6 +229,7 @@ To give reviewers one table of every locked term across all languages, run:
 ```bash
 python3 $SKILL/scripts/multilingual_table.py --base $KEYWORDS/en/en-bo-en-termbase-general.json \
     --lang zh=$KEYWORDS/zh/en-bo-zh-termbase-general.json --lang vi=$KEYWORDS/vi/en-bo-vi-termbase-general.json \
+    --lang hi=$KEYWORDS/hi/en-bo-hi-termbase-general.json \
     -o $KEYWORDS/standardised-keywords-general.md
 ```
 
@@ -305,6 +306,32 @@ light check, and a native reviewer, who starts with the flagged table.
   syllables in romanized Sanskrit without diacritics (Om, Tare, Tuttare, Ture, Soha,
   Hum, Phat), never translated. Do not add commentary, notes, or explanation."
 
+### Hindi (`hi`)
+
+- **Reference:** none needed. Hindi takes its Buddhist vocabulary straight from Sanskrit, so the standard term
+  *is* the Sanskrit word in Devanagari (नमस्कार, स्तुति, अभिषेक, सम्यक् सम्बुद्ध, वेताल, यक्ष). Source code
+  `standard`; no classical canon or related-language list sits in between. Pass no `--reference`.
+- **Script:** Devanagari. Use the Sanskrit spelling in the Sanskritized register (चन्द्रमा, not चंद्रमा; सत्त्व,
+  not सत्व).
+- **Mantras:** Devanagari, the Sanskrit as chanted: ॐ तारे तुत्तारे तुरे स्वाहा; हूँ, फट्, त्रट्, हर. A
+  Sanskrit title line is written in Devanagari too, not kept in IAST.
+- **Keep / replace:** keep the Sanskrit term where Hindi readers know it in that sense, even where English
+  chose a plain word (ग्रह for གདོན, "demons" in English — flag it). Replace one that a general Hindi reader
+  would take for something else: जिन / जिनपुत्र sound Jain, so write बुद्ध / बोधिसत्त्व. Keep distinct
+  English locks distinct in Hindi: भगवती is བཅོམ་ལྡན་འདས་མ, so རྗེ་བཙུན་མ་འཕགས་མ is पूज्य आर्या; बीजाक्षर is
+  the named seed-syllable, अक्षर the generic ཡི་གེ.
+- **Lock stems (rule 6):** Sanskrit compounds hide the free word — lock the stem: महा (महान्, महाभयंकर,
+  महानता), चन्द्र (चन्द्रमा, अर्धचन्द्र). Don't put `…` in a rendering; the checker searches it literally.
+- **Engine:** Gemini (`gemini-translate`). A Gemini zero-shot already reached 90% of the locked words on the
+  Tārās, because its `style.md` asks for the Sanskrit Buddhist vocabulary.
+- **style.md:** "Translate this Tibetan liturgical text into Hindi, line by line: render each Tibetan line as
+  exactly one Hindi line, in the same order, keeping the same number of lines as the source. Write in
+  Devanagari. Use the established Hindi/Sanskrit Buddhist vocabulary rather than coining new terms or
+  borrowing Hindu-devotional or Christian idiom. Devotional but clear register, in natural Hindi word order.
+  Keep mantra syllables as Devanagari transliteration of the Sanskrit, never translated. Render buddhas,
+  bodhisattvas and deities by their Sanskrit names in Devanagari. Do not add commentary, notes, or
+  explanation."
+
 ### Adding a language
 
 Add a section here with its reference, keep/replace rules, mantra convention, engine
@@ -347,6 +374,9 @@ not change.
     is byte-identical.
 - **Vietnamese (general):** the related-language reference is the Chinese list and
   translation; the machine draft is Gemini zero-shot. See `vi/` and `STATE.md`.
+- **Hindi (general):** no reference; the Sanskrit terms are the standard. 47 + 4 Hindi-only
+  entries (ॐ, स्वाहा, हर, तारे), 7 flagged. The Gemini zero-shot already had 123/136 locked words;
+  after enforcement 136/136. The full commentary check then found no errors. See `hi/` and `STATE.md`.
 
 ## After this skill
 
