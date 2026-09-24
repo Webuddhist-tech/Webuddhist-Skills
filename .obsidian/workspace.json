@@ -4,21 +4,21 @@
     "type": "split",
     "children": [
       {
-        "id": "7f6765f4a1ab3b89",
+        "id": "18858bce35725374",
         "type": "tabs",
         "children": [
           {
-            "id": "ebca0e4957573bad",
+            "id": "5d3c41d02cc28251",
             "type": "leaf",
             "state": {
               "type": "split-diff-view",
               "state": {
-                "aFile": "rails/rails-pipeline/SKILL.md",
-                "bFile": "rails/rails-pipeline/SKILL.md",
+                "aFile": "rails/keyword-extract/scripts/output/bo-སྒྲོལ་མ་ཉེར་གཅིག་ལ་བསྟོད་པ།-en-keyword_verses_yake.json",
+                "bFile": "rails/keyword-extract/scripts/output/bo-སྒྲོལ་མ་ཉེར་གཅིག་ལ་བསྟོད་པ།-en-keyword_verses_yake.json",
                 "aRef": ""
               },
               "icon": "diff",
-              "title": "Diff: SKILL  (Working Tree)"
+              "title": "Diff: bo-སྒྲོལ་མ་ཉེར་གཅིག་ལ་བསྟོད་པ།-en-keyword_verses_yake.json  (Working Tree)"
             }
           }
         ]
@@ -196,11 +196,21 @@
       "obsidian-git:Open Git source control": false
     }
   },
-  "active": "ebca0e4957573bad",
+  "active": "5d3c41d02cc28251",
   "lastOpenFiles": [
+    "rails/graded-translate/PIPELINE.md",
+    "rails/keyword-extract/scripts/keyword_gap_report.py",
+    "rails/keyword-extract/scripts/__pycache__/idf_corpus.cpython-310.pyc",
+    "rails/keyword-extract/scripts/__pycache__/idf_corpus.cpython-310.pyc.278109076735536",
+    "rails/keyword-extract/scripts/__pycache__",
+    "rails/keyword-extract/scripts/output/bo-སྒྲོལ་མ་ཉེར་གཅིག་ལ་བསྟོད་པ།-en-keyword_verses_yake.json",
+    "rails/keyword-extract/scripts/output/bo-སྒྲོལ་མ་ཉེར་གཅིག་ལ་བསྟོད་པ།-en-keywords.md",
+    "rails/keyword-extract/scripts/output/bo-སྒྲོལ་མ་ཉེར་གཅིག་ལ་བསྟོད་པ།-en-normalized.json",
+    "rails/keyword-extract/scripts/output/bo-སྒྲོལ་མ་ཉེར་གཅིག་ལ་བསྟོད་པ།-en-raw.json",
+    "rails/keyword-extract/scripts/output/bo-སྒྲོལ་མ་ཉེར་གཅིག་ལ་བསྟོད་པ།-en-preview.md",
+    "rails/keyword-extract/scripts/output",
     "Untitled.canvas",
     "2026-09-24.md",
-    "Untitled.base",
-    "rails/graded-translate/PIPELINE.md"
+    "Untitled.base"
   ]
 }

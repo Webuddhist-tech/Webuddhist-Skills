@@ -50,6 +50,13 @@ Method
    look -- it may be a legitimate paraphrase choice, or it may be real
    vocabulary drift.
 
+Grade-file mode (no verse rails needed)
+---------------------------------------
+    python check_termbase_consistency.py \\
+        --grade-file  <keywords>/bo_en_keyword_general.json \\
+        --translation 3-TRANSFORMATIONS/Translations/en-general/<text>-en-general.md \\
+        --strict-diacritics
+
 Usage
 -----
     python check_termbase_consistency.py \\
@@ -72,18 +79,28 @@ import unicodedata
 from pathlib import Path
 
 
+# Set by --strict-diacritics. Off (the historical default) folds accents, which
+# suits French ("éveil" = "eveil"). For a termbase that locks IAST spellings
+# (Tara vs Tārā, hum vs HŪṂ) folding would hide exactly the drift to catch.
+STRICT_DIACRITICS = False
+
+
 def normalize(s: str) -> str:
-    """Lowercase, strip accents, collapse whitespace/apostrophe variants."""
+    """Lowercase, collapse whitespace/apostrophe variants; strip accents unless
+    --strict-diacritics."""
     s = s.strip().lower()
-    s = s.replace("'", "'")
-    s = unicodedata.normalize("NFKD", s)
-    s = "".join(c for c in s if not unicodedata.combining(c))
+    s = s.replace("\u2019", "'")
+    if not STRICT_DIACRITICS:
+        s = unicodedata.normalize("NFKD", s)
+        s = "".join(c for c in s if not unicodedata.combining(c))
+    else:
+        s = unicodedata.normalize("NFC", s)
     s = re.sub(r"\s+", " ", s)
     return s
 
 
 _ARTICLE_WORD_RE = re.compile(
-    r"\b(l|le|la|les|un|une|des|du|aux|au|d|de|ce|cet|cette|ces)\b"
+    r"\b(l|le|la|les|un|une|des|du|aux|au|d|de|ce|cet|cette|ces|the|a|an)\b"
 )
 
 
@@ -95,6 +112,8 @@ def loose_form(s: str) -> str:
     s = _ARTICLE_WORD_RE.sub(" ", s)
     s = re.sub(r"[^\w\s]", " ", s)
     s = re.sub(r"\b(\w{4,})s\b", r"\1", s)
+    # crude English stemming for the advisory tier: blazing/blaze, endowed/endow
+    s = re.sub(r"\b(\w{3,}?)(?:ing|ed|e)\b", r"\1", s)
     s = re.sub(r"\s+", " ", s).strip()
     return s
 
@@ -114,6 +133,8 @@ TERMBASE_ROW_RE = re.compile(r"^\|\s*(.+?)\s*\|\s*(.+?)\s*\|\s*(.+?)\s*\|\s*$")
 
 
 def extract_surface_forms(rendering_cell: str) -> list:
+    # "world(s)" -> "world" / "worlds" (an optional plural, not a gloss)
+    rendering_cell = re.sub(r"(\w)\(s\)", r"\1 / \1s", rendering_cell)
     forms = []
     for alt in re.split(r"\s*/\s*", rendering_cell):
         alt = alt.strip()
@@ -126,10 +147,17 @@ def extract_surface_forms(rendering_cell: str) -> list:
     return [f for f in forms if f]
 
 
+_SEP_ROW_RE = re.compile(r"^\|[\s:|-]+\|$")
+
+
 def parse_termbase(path: Path) -> dict:
     text = path.read_text(encoding="utf-8")
     termbase = {}
-    for line in text.split("\n"):
+    lines = text.split("\n")
+    for i, line in enumerate(lines):
+        nxt = lines[i + 1].strip() if i + 1 < len(lines) else ""
+        if _SEP_ROW_RE.match(nxt):      # table header row
+            continue
         m = TERMBASE_ROW_RE.match(line.strip())
         if not m:
             continue
@@ -178,7 +206,7 @@ def parse_rail_concepts(path: Path) -> list:
     return lemmas
 
 
-BLOCK_ID_RE = re.compile(r"\^(\d+-[a-zA-Z0-9]+)\s*$")
+BLOCK_ID_RE = re.compile(r"(?<!\S)\^((?:\w[\w\-]*)?\d)\s*$")   # ^0 ^1-5 ^I-1 ^a-1
 FOOTNOTE_DEF_RE = re.compile(r"^\[\^(\d+)\]:\s*(.*)$")
 FOOTNOTE_REF_RE = re.compile(r"\[\^(\d+)\]")
 
@@ -199,6 +227,8 @@ def split_translation_by_verse(path: Path) -> dict:
     for raw_line in body.split("\n"):
         line = raw_line.rstrip()
         if FOOTNOTE_DEF_RE.match(line.strip()):
+            continue
+        if line.strip().startswith("![["):     # transclusion of the source block
             continue
         m = BLOCK_ID_RE.search(line)
         if m:
@@ -303,14 +333,92 @@ def run(termbase_path, translation_path, rails_dir, verses):
     return 1 if misses else 0
 
 
+def _verse_sort_key(vid):
+    return [(0, int(x)) if x.isdigit() else (1, x) for x in re.split(r"-", vid)]
+
+
+def run_grade_file(grade_path, translation_path, verses, grade_name=None):
+    """Grade-file mode: the expectations are the per-verse keyword lists that
+    graded-translate Phase 1 writes (bo_<tgt>_keyword_<grade>.json). No verse
+    rails or termbase.md needed. A keyword whose Tibetan is contained in a
+    longer locked phrase expected in the same verse (a title inside the
+    Sanskrit title line, "Tara" inside "the Blessed Tārā") is COVERED when
+    that phrase is present."""
+    import json
+    grade = json.loads(Path(grade_path).read_text(encoding="utf-8"))
+    verse_blocks = split_translation_by_verse(translation_path)
+    target = verses or sorted(
+        (v for v in grade if v in verse_blocks and grade[v].get("keywords")),
+        key=_verse_sort_key)
+
+    print(f"Grade file : {grade_path}  ({len(grade)} verses)")
+    print(f"Translation: {translation_path}  ({len(verse_blocks)} verse blocks found)")
+    print(f"Diacritics : {'strict' if STRICT_DIACRITICS else 'folded (use --strict-diacritics for IAST termbases)'}")
+    print()
+    header = f"{'verse':<8} {'bo term':<24} {'expected':<32} result"
+    print(header); print("-" * len(header))
+
+    checks = hits = loose = covered = 0
+    misses = []
+    for vid in target:
+        text = verse_blocks.get(vid, "")
+        if not text:
+            print(f"{vid:<8} (no matching block in translation output, skipped)")
+            continue
+        kws = {}
+        for kw in grade.get(vid, {}).get("keywords", []):
+            en = kw.get("en") or kw.get(grade_name or "", "")
+            if not en or (grade_name and kw.get("grade") not in (None, grade_name)):
+                continue
+            kws.setdefault((kw.get("term") or kw.get("key"), en), kw.get("bo") or "")
+        n_text, l_text = normalize(text), loose_form(text)
+        tiers = {k: [match_tier(f, n_text, l_text) for f in extract_surface_forms(re.sub(r"^the\s+", "", k[1], flags=re.I))]
+                 for k in kws}
+        for (term, en), bo in kws.items():
+            checks += 1
+            tr = tiers[(term, en)]
+            bo_disp = (bo[:22] + "…") if len(bo) > 23 else bo
+            en_disp = (en[:30] + "…") if len(en) > 31 else en
+            if "exact" in tr:
+                hits += 1; res = "OK"
+            elif "loose" in tr:
+                hits += 1; loose += 1; res = "OK (loose match -- verify inflection)"
+            else:
+                cover = [k2 for k2, b2 in kws.items() if k2 != (term, en) and bo and b2 and bo != b2
+                         and any(part.strip() and part.strip() in b2 for part in bo.split("/"))
+                         and "exact" in tiers[k2]]
+                if cover:
+                    hits += 1; covered += 1; res = f"COVERED by '{cover[0][1]}'"
+                else:
+                    res = "MISSING"; misses.append((vid, term, bo, en))
+            print(f"{vid:<8} {bo_disp:<24} {en_disp:<32} {res}")
+
+    print()
+    n_miss = checks - hits
+    print(f"Summary: {hits}/{checks} locked renderings found ({loose} loose, {covered} covered by a longer "
+          f"locked phrase, {n_miss} possible drift/miss{'es' if n_miss != 1 else ''}).")
+    if misses:
+        print("\nMisses (verify by eye):")
+        for vid, term, bo, en in misses:
+            snippet = verse_blocks.get(vid, "").strip().replace("\n", " / ")
+            print(f"  [{vid}] {term} ({bo}) -> expected '{en}'\n          text: {snippet[:160]}")
+    return 1 if misses else 0
+
+
 def main(argv=None):
     p = argparse.ArgumentParser(
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    p.add_argument("--termbase", required=True, type=Path)
+    p.add_argument("--termbase", type=Path, help="termbase.md table (rails mode)")
     p.add_argument("--translation", required=True, type=Path)
-    p.add_argument("--rails-dir", required=True, type=Path)
+    p.add_argument("--rails-dir", type=Path, help="2-RAILS/Verses (rails mode)")
+    p.add_argument("--grade-file", type=Path,
+                   help="graded-translate Phase 1 grade file (bo_<tgt>_keyword_<grade>.json): "
+                        "use its per-verse keywords as the expectation instead of verse rails")
+    p.add_argument("--grade", default=None, help="only check keywords of this grade (grade-file mode)")
+    p.add_argument("--strict-diacritics", action="store_true",
+                   help="do not fold accents: Tara != Tārā, hum != HŪṂ (use for IAST termbases)")
     p.add_argument(
         "--verses", nargs="*", default=None,
         help="Specific verse IDs to check (e.g. 1-1 1-2). "
@@ -318,6 +426,12 @@ def main(argv=None):
              "in --translation.",
     )
     args = p.parse_args(argv)
+    global STRICT_DIACRITICS
+    STRICT_DIACRITICS = args.strict_diacritics
+    if args.grade_file:
+        return run_grade_file(args.grade_file, args.translation, args.verses, args.grade)
+    if not (args.termbase and args.rails_dir):
+        p.error("rails mode needs --termbase and --rails-dir (or use --grade-file)")
     return run(args.termbase, args.translation, args.rails_dir, args.verses)
 
 
