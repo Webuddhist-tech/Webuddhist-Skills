@@ -4,21 +4,17 @@
     "type": "split",
     "children": [
       {
-        "id": "18858bce35725374",
+        "id": "8bc63835cee0c4d3",
         "type": "tabs",
         "children": [
           {
-            "id": "5d3c41d02cc28251",
+            "id": "b4b25f5719e7fbf9",
             "type": "leaf",
             "state": {
-              "type": "split-diff-view",
-              "state": {
-                "aFile": "rails/graded-translate/scripts/check_termbase_consistency.py",
-                "bFile": "rails/graded-translate/scripts/check_termbase_consistency.py",
-                "aRef": ""
-              },
-              "icon": "diff",
-              "title": "Diff: check_termbase_consistency.py  (Working Tree)"
+              "type": "empty",
+              "state": {},
+              "icon": "lucide-file",
+              "title": "New tab"
             }
           }
         ]
@@ -196,19 +192,19 @@
       "obsidian-git:Open Git source control": false
     }
   },
-  "active": "5d3c41d02cc28251",
+  "active": "7966689edccb6dfc",
   "lastOpenFiles": [
+    "rails/zh-keyword-standardize/SKILL.md",
+    "rails/zh-keyword-standardize/scripts/zh_worksheet.py",
+    "rails/zh-keyword-standardize/scripts/__pycache__/zh_common.cpython-310.pyc",
+    "rails/zh-keyword-standardize/scripts/__pycache__",
+    "rails/zh-keyword-standardize/scripts/build_zh_termbase.py",
+    "rails/zh-keyword-standardize/scripts/zh_common.py",
+    "rails/zh-keyword-standardize/scripts",
+    "rails/zh-keyword-standardize",
     "rails/machine-translate/scripts/__pycache__/dm_translate.cpython-310.pyc",
     "rails/machine-translate/scripts/__pycache__",
     "rails/commentary-fact-check/scripts/tally_report.py",
-    "rails/commentary-fact-check/scripts/__pycache__/find_textual_variants.cpython-310.pyc",
-    "rails/commentary-fact-check/scripts/__pycache__/extract_commentary.cpython-310.pyc",
-    "rails/commentary-fact-check/scripts/__pycache__",
-    "rails/commentary-fact-check/scripts/find_textual_variants.py",
-    "rails/graded-translate/scripts/__pycache__/check_termbase_consistency.cpython-310.pyc",
-    "rails/graded-translate/scripts/__pycache__",
-    "rails/graded-translate/scripts/termbase_to_md.py",
-    "rails/graded-translate/scripts/termbase_to_glossary.py",
     "rails/graded-translate/PIPELINE.md",
     "rails/keyword-extract/scripts/output/bo-སྒྲོལ་མ་ཉེར་གཅིག་ལ་བསྟོད་པ།-en-keywords.md",
     "rails/keyword-extract/scripts/output/bo-སྒྲོལ་མ་ཉེར་གཅིག་ལ་བསྟོད་པ།-en-preview.md",
