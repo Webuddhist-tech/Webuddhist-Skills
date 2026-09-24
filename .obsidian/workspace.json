@@ -13,12 +13,12 @@
             "state": {
               "type": "split-diff-view",
               "state": {
-                "aFile": "rails/keyword-extract/scripts/output/bo-སྒྲོལ་མ་ཉེར་གཅིག་ལ་བསྟོད་པ།-en-keyword_verses_yake.json",
-                "bFile": "rails/keyword-extract/scripts/output/bo-སྒྲོལ་མ་ཉེར་གཅིག་ལ་བསྟོད་པ།-en-keyword_verses_yake.json",
+                "aFile": "rails/graded-translate/scripts/check_termbase_consistency.py",
+                "bFile": "rails/graded-translate/scripts/check_termbase_consistency.py",
                 "aRef": ""
               },
               "icon": "diff",
-              "title": "Diff: bo-སྒྲོལ་མ་ཉེར་གཅིག་ལ་བསྟོད་པ།-en-keyword_verses_yake.json  (Working Tree)"
+              "title": "Diff: check_termbase_consistency.py  (Working Tree)"
             }
           }
         ]
@@ -198,19 +198,21 @@
   },
   "active": "5d3c41d02cc28251",
   "lastOpenFiles": [
+    "rails/machine-translate/scripts/__pycache__/dm_translate.cpython-310.pyc",
+    "rails/machine-translate/scripts/__pycache__",
+    "rails/commentary-fact-check/scripts/tally_report.py",
+    "rails/commentary-fact-check/scripts/__pycache__/find_textual_variants.cpython-310.pyc",
+    "rails/commentary-fact-check/scripts/__pycache__/extract_commentary.cpython-310.pyc",
+    "rails/commentary-fact-check/scripts/__pycache__",
+    "rails/commentary-fact-check/scripts/find_textual_variants.py",
+    "rails/graded-translate/scripts/__pycache__/check_termbase_consistency.cpython-310.pyc",
+    "rails/graded-translate/scripts/__pycache__",
+    "rails/graded-translate/scripts/termbase_to_md.py",
+    "rails/graded-translate/scripts/termbase_to_glossary.py",
     "rails/graded-translate/PIPELINE.md",
-    "rails/keyword-extract/scripts/keyword_gap_report.py",
-    "rails/keyword-extract/scripts/__pycache__/idf_corpus.cpython-310.pyc",
-    "rails/keyword-extract/scripts/__pycache__/idf_corpus.cpython-310.pyc.278109076735536",
-    "rails/keyword-extract/scripts/__pycache__",
-    "rails/keyword-extract/scripts/output/bo-སྒྲོལ་མ་ཉེར་གཅིག་ལ་བསྟོད་པ།-en-keyword_verses_yake.json",
     "rails/keyword-extract/scripts/output/bo-སྒྲོལ་མ་ཉེར་གཅིག་ལ་བསྟོད་པ།-en-keywords.md",
-    "rails/keyword-extract/scripts/output/bo-སྒྲོལ་མ་ཉེར་གཅིག་ལ་བསྟོད་པ།-en-normalized.json",
-    "rails/keyword-extract/scripts/output/bo-སྒྲོལ་མ་ཉེར་གཅིག་ལ་བསྟོད་པ།-en-raw.json",
     "rails/keyword-extract/scripts/output/bo-སྒྲོལ་མ་ཉེར་གཅིག་ལ་བསྟོད་པ།-en-preview.md",
-    "rails/keyword-extract/scripts/output",
     "Untitled.canvas",
-    "2026-09-24.md",
-    "Untitled.base"
+    "2026-09-24.md"
   ]
 }

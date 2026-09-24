@@ -34,9 +34,11 @@ import json
 import os
 import pathlib
 import re
+import ssl
 import sys
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 
 RATE_LIMIT_BACKOFF = [20, 40, 60, 90, 120, 180]
@@ -49,6 +51,41 @@ DAILY_LIMIT_RE = re.compile(r"per\s+1?\s*day|per\s+\d+\s*days?", re.I)
 
 class DailyQuotaExceeded(RuntimeError):
     """The daily request quota is spent. Retrying today cannot help."""
+
+
+class NetworkUnavailable(RuntimeError):
+    """The request cannot succeed from this machine (proxy refusal, TLS setup).
+    Retrying only wastes a minute of back-off, so it is raised at once."""
+
+
+def _ssl_context():
+    """TLS context for the API call. Uses certifi's CA bundle when it is
+    installed and the caller has not pointed SSL_CERT_FILE/SSL_CERT_DIR
+    elsewhere — python.org builds on macOS ship without a usable store, which
+    otherwise fails with CERTIFICATE_VERIFY_FAILED."""
+    if os.environ.get("SSL_CERT_FILE") or os.environ.get("SSL_CERT_DIR"):
+        return ssl.create_default_context()
+    try:
+        import certifi  # noqa: PLC0415
+        return ssl.create_default_context(cafile=certifi.where())
+    except Exception:  # noqa: BLE001 — certifi missing: fall back to the system store
+        return ssl.create_default_context()
+
+
+def _fatal_network_error(exc):
+    """Return an explanation if `exc` cannot be fixed by retrying, else None."""
+    reason = getattr(exc, "reason", exc)
+    msg = f"{exc} {reason}"
+    host = urllib.parse.urlsplit(ENDPOINT).hostname
+    if isinstance(reason, ssl.SSLCertVerificationError) or "CERTIFICATE_VERIFY_FAILED" in msg:
+        return ("TLS certificate check failed: this Python has no usable CA bundle. "
+                "Fix: pip3 install --upgrade certifi (the script then uses it automatically), "
+                "or export SSL_CERT_FILE=$(python3 -m certifi). Not retried.")
+    if "Tunnel connection failed: 403" in msg or ("403" in msg and "proxy" in msg.lower()):
+        return (f"the network proxy refused the connection to {host} (403 at CONNECT). "
+                "This is an egress policy on this machine/sandbox, not a DharmaMitra outage. "
+                f"Run from a terminal with direct internet access, or allowlist {host}. Not retried.")
+    return None
 
 ENDPOINT = os.environ.get(
     "DHARMAMITRA_CAT_TRANSLATE_URL",
@@ -219,7 +256,14 @@ def parse_source(path):
 
 
 def load_glossary(path):
-    """Read `source term<TAB or ' -> '>target rendering` lines. Comments with #."""
+    """Read `source<TAB>target[<TAB>block ids]` lines (also `source -> target`,
+    `source → target`, `source | target`). Comments with #.
+
+    The optional third, tab-separated column scopes a line to block IDs
+    (`དབང<TAB>empowerment<TAB>2-3`): it is only offered for batches containing
+    one of those blocks. graded-translate/scripts/termbase_to_glossary.py writes
+    this for forms whose rendering depends on the verse. Returns
+    [(source, target, frozenset(ids) | None)]."""
     if not path:
         return []
     entries = []
@@ -227,19 +271,35 @@ def load_glossary(path):
         line = line.strip()
         if not line or line.startswith("#"):
             continue
-        for sep in ("\t", " -> ", " → ", "|"):
+        if "\t" in line:
+            cols = [c.strip() for c in line.split("\t")]
+            scope = frozenset(x.strip() for x in cols[2].split(",") if x.strip()) if len(cols) > 2 and cols[2] else None
+            entries.append((cols[0], cols[1] if len(cols) > 1 else "", scope))
+            continue
+        for sep in (" -> ", " → ", "|"):
             if sep in line:
                 src, tgt = line.split(sep, 1)
-                entries.append((src.strip().strip("|").strip(), tgt.strip().strip("|").strip()))
+                entries.append((src.strip().strip("|").strip(), tgt.strip().strip("|").strip(), None))
                 break
-    return [e for e in entries if e[0] and e[1]]
+    entries = [e for e in entries if e[0] and e[1]]
+    unscoped = {}
+    for s, tgt, scope in entries:
+        if scope is None:
+            unscoped.setdefault(s, set()).add(tgt)
+    for s, tgts in unscoped.items():
+        if len(tgts) > 1:
+            print(f"warning: glossary gives '{s}' several unscoped renderings {sorted(tgts)}; "
+                  f"every matching call receives all of them — add a block-ID column", file=sys.stderr)
+    return entries
 
 
 def build_context(header, done, unit, glossary, window, char_cap):
     """Compose the `context` field: work header + glossary hits + rolling prior blocks."""
     parts = [header.strip()] if header.strip() else []
 
-    hits = [f"{s} → {t}" for s, t in glossary if s and s in unit["text"]]
+    ids = set(unit.get("ids") or ([unit["id"]] if unit.get("id") else []))
+    hits = [f"{s} → {t}" for s, t, scope in glossary
+            if s and s in unit["text"] and (scope is None or not ids or scope & ids)]
     if hits:
         parts.append("Terminology already fixed for this text:\n" + "\n".join(hits[:15]))
 
@@ -449,7 +509,7 @@ def call_api(body, timeout, retries, verbose=False):
             method="POST",
         )
         try:
-            with urllib.request.urlopen(req, timeout=timeout) as resp:
+            with urllib.request.urlopen(req, timeout=timeout, context=_ssl_context()) as resp:
                 payload = json.loads(resp.read().decode("utf-8"))
             text = (payload.get("translation") or "").strip()
             if not text:
@@ -480,6 +540,9 @@ def call_api(body, timeout, retries, verbose=False):
             time.sleep(wait)
         except Exception as exc:  # noqa: BLE001 — network/parse failures, then back off
             last = exc
+            fatal = _fatal_network_error(exc)
+            if fatal:
+                raise NetworkUnavailable(fatal) from exc
             if attempt < retries:
                 wait = 2 ** attempt
                 print(f"    ! attempt {attempt}/{retries} failed ({exc}); retrying in {wait}s",
@@ -704,7 +767,8 @@ def main():
     p.add_argument("--context-header", default=None,
                    help="file with the fixed work-level context prepended to every call")
     p.add_argument("--glossary", default=None,
-                   help="optional 'source<TAB>target' lines; matching entries join the context")
+                   help="optional 'source<TAB>target[<TAB>block ids]' lines; entries whose source "
+                        "occurs in a batch join its context as a HINT (not enforced)")
     p.add_argument("--context-blocks", type=int, default=3,
                    help="how many prior translated blocks to thread back in (0 disables)")
     p.add_argument("--context-cap", type=int, default=3000, help="max chars of context")
@@ -952,7 +1016,7 @@ def main():
         by_block, _ = latest_by_id(ledger)
         prior = [r for i, r in sorted((order[b], r) for b, r in by_block.items()
                                       if b in order and b not in ids and order[b] < first_pos)]
-        combined = {"text": "\n".join(u["text"] for u in batch)}
+        combined = {"text": "\n".join(u["text"] for u in batch), "ids": [u["id"] for u in batch]}
         return build_context(header, prior, combined, glossary,
                              args.context_blocks, args.context_cap)
 
