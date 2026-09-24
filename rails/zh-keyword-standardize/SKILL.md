@@ -67,8 +67,8 @@ Ask these once and record the answers in the decisions file's `_meta.choices`:
 
 | Input | Required | Description |
 |---|---|---|
-| Base termbase | ✓ | `$KEYWORDS/en-bo-en-termbase-<grade>.json` — the locked Tibetan terms, verse scopes and notes |
-| Base grade file | ✓ | `$KEYWORDS/bo_en_keyword_<grade>.json` — per-verse keywords and `bo_text` |
+| Base termbase | ✓ | `$KEYWORDS/en/en-bo-en-termbase-<grade>.json` — the locked Tibetan terms, verse scopes and notes |
+| Base grade file | ✓ | `$KEYWORDS/en/bo_en_keyword_<grade>.json` — per-verse keywords and `bo_text` |
 | Meaning text | ✓ | The fact-checked translation (e.g. English D3). It is the meaning reference, not a source of words |
 | Classical reference | strongly advised | A classical Chinese version of the same text (CBETA), aligned by block ID (Step 2) |
 | Machine draft | optional | A zero-shot Chinese draft (`machine-translate`, DharmaMitra `modern chinese`) |
@@ -76,7 +76,7 @@ Ask these once and record the answers in the decisions file's `_meta.choices`:
 
 ## Outputs
 
-All in `$KEYWORDS/` unless stated.
+In `$KEYWORDS/zh/`: one subfolder per language, next to `en/` and `shared/` (see `rails/CONVENTIONS.md` §8). The scripts take explicit paths, so a flat folder works too.
 
 | File | What |
 |---|---|
@@ -86,7 +86,7 @@ All in `$KEYWORDS/` unless stated.
 | `termbase-zh-<grade>.md` | Readable review table, flagged picks first |
 | `glossary-zh-<grade>.tsv` | Verse-scoped glossary for `machine-translate --glossary` |
 | `zh-worksheet-<grade>.md` | Evidence per term and verse (working file) |
-| `…/zh-references/zh-classical-<id>.md` | Classical reference aligned to our block IDs (outside `$KEYWORDS`) |
+| `references/zh-classical-<id>.md` | Classical reference aligned to our block IDs |
 
 Never writes to `$SOURCE_TEXTS/`, `$TRANSLATIONS/`, the base termbase or the base grade file.
 
@@ -125,13 +125,13 @@ source; say so in `_meta.sources_note`.
 
 ```bash
 python3 $SKILL/scripts/zh_worksheet.py \
-    --base-termbase $KEYWORDS/en-bo-en-termbase-general.json \
-    --base-grade-file $KEYWORDS/bo_en_keyword_general.json \
+    --base-termbase $KEYWORDS/en/en-bo-en-termbase-general.json \
+    --base-grade-file $KEYWORDS/en/bo_en_keyword_general.json \
     --meaning-text <fact-checked translation .md> \
-    --reference <zh-references/zh-classical-*.md> \
+    --reference <$KEYWORDS/zh/references/zh-classical-*.md> \
     --mt-draft <Dharmamitra/zh/…-zh.md> \
-    -o $KEYWORDS/zh-worksheet-general.md \
-    --template $KEYWORDS/zh-decisions-general.json
+    -o $KEYWORDS/zh/zh-worksheet-general.md \
+    --template $KEYWORDS/zh/zh-decisions-general.json
 ```
 
 For every term, it shows each verse's Tibetan, meaning, classical stanza and machine
@@ -182,12 +182,12 @@ anchor terms.
 
 ```bash
 python3 $SKILL/scripts/build_zh_termbase.py \
-    --decisions $KEYWORDS/zh-decisions-general.json \
-    --base-termbase $KEYWORDS/en-bo-en-termbase-general.json \
-    --base-grade-file $KEYWORDS/bo_en_keyword_general.json \
+    --decisions $KEYWORDS/zh/zh-decisions-general.json \
+    --base-termbase $KEYWORDS/en/en-bo-en-termbase-general.json \
+    --base-grade-file $KEYWORDS/en/bo_en_keyword_general.json \
     --meaning-text <fact-checked translation .md> \
-    --reference <zh-references/zh-classical-*.md> --mt-draft <machine draft .md> \
-    --out-dir $KEYWORDS            # --force to rebuild after editing decisions
+    --reference <$KEYWORDS/zh/references/zh-classical-*.md> --mt-draft <machine draft .md> \
+    --out-dir $KEYWORDS/zh            # --force to rebuild after editing decisions
 ```
 
 It refuses to build when a base term has no decision, a rendering or source is
@@ -202,13 +202,13 @@ old word may still be in the text.
 
 ```bash
 python3 $GT/scripts/validate_grade_file.py --lang zh \
-    --termbase $KEYWORDS/en-bo-zh-termbase-general.json \
-    --grade-file $KEYWORDS/bo_zh_keyword_general.json          # must be 0 errors
+    --termbase $KEYWORDS/zh/en-bo-zh-termbase-general.json \
+    --grade-file $KEYWORDS/zh/bo_zh_keyword_general.json          # must be 0 errors
 python3 $GT/scripts/check_termbase_consistency.py --lang zh \
-    --grade-file $KEYWORDS/bo_zh_keyword_general.json \
+    --grade-file $KEYWORDS/zh/bo_zh_keyword_general.json \
     --translation <machine draft .md>                          # baseline
 python3 $GT/scripts/termbase_to_glossary.py --lang zh --scope-all \
-    $KEYWORDS/en-bo-zh-termbase-general.json -o $KEYWORDS/glossary-zh-general.tsv
+    $KEYWORDS/zh/en-bo-zh-termbase-general.json -o $KEYWORDS/zh/glossary-zh-general.tsv
 ```
 
 Write the baseline ("the machine draft already uses N of M locked words") into

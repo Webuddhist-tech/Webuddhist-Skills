@@ -15,11 +15,11 @@ With --template, it also writes an empty decisions file (every base key, `zh`
 blank) for build_zh_termbase.py, unless that file already exists.
 
 Usage:
-    python3 zh_worksheet.py --base-termbase <kw>/en-bo-en-termbase-general.json \\
-        --base-grade-file <kw>/bo_en_keyword_general.json \\
-        --meaning-text <en translation .md> --reference <zh-references/zh-classical-*.md> \\
-        --mt-draft <Dharmamitra/zh/…-zh.md> -o <kw>/zh-worksheet-general.md \\
-        [--template <kw>/zh-decisions-general.json] [--decisions <existing decisions, shown per term>]
+    python3 zh_worksheet.py --base-termbase <kw>/en/en-bo-en-termbase-general.json \\
+        --base-grade-file <kw>/en/bo_en_keyword_general.json \\
+        --meaning-text <en translation .md> --reference <$KEYWORDS/zh/references/zh-classical-*.md> \\
+        --mt-draft <Dharmamitra/zh/…-zh.md> -o <kw>/zh/zh-worksheet-general.md \\
+        [--template <kw>/zh/zh-decisions-general.json] [--decisions <existing decisions, shown per term>]
 """
 import argparse, json, sys
 from pathlib import Path

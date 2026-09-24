@@ -39,12 +39,12 @@ Decisions file (JSON):
   Without it, a keyword is added for each verse (mantra syllables English left unlocked).
 
 Usage:
-    python3 build_zh_termbase.py --decisions <kw>/zh-decisions-general.json \\
-        --base-termbase <kw>/en-bo-en-termbase-general.json \\
-        --base-grade-file <kw>/bo_en_keyword_general.json \\
+    python3 build_zh_termbase.py --decisions <kw>/zh/zh-decisions-general.json \\
+        --base-termbase <kw>/en/en-bo-en-termbase-general.json \\
+        --base-grade-file <kw>/en/bo_en_keyword_general.json \\
         --meaning-text <en translation .md> \\
-        --reference <zh-references/zh-classical-*.md> --mt-draft <Dharmamitra/zh/…-zh.md> \\
-        --out-dir <kw> [--force]
+        --reference <$KEYWORDS/zh/references/zh-classical-*.md> --mt-draft <Dharmamitra/zh/…-zh.md> \\
+        --out-dir <kw>/zh [--force]
 """
 import argparse, copy, json, sys
 from pathlib import Path

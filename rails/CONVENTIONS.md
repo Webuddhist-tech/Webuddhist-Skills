@@ -235,6 +235,18 @@ A reader should never have to guess which file to use.
   "final" copy next to it.
 - Update the index row when a translation's draft number, checks or status change.
 
+The keywords folder (`$KEYWORDS`, the word-list work behind the translations) is laid out the same way:
+
+```
+$KEYWORDS/
+├── 00-INDEX.md        ← what each file is, and which one to edit or read
+├── STATE.md           ← running log
+├── shared/            ← keyword-extract output (Tibetan side, used by every language)
+├── <lang>/            ← one per target language: termbase, grade file, glossary
+│   ├── notes/         ← working notes from building the list
+│   └── references/    ← aligned reference texts (e.g. the classical Chinese version)
+```
+
 ## Provenance
 
 Consolidated from `webuddhist-library-data-pipeline/docs/reference/conventions.md`
