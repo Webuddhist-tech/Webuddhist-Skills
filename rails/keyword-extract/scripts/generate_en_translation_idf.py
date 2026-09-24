@@ -98,6 +98,9 @@ def strip_frontmatter(text: str) -> str:
     return text
 
 
+_IAST = "āīūṛṝḷḹṃṁḥṅñṭḍṇśṣēōĀĪŪṚṜḶḸṂṀḤṄÑṬḌṆŚṢĒŌ"
+
+
 def tokenize(text: str) -> list[str]:
     text = strip_frontmatter(text)
     # drop Obsidian transclusion lines (e.g. "![[1-SOURCES/Translations/bo-...]]")
@@ -107,9 +110,10 @@ def tokenize(text: str) -> list[str]:
     text = re.sub(r"[#\[\]`*_>|§]", " ", text)       # markdown syntax
     text = re.sub(r"\d+", " ", text)                  # numbers
     # keep hyphened compounds as single tokens (e.g. self-collectedness)
+    # IAST letters for both Pāli and Sanskrit (ś ṣ ṛ ḥ … were missing, which
+    # split words like yakṣa, Īśvara, Uṣṇīṣa into fragments).
     tokens = re.findall(
-        r"[a-zA-ZāīūṭḍṅñṇḷṃṁĀĪŪṬḌṄÑṆḶṂṀ]+"
-        r"(?:[-][a-zA-ZāīūṭḍṅñṇḷṃṁĀĪŪṬḌṄÑṆḶṂṀ]+)*",
+        rf"[a-zA-Z{_IAST}]+(?:[-][a-zA-Z{_IAST}]+)*",
         text,
     )
     return [t.lower() for t in tokens]
@@ -169,11 +173,16 @@ def band(score: float) -> str:
 # Pāli transliterations use diacritical characters not found in English.
 # Any token containing one of these is excluded from JSON output.
 # ---------------------------------------------------------------------------
-_PALI_CHARS = re.compile(r"[āīūṭḍṅñṇḷṃṁĀĪŪṬḌṄÑṆḶṂṀ]")
+_PALI_CHARS = re.compile(rf"[{_IAST}]")   # any IAST diacritic (Pāli or Sanskrit)
+
+# Set from --keep-transliterated. For an English translation of a *Tibetan* text,
+# transliterated Sanskrit words (yakṣa, vetāla, Tārā) are exactly the termbase
+# candidates, so Mode 1 should keep them; the Pāli workflow drops them.
+KEEP_TRANSLITERATED = False
 
 def is_english(word: str) -> bool:
-    """Return True if the word contains no Pāli diacritical characters."""
-    return not bool(_PALI_CHARS.search(word))
+    """True if the word should be kept: no IAST diacritics, or --keep-transliterated."""
+    return KEEP_TRANSLITERATED or not bool(_PALI_CHARS.search(word))
 
 
 # ---------------------------------------------------------------------------
@@ -652,7 +661,7 @@ def main() -> None:
 # ---------------------------------------------------------------------------
 
 # Matches verse markers like ^1-1, ^2-34, ^I-0, ^0
-_VERSE_MARKER = re.compile(r"\^([\w][\w\-]*\d+)\s*$")
+_VERSE_MARKER = re.compile(r"(?<!\S)\^((?:\w[\w\-]*)?\d)\s*$")   # ^0, ^1-5, ^I-0, ^a-1
 
 
 def extract_verses(path: pathlib.Path) -> list[dict]:
@@ -846,6 +855,9 @@ def _parse_args() -> argparse.Namespace:
                    help=f"Output directory. (default: {_DEFAULT_OUTDIR})")
     p.add_argument("--bottom", "-b", metavar="N", type=int, default=None,
                    help="Write bottom-N report: N most frequent keywords sorted by TF-IDF ascending.")
+    p.add_argument("--keep-transliterated", action="store_true",
+                   help="Keep words with IAST diacritics (yakṣa, Tārā) in the JSON outputs. "
+                        "Use for English translations of Tibetan/Sanskrit texts (Mode 1).")
     return p.parse_args()
 
 
@@ -854,7 +866,9 @@ def _parse_args() -> argparse.Namespace:
 # ---------------------------------------------------------------------------
 
 def main() -> None:
+    global KEEP_TRANSLITERATED
     args   = _parse_args()
+    KEEP_TRANSLITERATED = args.keep_transliterated
     outdir = pathlib.Path(args.outdir).resolve() if args.outdir else _DEFAULT_OUTDIR
     outdir.mkdir(parents=True, exist_ok=True)
 

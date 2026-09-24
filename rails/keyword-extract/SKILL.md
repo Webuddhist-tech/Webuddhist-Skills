@@ -49,7 +49,7 @@ well-conditioned — and then mapping each keyword back to the Tibetan term it
 renders, verse by verse.
 
 If the corpus has no English translation yet, produce one first with
-`$SKILLS/zeroshot-translator/` (block-ID-preserving), or use any
+`$SKILLS/machine-translate/` (DharmaMitra/Gemini baseline) or `$SKILLS/zeroshot-translate/` (block-ID-preserving), or use any
 existing published translation whose verses carry `^chapter-verse` IDs.
 
 ### Pipeline
@@ -57,24 +57,51 @@ existing published translation whose verses carry `^chapter-verse` IDs.
 #### Step 1 — extract keywords per verse (deterministic)
 
 ```bash
-python3 scripts/keywords.py --input <en-translation>.md --output <out>/verse_keywords.json
+python3 scripts/keywords.py <en-translation>.md --outdir <out>/
 ```
 
 `keywords.py` (YAKE + spaCy noun-phrase filtering) reads a block-ID'd English
-translation and writes `{verse_id: {text, keywords: [{key, rank, score,
-count}]}}`. Requires `pip install yake spacy` + the `en_core_web_sm` model
-(see `scripts/requirements.txt`).
+translation and writes `<out>/<stem>-keyword_verses_yake.json` —
+`{verse_id: {text, keywords: [{key, rank, score, count}]}}` — plus corpus-level
+`-keywords.md`, `-raw.json`, `-normalized.json` and `-preview.md`. `--outdir`
+defaults to `scripts/output/` and is created if missing; `--threshold` sets the
+YAKE cut-off (default 0.3). Only the verse texts are scored: YAML frontmatter,
+transclusion lines and `^block-ids` are stripped first (before 2026-09 the
+corpus-level files picked up frontmatter words such as `root_text`). Requires
+`pip install yake spacy` + the `en_core_web_sm` model (see
+`scripts/requirements.txt`).
 
-#### Step 2 (optional) — corpus-level TF-IDF report
+#### Step 2 — corpus-level TF-IDF report (required when building a termbase)
 
 ```bash
-python3 scripts/generate_en_translation_idf.py
+python3 scripts/generate_en_translation_idf.py --input <en-translation>.md \
+    --outdir <out>/tfidf --keep-transliterated
 ```
 
 Ranks terms across the whole translation against the bundled Reuters-21578
 general-English IDF table (`scripts/idf_corpus.py`, regenerable with
-`scripts/generate_idf_corpus.py`). Use this to pick the corpus-level top-N
-key terms rather than per-verse ones.
+`scripts/generate_idf_corpus.py`). `graded-translate/PIPELINE.md` treats this as
+step 1b; it is not optional when the keywords will feed a termbase, because
+YAKE can miss rare but distinctive terms (on the Twenty-One Tārās it missed
+*yakṣa*, which TF-IDF ranked 43rd).
+
+`--keep-transliterated` keeps words with IAST diacritics (yakṣa, vetāla, Tārā)
+in the JSON outputs. Use it for Mode 1: in a translation from Tibetan those
+Sanskrit loanwords are prime termbase candidates. Without it they are filtered
+out, as the Pāli workflow wants. The tokenizer handles the full IAST set
+(ś ṣ ṛ ḥ as well as the Pāli letters).
+
+#### Step 2b — gap report: TF-IDF terms YAKE missed
+
+```bash
+python3 scripts/keyword_gap_report.py \
+    --yake  <out>/<stem>-keyword_verses_yake.json \
+    --tfidf <out>/tfidf/<stem>_keyword_verses.json --top 60 --md <out>/gap-report.md
+```
+
+Lists the top-N TF-IDF terms that are not among the YAKE keywords. Add the real
+content terms (names, classes of beings, technical vocabulary) to the verses'
+keyword lists before Step 3; ignore generic words.
 
 #### Step 3 — enrich with Tibetan equivalents
 
@@ -87,6 +114,12 @@ aligned Tibetan verse (same `^chapter-verse` ID in the root text) to see which
 Tibetan word the translator was rendering. Write the enriched JSON alongside
 the input with suffix `_en_bo_keyword_meaning_enriched.json`. Checkpoint
 every 50 verses. Report totals and gaps when done.
+
+While enriching, watch for one English keyword that renders **different**
+Tibetan words in different verses (the Twenty-One Tārās machine draft used
+"power" for ནུས, དབང and མཐུ). Give each Tibetan word its own `bo` — never copy
+the first verse's `bo` onto later ones — so Phase 1 can lock them separately.
+`graded-translate/scripts/validate_grade_file.py` flags these after Phase 1.
 
 **(b) Batch via Gemini** (reads `GEMINI_API_KEY` from the environment,
 never hardcoded):
