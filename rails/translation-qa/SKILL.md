@@ -35,8 +35,8 @@ The LLM never sets `status: complete` on its own output — it reports; a domain
 | **Translation file(s)** | Yes | The file under test, e.g. `$TRANSFORMATIONS/Translations/hi-plain/hi-plain-ch2.md`, or a draft `translated_*.md`. For comparison, two files. |
 | **Source text** | Yes | `$SOURCE_TEXTS/BCAV08_SH_sk.md` (Sanskrit root) and/or `$TRANSLATIONS/bo-བློ་ལྡན་ཤེས་རབ།.md` (Tibetan basis named in the file's `root_text:` frontmatter). |
 | **Verse rails** | Preferred | `$VERSES/<verse-id>.md` — the disambiguated restatement is the authority for accuracy. If a verse rail is not `status: complete`, fall back to the source and say so in the report. |
-| **Track requirements** | Yes | `$TRANSFORMATIONS/Translations/<track>/requirements.md` — the register/style contract. |
-| **Track termbase** | Yes | `$TRANSFORMATIONS/Translations/<track>/termbase.md` — the one-rendering-per-keyword contract. |
+| **Track requirements** | Yes | `$TRANSFORMATIONS/Translations/<track>/requirements.md` — the register/style contract. For a `graded-translate` track without one, the grade's row in `graded-translate/SKILL.md` § Registers is the contract; say so in the report. |
+| **Track termbase** | Yes | `$TRANSFORMATIONS/Translations/<track>/termbase.md` — the one-rendering-per-keyword contract. A `graded-translate` track keeps its termbase as JSON (`$KEYWORDS/<src>-<tgt>-termbase-<grade>.json`, the source of truth); write the table with `graded-translate/scripts/termbase_to_md.py <termbase>.json -o termbase.md`. For the mechanical per-verse terminology check on such a track, `graded-translate/scripts/check_termbase_consistency.py --grade-file … --strict-diacritics` covers the Terminology dimension exactly. |
 
 Read the translation and every relevant source before scoring. Do not score accuracy or terminology from memory.
 
