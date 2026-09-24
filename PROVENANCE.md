@@ -12,7 +12,7 @@ retire the vault copy when the team has moved over.
 ---
 
 
-**53 canonical skills, consolidated from 178 source files across 6 repos.**
+**54 canonical skills, consolidated from 178 source files across 6 repos.**
 
 ### `library/annotate-root-text`
 
@@ -456,3 +456,8 @@ retire the vault copy when the team has moved over.
 - `bodhisattvacharyavatara-rails/4-SYSTEM/Skills/translate-zero-shot/SKILL.md`
 - `21-taras-rails/4-SYSTEM/Skills/zeroshot-translator/SKILL.md`
 - `abhidhamma-rails/4-SYSTEM/Skills/zero-shot-translate/SKILL.md`
+
+### `rails/zh-keyword-standardize`
+
+*profile: `rails-vault`* — absorbs 0 source file(s):
+

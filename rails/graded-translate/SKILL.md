@@ -505,7 +505,9 @@ Conventions for every grade:
 - **Line count follows the Tibetan**, one Chinese line per Tibetan line, with
   full-width punctuation （，。；：！、）.
 
-**No attested Chinese translation?** This is the usual case. Build the base
+**No attested Chinese translation?** This is the usual case. Use the
+[`zh-keyword-standardize`](../zh-keyword-standardize/SKILL.md) skill, which does
+the steps below with scripts and one editable decisions file. It builds the base
 termbase from, in order of trust: (1) a classical canon translation of the same
 text (CBETA), aligned by block ID in a reference file; (2) the established
 Buddhist term (Mahāvyutpatti pairs, 佛學大辭典); (3) the zero-shot machine draft,
