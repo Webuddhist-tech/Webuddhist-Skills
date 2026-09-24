@@ -89,6 +89,7 @@ In `$KEYWORDS/<tgt>/`. The scripts take explicit paths, so a flat folder works t
 | `glossary-<tgt>-<grade>.tsv` | Verse-scoped glossary for `machine-translate --glossary` |
 | `<tgt>-worksheet-<grade>.md` | Evidence per term and verse (working file) |
 | `references/…` | Aligned reference texts |
+| `$KEYWORDS/standardised-keywords-<grade>.md` | All languages in one table (`multilingual_table.py`) |
 
 Never writes to `$SOURCE_TEXTS/`, `$TRANSLATIONS/`, the base termbase or the base grade file.
 
@@ -222,6 +223,16 @@ python3 $GT/scripts/check_termbase_consistency.py --lang <tgt> \
 python3 $GT/scripts/termbase_to_glossary.py --lang <tgt> --scope-all \
     $KEYWORDS/<tgt>/en-bo-<tgt>-termbase-general.json -o $KEYWORDS/<tgt>/glossary-<tgt>-general.tsv
 ```
+
+To give reviewers one table of every locked term across all languages, run:
+
+```bash
+python3 $SKILL/scripts/multilingual_table.py --base $KEYWORDS/en/en-bo-en-termbase-general.json \
+    --lang zh=$KEYWORDS/zh/en-bo-zh-termbase-general.json --lang vi=$KEYWORDS/vi/en-bo-vi-termbase-general.json \
+    -o $KEYWORDS/standardised-keywords-general.md
+```
+
+Rebuild it whenever a word list changes.
 
 Write the baseline into `_meta.baseline` and rebuild (Step 5 `--force`).
 `--scope-all` hints each term only in the verses where it is locked. It is always
