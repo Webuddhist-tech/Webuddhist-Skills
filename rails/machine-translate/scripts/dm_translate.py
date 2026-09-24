@@ -107,7 +107,7 @@ PRESERVE_FM_KEYS = [
     "title", "title_original", "title_attested", "title_source", "alt_titles",
     "translator", "license", "category_id", "edition_type", "source",
     "bdrc_work_id", "text_id", "edition_id", "toc_id", "previous_edition_id",
-    "translation_of_text_id", "translation_of_edition_id",
+    "translation_of", "translation_of_text_id", "translation_of_edition_id",
     "imported_from", "import_note",
 ]
 
@@ -519,6 +519,16 @@ def read_frontmatter(path):
     return meta
 
 
+# The API sometimes wraps Sanskrit/Tibetan terms in markdown emphasis (*uṣṇīṣa*).
+# The note is the upload source, so the asterisks would reach the edition content
+# as literal characters; they are dropped at render time (the ledger keeps them).
+EMPHASIS_RE = re.compile(r"(?<![\w*])\*{1,2}(?=\S)([^*\n]+?)(?<=\S)\*{1,2}(?!\*)")
+
+
+def strip_emphasis(text):
+    return EMPHASIS_RE.sub(r"\1", text)
+
+
 def is_heading_record(rec):
     return rec.get("kind") == "heading"
 
@@ -599,6 +609,7 @@ def render(out_md, units, ledger, meta, args, source_rel, prov=None, extra_fm=No
         "file_type": "translation",
         "track_type": "machine-baseline",
         "root_text": source_rel,
+        "translation_of": keep("translation_of"),   # set by the vault linter from the source's text_id
         "translation_of_text_id": keep("translation_of_text_id", meta.get("text_id") or ""),
         "translation_of_edition_id": keep("translation_of_edition_id", meta.get("edition_id") or ""),
         "text_id": keep("text_id"),
@@ -653,7 +664,7 @@ def render(out_md, units, ledger, meta, args, source_rel, prov=None, extra_fm=No
             if level == 1:
                 text = fm["title"]
             elif unit["id"] in heads:
-                text = heads[unit["id"]]["translation"].strip().split("\n")[0]
+                text = strip_emphasis(heads[unit["id"]]["translation"].strip().split("\n")[0])
             else:
                 text = unit["text"]
             lines.append(f"{hashes} {text}{hid}")
@@ -670,7 +681,7 @@ def render(out_md, units, ledger, meta, args, source_rel, prov=None, extra_fm=No
             lines.append(f"![[{link_target}#^{unit['id']}]]")
             lines.append("")
         if rec:
-            tlines = rec["translation"].split("\n")
+            tlines = strip_emphasis(rec["translation"]).split("\n")
             tlines = [t for t in tlines if t.strip()]
             if not tlines:
                 tlines = ["[empty]"]
@@ -734,6 +745,9 @@ def main():
     p.add_argument("--heading-style", default=HEADING_STYLE,
                    help="style_instruction for --headings (default: HEADING_STYLE); append e.g. "
                         "a script requirement to match the rest of the track")
+    p.add_argument("--heading-batch", type=int, default=1,
+                   help="with --headings: headings per call, split on [[n]] markers "
+                        "(1 = one call each, the default; a bad split falls back to singles)")
     p.add_argument("--extra-fm", default=None,
                    help="JSON file of frontmatter keys to seed/override on render "
                         "(researched title, backend ids, import provenance)")
@@ -854,37 +868,71 @@ def main():
         print(f"target     : {args.lang} ({args.lang_tag})   mode=headings")
         print(f"track      : {out_dir}")
         print(f"headings   : {len(heading_units)} total, {len(done_heads)} already in ledger, {len(todo)} to do")
-        n_done = 0
-        for i, hu in enumerate(todo, 1):
-            body = build_body([hu], header, args)
-            print(f"[{i}/{len(todo)}] ^{hu['id']}  {hu['text'][:40]} … ", end="", flush=True)
-            if args.dry_run:
-                print("(dry run)")
-                print(json.dumps(body, ensure_ascii=False, indent=2))
-                continue
-            t0 = time.time()
-            try:
-                one = call_api(body, args.timeout, args.retries)
-            except RuntimeError as exc:
-                print(f"\nSTOPPED at ^{hu['id']}: {exc}", file=sys.stderr)
-                break
-            el = time.time() - t0
+        # --heading-batch N > 1 sends N headings per call under the same [[n]]
+        # marker protocol as blocks; a bad split falls back to one call each.
+        hb = max(1, args.heading_batch)
+        hbatches = [todo[i:i + hb] for i in range(0, len(todo), hb)]
+        print(f"calls      : {len(hbatches)} (<= {hb} heading(s) per call)")
+
+        def record_heading(hu, one, el, batch_ids, fell_back):
             translation = one.strip().split("\n")[0].strip().strip('"').strip("'")
             rec = {
                 "block_id": hu["id"], "kind": "heading", "heading": None,
                 "source": hu["text"], "translation": translation,
                 "target_language": args.lang, "focus": args.focus,
                 "style_instruction": args.style, "context": header, "endpoint": ENDPOINT,
-                "batch_size": 1, "batch_block_ids": [hu["id"]], "batch_fallback": False,
+                "batch_size": len(batch_ids), "batch_block_ids": batch_ids,
+                "batch_fallback": fell_back,
                 "elapsed_s": round(el, 2),
                 "ts": _dt.datetime.now().isoformat(timespec="seconds"),
             }
             ledger.append(rec)
             with ledger_path.open("a", encoding="utf-8") as fh:
                 fh.write(json.dumps(rec, ensure_ascii=False) + "\n")
-            n_done += 1
-            print(f"{el:.1f}s  {translation[:60]}")
-            if args.sleep and i < len(todo):
+            return translation
+
+        n_done, stopped = 0, False
+        for i, hbatch in enumerate(hbatches, 1):
+            ids = [hu["id"] for hu in hbatch]
+            body = build_body(hbatch, header, args)
+            print(f"[{i}/{len(hbatches)}] ^{',^'.join(ids)}  {hbatch[0]['text'][:40]} … ",
+                  end="", flush=True)
+            if args.dry_run:
+                print("(dry run)")
+                print(json.dumps(body, ensure_ascii=False, indent=2))
+                continue
+            t0 = time.time()
+            try:
+                out = call_api(body, args.timeout, args.retries)
+            except RuntimeError as exc:
+                print(f"\nSTOPPED at ^{ids[0]}: {exc}", file=sys.stderr)
+                break
+            el = time.time() - t0
+            segs = split_batch_response(out, len(hbatch))
+            if segs is not None:
+                for hu, seg in zip(hbatch, segs):
+                    last = record_heading(hu, seg, el, ids, False)
+                n_done += len(hbatch)
+                print(f"{el:.1f}s  {last[:60]}")
+            else:
+                print(f"{el:.1f}s  ! marker split failed; retrying {len(hbatch)} heading(s) singly")
+                for hu in hbatch:
+                    if args.sleep:
+                        time.sleep(args.sleep)
+                    print(f"    ^{hu['id']} … ", end="", flush=True)
+                    t0 = time.time()
+                    try:
+                        one = call_api(build_body([hu], header, args), args.timeout, args.retries)
+                    except RuntimeError as exc:
+                        print(f"\nSTOPPED at ^{hu['id']}: {exc}", file=sys.stderr)
+                        stopped = True
+                        break
+                    last = record_heading(hu, one, time.time() - t0, [hu["id"]], True)
+                    n_done += 1
+                    print(f"{last[:60]}")
+                if stopped:
+                    break
+            if args.sleep and i < len(hbatches):
                 time.sleep(args.sleep)
         if not args.dry_run:
             render(out_md, units, latest_records(), meta, args, src_rel, extra_fm=extra_fm)

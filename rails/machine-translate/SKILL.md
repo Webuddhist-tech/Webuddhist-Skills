@@ -371,7 +371,7 @@ python3 $SKILL/scripts/dm_translate.py \
   --source "$SOURCE_TEXTS/<file>.md" --lang <language> --headings
 ```
 
-One call per `##` heading (level ≥ 2) under `HEADING_STYLE`; the H1 is never sent. Read the four-or-so results back: a short label, numeral kept, nothing added. Re-run one with `--headings --force --only <id>` if needed. These become the section titles of the translation's table of contents on upload.
+One call per `##` heading (level ≥ 2) under `HEADING_STYLE`; the H1 is never sent. For a text with many headings (a commentary's sa-bcad), add `--heading-batch 8`: headings go N per call under the same `[[n]]` marker protocol as blocks, and a bad split falls back to one call each — 271 headings cost 36 calls instead of 271. Read the four-or-so results back: a short label, numeral kept, nothing added. Re-run one with `--headings --force --only <id>` if needed. These become the section titles of the translation's table of contents on upload.
 
 #### Step 4 — Verify the render
 
