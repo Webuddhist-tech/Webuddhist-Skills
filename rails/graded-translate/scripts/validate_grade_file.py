@@ -13,6 +13,7 @@ ERRORS (exit 1):
   E4  a keyword's `en` differs from its term's locked rendering
   E5  one Tibetan form locked to two renderings in the same verse, or with
       overlapping verse_ids (context-dependent senses must be verse-scoped)
+  E6  a keyword has no rendering in the target-language field (--lang)
 
 WARNINGS:
   W1  a termbase form contains "..." — it can never match a text or be sent
@@ -28,6 +29,8 @@ WARNINGS:
 Usage:
     python3 validate_grade_file.py --termbase <kw>/en-bo-en-termbase-general.json \\
         --grade-file <kw>/bo_en_keyword_general.json
+    python3 validate_grade_file.py --lang zh --termbase <kw>/en-bo-zh-termbase-general.json \\
+        --grade-file <kw>/bo_zh_keyword_general.json
 """
 import argparse, json, re, sys
 from collections import defaultdict
@@ -46,7 +49,10 @@ def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--termbase", required=True, type=Path)
     ap.add_argument("--grade-file", required=True, type=Path)
+    ap.add_argument("--lang", default="en",
+                    help="target-language field holding the locked rendering (en, zh, hi, …); default en")
     a = ap.parse_args(argv)
+    L = a.lang
     tb = json.loads(a.termbase.read_text(encoding="utf-8"))
     g = json.loads(a.grade_file.read_text(encoding="utf-8"))
     E, W = [], []
@@ -60,11 +66,11 @@ def main(argv=None):
             else:
                 by_form[f].append(key)
     for f, keys in by_form.items():
-        if len({tb[k]["en"] for k in keys}) > 1:
+        if len({tb[k].get(L) for k in keys}) > 1:
             vids = [set(tb[k].get("verse_ids") or []) for k in keys]
             overlap = any(vids[i] & vids[j] for i in range(len(vids)) for j in range(i + 1, len(vids)))
             unscoped = any(not v for v in vids)
-            desc = "; ".join(f"{tb[k]['en']} ({','.join(tb[k].get('verse_ids') or ['all'])})" for k in keys)
+            desc = "; ".join(f"{tb[k].get(L)} ({','.join(tb[k].get('verse_ids') or ['all'])})" for k in keys)
             if overlap or unscoped:
                 E.append(f"E5 {f} has several renderings with overlapping/unscoped verses: {desc}")
             else:
@@ -77,7 +83,7 @@ def main(argv=None):
         seen = defaultdict(set)
         present = []
         for kw in v.get("keywords", []):
-            term, bo, en = kw.get("term"), kw.get("bo") or "", kw.get("en")
+            term, bo, en = kw.get("term"), kw.get("bo") or "", kw.get(L)
             if kw.get("key") and bo:
                 en_to_bo[kw["key"].lower()][(bo, term or "?")].add(vid)
             if not term:
@@ -90,8 +96,10 @@ def main(argv=None):
                 E.append(f"E2 [{vid}] '{term}': Tibetan {bo} is not in this verse")
             if bo and forms(e.get("bo")) and bo not in forms(e.get("bo")):
                 E.append(f"E3 [{vid}] keyword Tibetan {bo} filed under '{term}', whose Tibetan is {e.get('bo')}")
-            if en and e.get("en") and en != e["en"]:
-                E.append(f"E4 [{vid}] '{term}': grade file says '{en}', termbase says '{e['en']}'")
+            if not en:
+                E.append(f"E6 [{vid}] '{term}': no '{L}' rendering in the grade file")
+            elif e.get(L) and en != e[L]:
+                E.append(f"E4 [{vid}] '{term}': grade file says '{en}', termbase says '{e[L]}'")
             if bo:
                 seen[bo].add(en); present.append((term, bo))
         for bo, ens in seen.items():

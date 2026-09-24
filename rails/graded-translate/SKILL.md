@@ -174,6 +174,15 @@ the attested form and log the change; if the base value is empty, read the
 rendering off the attested text. Attested beats base beats invented. Save the
 updated base termbase.
 
+**Step 4b — No attested translation.** Fill each `<tgt>` value from the
+sources the language's register section lists, most trusted first, and record
+where each came from (`<tgt>_source`) and why (`<tgt>_note`). Values chosen
+where the sources disagree get `<tgt>_decision`. The machine draft is never the
+only evidence for a value unless the note says no other source had the word. If
+the target language needs distinctions the English termbase does not lock
+(mantra syllables, a Tibetan word English merged), add target-only entries
+with the same schema and say so in their note.
+
 **Step 5 — Parse the source root text** into `{verse_id → bo_text}`, joining the
 lines of a multi-line verse and skipping headings and transclusions.
 
@@ -197,10 +206,14 @@ filled before Phase 2 uses the file.
 **Step 9 — Validate.** Run the validator on the termbase and every grade file:
 
 ```bash
-python3 $SKILL/scripts/validate_grade_file.py \
+python3 $SKILL/scripts/validate_grade_file.py --lang <tgt> \
     --termbase   $KEYWORDS/<src>-<tgt>-termbase-<grade>.json \
     --grade-file $KEYWORDS/bo_<tgt>_keyword_<grade>.json
 ```
+
+`--lang` names the field that holds the locked rendering (default `en`). The
+same flag exists on `check_termbase_consistency.py --grade-file` and on
+`termbase_to_glossary.py`.
 
 Fix every **E** line before Phase 2 (exit code 1 until they are gone); read every
 **W** line. What it enforces, and why:
@@ -229,7 +242,8 @@ Phase 1 writes only to `$KEYWORDS/`. It never modifies `$SOURCE_TEXTS/`,
 
 - [ ] Base termbase loaded (or built and saved) for `<tgt>`.
 - [ ] `verse_ids` populated from the keyword JSON.
-- [ ] Attested translation parsed and its renderings folded into the termbase; changes logged.
+- [ ] Attested translation parsed and its renderings folded into the termbase; changes logged
+      (or, with none, every value has a `<tgt>_source`, per Step 4b).
 - [ ] `bo_text` set for every verse.
 - [ ] Every keyword in every grade file has a non-empty `<tgt>` and a `grade`; rank cutoff applied.
 - [ ] Files re-loaded after writing; nothing outside `$KEYWORDS/` touched.
@@ -260,8 +274,10 @@ content · inflection and natural target-language word order are allowed.
 **Variant — enforce on a machine draft.** When the base is a `machine-translate`
 draft (DharmaMitra), keep its wording and only substitute the locked terms verse by
 verse. Give DharmaMitra the termbase as a hint first
-(`scripts/termbase_to_glossary.py` → `dm_translate.py --glossary`), but do not rely
-on it: on the Twenty-One Tārās the glossary-primed draft was ~88% identical to the
+(`scripts/termbase_to_glossary.py --lang <tgt> --scope-all` → `dm_translate.py
+--glossary`; `--scope-all` hints each term only in the verses where it is locked, so
+1-8's ཆུ་སྐྱེས་ཞལ "her lotus face" is not pushed onto 1-1, where the same Tibetan is
+the Lord's face), but do not rely on it: on the Twenty-One Tārās the glossary-primed draft was ~88% identical to the
 unprimed one and still used "zombies" and "yakṣas". The enforcement pass here is what
 makes the terms stick (locked-term adherence 87% → 99%).
 
@@ -445,6 +461,58 @@ general → intermediate keeps the Sino-Vietnamese term, may add a qualifier
 form in parentheses (`tánh không` → `tánh không (vô tự tính)`). Keep values 1–6
 words; prefer a form attested in an existing Vietnamese translation over a new
 one. Natural Vietnamese particles (rồi, thì, mà, vậy) are allowed in prose.
+
+### Chinese (`zh`)
+
+WeBuddhist writes **Traditional characters** (`zh-Hant`) unless a project says
+otherwise. For Simplified, convert the finished termbase and text with a
+character converter (e.g. OpenCC `t2s`); never re-choose terms by hand.
+
+| Grade | Style |
+|---|---|
+| **beginner** | Plain modern written Chinese (白話), short sentences. A Buddhist term is glossed in parentheses on first use: 菩提心（為利益一切眾生而求覺悟的心）. |
+| **general** | Standard modern written Chinese. Common Buddhist terms used freely (菩提心、涅槃、灌頂、功德). Clear sentences, with no classical grammar (之乎者也) and no lines forced to seven characters. |
+| **intermediate** | Modern Chinese + exact Buddhist terms used without gloss (煩惱、般若、波羅蜜、三摩地). |
+| **advanced** | Term-dense, may lean on classical canon wording. Sanskrit/Tibetan in parentheses for key terms. |
+
+| English | beginner | general | intermediate | advanced |
+|---|---|---|---|---|
+| compassion | 慈悲心（希望眾生離苦） | 慈悲 | 悲心 | 悲心（karuṇā） |
+| emptiness | 一切事物沒有固定不變的本質 | 空性 | 空性 | 空性（śūnyatā，無自性） |
+| merit | 善行帶來的福報 | 福德 | 福德／功德 | 福德資糧（puṇya） |
+| bodhichitta | 為利益一切眾生而求覺悟的心 | 菩提心 | 菩提心 | 菩提心（bodhicitta） |
+| suffering | 痛苦 | 苦 | 苦 | 苦（duḥkha，三苦） |
+| liberation | 從痛苦中解脫 | 解脫 | 解脫 | 解脫（mokṣa） |
+
+Adaptation: general → beginner replaces a term with its plain gloss, or adds the
+gloss once; general → intermediate keeps the term and may pick the narrower one
+(慈悲 → 悲心); general → advanced adds the Sanskrit in parentheses. Keep values
+1–6 characters where possible.
+
+Conventions for every grade:
+
+- **Mantra syllables are written in Chinese characters, never Latin.** Where the
+  syllable belongs to a mantra that people commonly recite, use that recitation
+  form (Tārā: 嗡 達咧 都達咧 都咧 梭哈; also 吽, 呸). Otherwise use the form of the
+  classical canon translation (CBETA). Lock every syllable in the termbase, since
+  the English termbase often leaves them unlocked.
+- **Names use their established Chinese forms** (度母、阿彌陀佛、須彌山、帝釋、梵天、
+  夜叉). A Sanskrit title line stays in IAST, as in English.
+- **Classical vocabulary is evidence, not the target.** A classical translation
+  (e.g. CBETA) shows which words Chinese readers already know. Keep a classical
+  word a modern reader understands (敬禮、無餘、起屍). Replace a transliteration
+  they cannot parse (部多 → 鬼神). Do not copy classical lines into the text.
+- **Line count follows the Tibetan**, one Chinese line per Tibetan line, with
+  full-width punctuation （，。；：！、）.
+
+**No attested Chinese translation?** This is the usual case. Build the base
+termbase from, in order of trust: (1) a classical canon translation of the same
+text (CBETA), aligned by block ID in a reference file; (2) the established
+Buddhist term (Mahāvyutpatti pairs, 佛學大辭典); (3) the zero-shot machine draft,
+which may suggest but never confirm. Record the source of every value in
+`zh_source` and the reason for any choice between sources in `zh_note`. A value
+decided without agreement between sources gets `zh_decision` saying who
+decided, so the native reviewer can find it.
 
 ### Adding a language
 

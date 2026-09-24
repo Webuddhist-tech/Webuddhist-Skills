@@ -337,7 +337,7 @@ def _verse_sort_key(vid):
     return [(0, int(x)) if x.isdigit() else (1, x) for x in re.split(r"-", vid)]
 
 
-def run_grade_file(grade_path, translation_path, verses, grade_name=None):
+def run_grade_file(grade_path, translation_path, verses, grade_name=None, lang="en"):
     """Grade-file mode: the expectations are the per-verse keyword lists that
     graded-translate Phase 1 writes (bo_<tgt>_keyword_<grade>.json). No verse
     rails or termbase.md needed. A keyword whose Tibetan is contained in a
@@ -367,7 +367,7 @@ def run_grade_file(grade_path, translation_path, verses, grade_name=None):
             continue
         kws = {}
         for kw in grade.get(vid, {}).get("keywords", []):
-            en = kw.get("en") or kw.get(grade_name or "", "")
+            en = kw.get(lang) or ""
             if not en or (grade_name and kw.get("grade") not in (None, grade_name)):
                 continue
             kws.setdefault((kw.get("term") or kw.get("key"), en), kw.get("bo") or "")
@@ -417,6 +417,8 @@ def main(argv=None):
                    help="graded-translate Phase 1 grade file (bo_<tgt>_keyword_<grade>.json): "
                         "use its per-verse keywords as the expectation instead of verse rails")
     p.add_argument("--grade", default=None, help="only check keywords of this grade (grade-file mode)")
+    p.add_argument("--lang", default="en",
+                   help="grade-file mode: keyword field holding the locked rendering (en, zh, hi, …); default en")
     p.add_argument("--strict-diacritics", action="store_true",
                    help="do not fold accents: Tara != Tārā, hum != HŪṂ (use for IAST termbases)")
     p.add_argument(
@@ -429,7 +431,7 @@ def main(argv=None):
     global STRICT_DIACRITICS
     STRICT_DIACRITICS = args.strict_diacritics
     if args.grade_file:
-        return run_grade_file(args.grade_file, args.translation, args.verses, args.grade)
+        return run_grade_file(args.grade_file, args.translation, args.verses, args.grade, args.lang)
     if not (args.termbase and args.rails_dir):
         p.error("rails mode needs --termbase and --rails-dir (or use --grade-file)")
     return run(args.termbase, args.translation, args.rails_dir, args.verses)
