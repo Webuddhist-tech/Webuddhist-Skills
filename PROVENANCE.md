@@ -12,7 +12,7 @@ retire the vault copy when the team has moved over.
 ---
 
 
-**52 canonical skills, consolidated from 178 source files across 6 repos.**
+**53 canonical skills, consolidated from 178 source files across 6 repos.**
 
 ### `library/annotate-root-text`
 
@@ -299,6 +299,11 @@ retire the vault copy when the team has moved over.
 - `21-taras-rails/4-SYSTEM/Skills/property-creator/SKILL.md`
 - `abhidhamma-rails/4-SYSTEM/Skills/property-creator/SKILL.md`
 - `bodhisattvacharyavatara-rails/4-SYSTEM/Skills/property-creator/SKILL.md`
+
+### `rails/rails-pipeline`
+
+*profile: `any`* — absorbs 0 source file(s):
+
 
 ### `rails/raw-to-sources`
 

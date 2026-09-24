@@ -8,6 +8,7 @@ import os, re, sys, yaml, datetime
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 GROUPS = [
+ ("Orchestration",    ["rails-pipeline"]),
  ("Intake & cleanup", ["epub-to-markdown","raw-to-sources","clean-raw-text","tibetan-ocr-quality",
                        "json-to-source-text","json-to-commentary"]),
  ("Formatting",       ["format-root-text","format-tibetan-root-text","format-sanskrit-root-text",

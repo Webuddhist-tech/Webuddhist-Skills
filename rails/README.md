@@ -23,6 +23,11 @@ for in duplication.
 
 ## The usual order
 
+**Want this run for you?** [`rails-pipeline`](rails-pipeline/SKILL.md) is the
+orchestrator: it picks the pipeline for a goal, checks what a text already has,
+runs each skill below in order with its completion check, stops at the human
+gates, and keeps a resumable run log in `$WORK/rails-run-<text-id>.md`.
+
 ```
 epub-to-markdown ─┐
                   ├─→ clean-raw-text ─→ format-*-root-text ─→ frontmatter

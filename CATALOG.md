@@ -3,7 +3,7 @@
 Every skill in this repo. Generated from each skill's own frontmatter —
 run `python3 tools/build-catalog.py` after adding or changing one.
 
-- **48** text-processing skills in [`rails/`](rails/README.md)
+- **49** text-processing skills in [`rails/`](rails/README.md)
 - **4** library ingestion skills in [`library/`](library/README.md)
 - **17** org & engineering skills at the repo root
 
@@ -15,6 +15,12 @@ for the full mapping.
 
 ## rails/ — text processing
 
+
+### Orchestration
+
+| Skill | Does | Absorbs |
+|---|---|---|
+| [`rails-pipeline`](rails/rails-pipeline/SKILL.md) | Orchestrate the rails skills end to end: pick the right pipeline for a goal, detect what a text already has, then run each rails skill in order with its… | 0 |
 
 ### Intake & cleanup
 
