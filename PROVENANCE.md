@@ -12,7 +12,7 @@ retire the vault copy when the team has moved over.
 ---
 
 
-**54 canonical skills, consolidated from 178 source files across 6 repos.**
+**55 canonical skills, consolidated from 178 source files across 6 repos.**
 
 ### `library/annotate-root-text`
 
@@ -253,6 +253,11 @@ retire the vault copy when the team has moved over.
 
 - `21-taras-rails/4-SYSTEM/Skills/english-keyword-extraction/SKILL.md`
 - `abhidhamma-rails/4-SYSTEM/Skills/pali-keyword-extraction/SKILL.md`
+
+### `rails/keyword-standardize`
+
+*profile: `rails-vault`* — absorbs 0 source file(s):
+
 
 ### `rails/local-wiki-article`
 

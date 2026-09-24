@@ -3,7 +3,7 @@
 Every skill in this repo. Generated from each skill's own frontmatter —
 run `python3 tools/build-catalog.py` after adding or changing one.
 
-- **50** text-processing skills in [`rails/`](rails/README.md)
+- **51** text-processing skills in [`rails/`](rails/README.md)
 - **4** library ingestion skills in [`library/`](library/README.md)
 - **17** org & engineering skills at the repo root
 
@@ -80,7 +80,8 @@ for the full mapping.
 | [`pali-biterm-extraction`](rails/pali-biterm-extraction/SKILL.md) | For a block-aligned Pāli source file and an English translation file, extract every attested English rendering for each Pāli token's morphological family… | 1 |
 | [`term-definition`](rails/term-definition/SKILL.md) | Extract verbatim definitions of key terms from Tibetan commentaries and fill them into the Meaning column of BCA-Term-Localization.md, formatted in… | 2 |
 | [`term-localization`](rails/term-localization/SKILL.md) | Translate Tibetan Buddhist key terms in BCA-Term-Localization.md into English, Chinese, Hindi, Nepali, Russian, and Mongolian, deriving each rendering… | 1 |
-| [`zh-keyword-standardize`](rails/zh-keyword-standardize/SKILL.md) | Standardise the Chinese keywords of a block-ID'd Tibetan text before it is translated into Chinese, when no human Chinese translation of it exists:… | 0 |
+| [`keyword-standardize`](rails/keyword-standardize/SKILL.md) | Standardise the target-language keywords of a block-ID'd Tibetan text before it is translated, when no human translation in that language exists to attest… | 0 |
+| [`zh-keyword-standardize`](rails/zh-keyword-standardize/SKILL.md) | Alias of `keyword-standardize` (Chinese) | 0 |
 
 ### Summaries & context
 

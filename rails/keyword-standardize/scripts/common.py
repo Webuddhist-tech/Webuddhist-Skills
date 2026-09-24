@@ -1,4 +1,4 @@
-"""Shared helpers for zh-keyword-standardize (stdlib only)."""
+"""Shared helpers for keyword-standardize (stdlib only)."""
 import json, re
 from pathlib import Path
 
@@ -8,10 +8,11 @@ SOURCE_LABELS = {
     "mt":         "machine draft",
     "recitation": "modern mantra recitation",
     "attested":   "attested human translation",
+    "related":    "related-language word list",
     "kept":       "kept as in the English",
     "new":        "new (no source had it)",
 }
-TRUST = ["attested", "classical", "standard", "recitation", "kept", "mt", "new"]
+TRUST = ["attested", "classical", "related", "standard", "recitation", "kept", "mt", "new"]
 _ID = re.compile(r"(?<!\S)\^([\w][\w\-]*)\s*$")
 
 

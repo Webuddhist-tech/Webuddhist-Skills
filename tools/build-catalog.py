@@ -23,7 +23,7 @@ GROUPS = [
  ("Terminology & glossaries",
                       ["bilingual-glossary","interlinear-gloss","keyword-extract",
                        "pali-biterm-extraction","term-definition","term-localization",
-                       "zh-keyword-standardize"]),
+                       "keyword-standardize","zh-keyword-standardize"]),
  ("Summaries & context",
                       ["section-summary","verse-context","multilevel-summary","local-wiki-article"]),
  ("Claims",           ["commentary-claims","claims-consolidate"]),

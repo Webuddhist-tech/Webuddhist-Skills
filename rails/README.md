@@ -47,7 +47,7 @@ raw-to-sources ───┘                     format-commentary     extract-so
   bilingual-glossary       claims-consolidate        machine-translate
   keyword-extract          wiki-article-from-claims  zeroshot-translate
   term-definition                                    graded-translate
-  zh-keyword-standardize ───────────────────────────→  (zh termbase, no attested translation)
+  keyword-standardize ──────────────────────────────→  (zh / vi / … termbase, no attested translation)
                                                      translation-qa
                                                      commentary-fact-check
 ```

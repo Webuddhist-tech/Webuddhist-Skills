@@ -49,7 +49,7 @@ import urllib.error
 import urllib.request
 
 HERE = pathlib.Path(__file__).resolve().parent
-DM_PATH = HERE.parent.parent / "dharmamitra-translate" / "scripts" / "dm_translate.py"
+DM_PATH = HERE / "dm_translate.py"   # sibling in rails/machine-translate/scripts/
 _spec = importlib.util.spec_from_file_location("dm_translate", DM_PATH)
 dm = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(dm)
@@ -750,7 +750,7 @@ def main():
                  if dm.is_heading_record(r) == bool(args.headings)
                  and r["block_id"] in order and order[r["block_id"]] < first_pos]
         prior.sort(key=lambda r: order[r["block_id"]])
-        combined = {"text": "\n".join(u["text"] for u in batch)}
+        combined = {"text": "\n".join(u["text"] for u in batch), "ids": [u["id"] for u in batch]}
         return dm.build_context(header, prior, combined, glossary,
                                 args.context_blocks, args.context_cap)
 
