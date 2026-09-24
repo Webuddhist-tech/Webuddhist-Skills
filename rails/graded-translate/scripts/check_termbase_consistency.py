@@ -134,7 +134,7 @@ TERMBASE_ROW_RE = re.compile(r"^\|\s*(.+?)\s*\|\s*(.+?)\s*\|\s*(.+?)\s*\|\s*$")
 
 def extract_surface_forms(rendering_cell: str) -> list:
     # "world(s)" -> "world" / "worlds" (an optional plural, not a gloss)
-    rendering_cell = re.sub(r"(\w)\(s\)", r"\1 / \1s", rendering_cell)
+    rendering_cell = re.sub(r"(\w+)\(s\)", r"\1 / \1s", rendering_cell)
     forms = []
     for alt in re.split(r"\s*/\s*", rendering_cell):
         alt = alt.strip()

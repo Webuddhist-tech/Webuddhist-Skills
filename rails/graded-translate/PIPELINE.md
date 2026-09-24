@@ -10,24 +10,27 @@ Choephel English base). Paths are logical names from `rails/PROFILES.md`;
 flowchart TD
     A["English base translation<br/>one verse per block: text ^verse-id"]
     B1["Step 1a — YAKE keyword extraction<br/>keyword-extract: keywords.py"]
-    B2["Step 1b — TF-IDF keyword extraction<br/>keyword-extract: generate_en_translation_idf.py"]
+    B2["Step 1b — TF-IDF keyword extraction<br/>keyword-extract: generate_en_translation_idf.py --keep-transliterated"]
+    B3["Step 1c — gap report<br/>keyword_gap_report.py: TF-IDF terms YAKE missed"]
     C["verse_keywords.json<br/>{verse_id: {text, keywords:[{key,rank,score,count}]}}"]
     D["Step 2 — Tibetan meaning enrichment<br/>keyword-extract Step 3 (Claude, or enrich_en_bo_keyword_meaning.py via Gemini)"]
     E["*_en_bo_keyword_meaning_enriched.json<br/>adds bo per keyword per verse"]
     F["Step 3 — graded-translate Phase 1<br/>bo_&lt;tgt&gt;_keyword_&lt;grade&gt;.json<br/>rank ≤200 beginner, ≤500 general/intermediate, all advanced"]
+    V["Step 3c — validate_grade_file.py<br/>0 errors before Phase 2"]
     G["Step 3b (English tracks, vault-local)<br/>glossary_select_termbase.py → termbase.md<br/>glossary_audit_and_promote.py → bo-en.md"]
     H["Step 4 — graded-translate Phase 2<br/>locked term dict → translate chapter by chapter at grade register"]
     I["&lt;text&gt;-&lt;tgt&gt;-&lt;grade&gt;.md<br/>one verse per block, ^verse-id"]
-    J["Step 5 — graded-translate Phase 3<br/>check_termbase_consistency.py<br/>EXACT / LOOSE / MISSING per verse"]
-    K["Step 6 — commentary-fact-check<br/>extract_commentary.py + extract_translation.py"]
-    L["commentary-fact-check-report-&lt;grade&gt;.md<br/>verse-by-verse ✓ / ⚠ table"]
+    J["Step 5 — graded-translate Phase 3<br/>check_termbase_consistency.py --grade-file --strict-diacritics<br/>EXACT / LOOSE / COVERED / MISSING per verse"]
+    K["Step 6 — commentary-fact-check, one run per commentary<br/>extract_commentary.py + extract_translation.py"]
+    L["one report per commentary + consensus table<br/>fix where 3 of 4 agree"]
 
     A --> B1 --> C
     A --> B2 --> C
+    B2 --> B3 --> C
     C --> D --> E
     E --> F
     E --> G
-    F --> H
+    F --> V --> H
     G -.-> H
     H --> I
     I --> J
@@ -126,7 +129,16 @@ verse    bo term                      expected                         result
 ```
 
 Where no verse rails exist yet for a language, the grade file's own per-verse
-keyword lists serve as the expectation (the manual pass in Step 4.4).
+keyword lists serve as the expectation — run it in grade-file mode:
+
+```bash
+python3 $SKILLS/graded-translate/scripts/check_termbase_consistency.py \
+    --grade-file $KEYWORDS/bo_<tgt>_keyword_<grade>.json \
+    --translation $TRANSFORMATIONS/Translations/<tgt>-<grade>/<text>-<tgt>-<grade>.md --strict-diacritics
+```
+
+`--strict-diacritics` keeps "Tārā" and "Tara" apart; without it accents are folded
+(right for French, wrong for an IAST termbase).
 
 ## Step 6 — Fact-check against the commentary (`commentary-fact-check`)
 
@@ -135,14 +147,17 @@ commentary says the verse means.
 
 ```bash
 python3 $SKILLS/commentary-fact-check/scripts/extract_commentary.py \
-    $COMMENTARIES/Transcluded/<commentary>.md --json $WORK/commentary.json
+    $COMMENTARIES/<commentary>.md --root $SOURCE_TEXTS/<root>.md --json $WORK/commentary.json
 python3 $SKILLS/commentary-fact-check/scripts/extract_translation.py \
     $TRANSFORMATIONS/Translations/hi-beginner/bca-hi-beginner.md --chapter 1 --json $WORK/hi_ch1.json
 ```
 
-Each verse gets ✓ if the commentary's content (similes, named entities,
-enumerations) is present, or ⚠ with a concrete note. Verdicts accumulate in
-one report per grade/language:
+Any commentary file with `![[<root>#^<id>]]` markers works; no special folder is
+needed. Run it once per commentary (one report each), and when more than one has
+been checked, build the consensus table (`commentary-fact-check` Phase 1b): fix
+where at least 3 of 4 say the English is wrong, leave splits to the translator,
+drop single-commentary flags. Each verse gets ✓ if the commentary's content
+(similes, named entities, enumerations) is present, or ⚠ with a concrete note:
 
 ```
 | Verse | Verdict | Note |
@@ -155,9 +170,9 @@ one report per grade/language:
 
 | Stage | Skill / script | Input | Output |
 |---|---|---|---|
-| 1. Keyword extraction | `keyword-extract` (`keywords.py` / `generate_en_translation_idf.py`) | English base .md | `*_verse_keywords.json` |
+| 1. Keyword extraction | `keyword-extract` (`keywords.py` / `generate_en_translation_idf.py --keep-transliterated` / `keyword_gap_report.py`) | English base .md | `*_verse_keywords.json` + gap report |
 | 2. Tibetan enrichment | `keyword-extract` Step 3 | keyword JSON + root text | `*_en_bo_keyword_meaning_enriched.json` |
-| 3. Target termbase | `graded-translate` Phase 1 | enriched JSON, rank cutoff, attested translation | `bo_<tgt>_keyword_<grade>.json` |
+| 3. Target termbase | `graded-translate` Phase 1 + `validate_grade_file.py` | enriched JSON, rank cutoff, attested translation | termbase JSON + `bo_<tgt>_keyword_<grade>.json` (0 validator errors) |
 | 4. Translation | `graded-translate` Phase 2 | grade file | `<text>-<tgt>-<grade>.md` |
-| 5. Consistency check | `graded-translate` Phase 3 (`check_termbase_consistency.py`) | termbase + translation (+ rails) | EXACT / LOOSE / MISSING per verse |
-| 6. Fact-check | `commentary-fact-check` | commentary + translation | `commentary-fact-check-report-<grade>.md` |
+| 5. Consistency check | `graded-translate` Phase 3 (`check_termbase_consistency.py`) | grade file (or termbase.md + rails) + translation | EXACT / LOOSE / COVERED / MISSING per verse |
+| 6. Fact-check | `commentary-fact-check` (per commentary, then consensus) | commentaries + translation | one report per commentary + consensus table + fixes log |

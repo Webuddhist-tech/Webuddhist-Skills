@@ -194,6 +194,34 @@ its grade-adapted `<tgt>` and `grade`.
 keyword count, and every keyword whose `<tgt>` is still empty — those must be
 filled before Phase 2 uses the file.
 
+**Step 9 — Validate.** Run the validator on the termbase and every grade file:
+
+```bash
+python3 $SKILL/scripts/validate_grade_file.py \
+    --termbase   $KEYWORDS/<src>-<tgt>-termbase-<grade>.json \
+    --grade-file $KEYWORDS/bo_<tgt>_keyword_<grade>.json
+```
+
+Fix every **E** line before Phase 2 (exit code 1 until they are gone); read every
+**W** line. What it enforces, and why:
+
+- **A keyword's Tibetan is copied from that verse's `bo_text`**, in the verse's own
+  word order and spelling (E2). A form that is not literally in the verse can never
+  be checked or glossed.
+- **A keyword's Tibetan is one of its term's forms** (E3). On the Twenty-One Tārās,
+  1-21's མཐུ was filed under `power` (locked to དབང) because the English draft said
+  "power"; only the commentary fact-check caught it.
+- **Context-dependent senses are separate entries with disjoint `verse_ids`** (E5).
+  One Tibetan form may carry two renderings (དབང: "power" at 1-10, "empowerment" at
+  2-3) only when each entry lists the verses it applies to.
+- **No `...` in a Tibetan form** (W1). Write each contiguous part, or leave the phrase
+  out; a gapped form matches nothing.
+- **One English word for several locked Tibetan terms** (W2) is the signature of a
+  base draft that merged distinctions ("power" for ནུས / དབང / མཐུ). Confirm each
+  split is intended.
+- **Nested terms** (W5 — "Tara" inside the Sanskrit title) are reported as COVERED
+  by the Phase 3 check; make sure that is what you want.
+
 Phase 1 writes only to `$KEYWORDS/`. It never modifies `$SOURCE_TEXTS/`,
 `$TRANSLATIONS/`, the enriched keyword JSON, or the attested translation.
 
@@ -205,6 +233,7 @@ Phase 1 writes only to `$KEYWORDS/`. It never modifies `$SOURCE_TEXTS/`,
 - [ ] `bo_text` set for every verse.
 - [ ] Every keyword in every grade file has a non-empty `<tgt>` and a `grade`; rank cutoff applied.
 - [ ] Files re-loaded after writing; nothing outside `$KEYWORDS/` touched.
+- [ ] `validate_grade_file.py` reports 0 errors; its warnings were read.
 
 ---
 
@@ -228,9 +257,22 @@ chapters in the text's order (BCA: `0, I, 1–10, colophon`).
 Rules: locked terms override register · translate line by line · never add
 content · inflection and natural target-language word order are allowed.
 
+**Variant — enforce on a machine draft.** When the base is a `machine-translate`
+draft (DharmaMitra), keep its wording and only substitute the locked terms verse by
+verse. Give DharmaMitra the termbase as a hint first
+(`scripts/termbase_to_glossary.py` → `dm_translate.py --glossary`), but do not rely
+on it: on the Twenty-One Tārās the glossary-primed draft was ~88% identical to the
+unprimed one and still used "zombies" and "yakṣas". The enforcement pass here is what
+makes the terms stick (locked-term adherence 87% → 99%).
+
 **Step 4 — Consistency pass.** Re-scan the whole output for every locked term;
 fix any verse that used a non-termbase form. Write each verse's `<tgt>_text`
 back into the grade file.
+
+`<tgt>_text` is the **Phase 2 snapshot**. Later edits — `commentary-fact-check`
+Phase 2 fixes, translator decisions — go into the translation `.md` only; do not
+rewrite `<tgt>_text`. The file's `draft_history` property (rails/CONVENTIONS.md)
+and git record which text is which draft.
 
 **Step 5 — Write the markdown.** One block per verse, translated text followed
 by its block ID, blank line between blocks; headings (`id` ends in `-0`) as
@@ -273,6 +315,23 @@ identical.
 
 ## Phase 3 — Mechanical drift check
 
+**Without verse rails (grade-file mode)** — the usual case right after Phase 2:
+
+```bash
+python3 $SKILL/scripts/check_termbase_consistency.py \
+    --grade-file  $KEYWORDS/bo_<tgt>_keyword_<grade>.json \
+    --translation $TRANSFORMATIONS/Translations/<tgt>-<grade>/<text>-<tgt>-<grade>.md \
+    --strict-diacritics
+```
+
+Each verse's expected terms are its keyword list in the grade file. A term whose
+Tibetan sits inside a longer locked phrase present in the same verse is
+**COVERED**. Pass `--strict-diacritics` whenever the termbase locks IAST spellings:
+without it accents are folded, and "Tārā" passes for "Tara" (on the Twenty-One Tārās
+machine draft that hid 11 of 21 misses).
+
+**With verse rails:**
+
 ```bash
 python3 $SKILL/scripts/check_termbase_consistency.py \
     --termbase   $TRANSFORMATIONS/Translations/<track>/termbase.md \
@@ -280,6 +339,9 @@ python3 $SKILL/scripts/check_termbase_consistency.py \
     --rails-dir  $VERSES \
     --verses 1-1 1-2 1-3
 ```
+
+`scripts/termbase_to_md.py <termbase>.json -o termbase.md` writes the JSON termbase
+as that table (it is also the `termbase.md` that `translation-qa` reads).
 
 The script parses a `termbase.md` table (`| source lemma | locked rendering |
 note |`, several source variants per row separated by ` / `, parenthetical
@@ -291,17 +353,9 @@ reports per (verse, lemma): **EXACT**, **LOOSE** (article-stripped,
 de-pluralised), or **MISSING**. MISSING is a human-look item — a legitimate
 paraphrase or real drift.
 
-Two things to know:
-
-- It reads a **markdown termbase**, the `termbase.md` a track keeps under
-  `$TRANSFORMATIONS/Translations/<track>/`. To check a Phase 2 output, first
-  export the grade file's locked dict as that table (`| bo | <tgt> | |` rows,
-  one per keyword, `bo` from the keyword entry). Or run the check directly
-  against the JSON in a session — the algorithm is the one above.
-- It needs verse rails (`$VERSES/<id>.md` with `concepts_in_verse:`) to know
-  which lemmas to expect in which verse. Where no rails exist yet, use the
-  keyword JSON's own per-verse keyword lists as the expectation instead — that
-  is exactly what Phase 2 Step 4 does by hand.
+Block IDs of every shape are read (`^0`, `^1-5`, `^I-1`, `^a-1`), multi-line
+verses are joined, and transclusion lines (`![[…#^id]]`) are skipped, so the
+check runs on transclusion-layout files as they are.
 
 Every MISSING must be either fixed or explained in the translation's notes
 before the file is handed to `commentary-fact-check`.
