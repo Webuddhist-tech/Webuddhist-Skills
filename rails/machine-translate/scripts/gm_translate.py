@@ -56,7 +56,7 @@ _spec.loader.exec_module(dm)
 
 API_BASE = "https://generativelanguage.googleapis.com/v1beta/models"
 DEFAULT_MODEL = "gemini-3.1-pro-preview"
-DEFAULT_TRACK_ROOT = "3-TRANSFORMATIONS/Translations/Gemini"
+DEFAULT_TRACK_ROOT = "3-TRANSFORMATIONS/Translations/machine-drafts/zero-shot"   # track = <root>/<engine>-<tag>
 KEY_ENV = "GEMINI_API_KEY"
 
 RATE_LIMIT_BACKOFF = [10, 20, 40, 60, 120, 180]
@@ -194,7 +194,7 @@ status: draft
 seeded: {today}
 ---
 
-# Gemini/{tag} — about this track
+# machine-drafts/zero-shot/gemini-{tag} — about this track
 
 A **machine baseline**, not a rails-governed translation track.
 
@@ -468,7 +468,7 @@ def main():
     p.add_argument("--lang", default=None, help="target language LABEL (hindi, nepali, …)")
     p.add_argument("--lang-tag", default=None, help="vault lang tag (hi, ne, mn, vi, …)")
     p.add_argument("--out", default=None,
-                   help=f"track folder (default {DEFAULT_TRACK_ROOT}/<lang-tag>)")
+                   help=f"track folder (default {DEFAULT_TRACK_ROOT}/gemini-<lang-tag>)")
     p.add_argument("--model", default=DEFAULT_MODEL)
     p.add_argument("--thinking", default=None, choices=[None, "low", "medium", "high"],
                    help="thinkingLevel; default = the model's own default")
@@ -544,7 +544,7 @@ def main():
     args.lang = args.lang.strip().lower()
     args.lang_tag = args.lang_tag or LANG_TAGS.get(args.lang) or re.sub(r"[^a-z]", "", args.lang)[:3]
     args.source_language = "tibetan"
-    out_dir = pathlib.Path(args.out or f"{DEFAULT_TRACK_ROOT}/{args.lang_tag}")
+    out_dir = pathlib.Path(args.out or f"{DEFAULT_TRACK_ROOT}/gemini-{args.lang_tag}")
     work_dir = out_dir / "work"
     work_dir.mkdir(parents=True, exist_ok=True)
 

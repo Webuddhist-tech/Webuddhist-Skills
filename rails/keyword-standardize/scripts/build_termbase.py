@@ -44,7 +44,7 @@ Usage:
         --base-termbase <kw>/en/en-bo-en-termbase-general.json \\
         --base-grade-file <kw>/en/bo_en_keyword_general.json \\
         --meaning-text <en translation .md> \\
-        --reference <$KEYWORDS/zh/references/zh-classical-*.md> --mt-draft <Dharmamitra/zh/…-zh.md> \\
+        --reference <$KEYWORDS/zh/references/zh-classical-*.md> --mt-draft <machine-drafts/zero-shot/dharmamitra-zh/…-zh.md> \\
         --out-dir <kw>/zh [--force]
 """
 import argparse, copy, json, sys

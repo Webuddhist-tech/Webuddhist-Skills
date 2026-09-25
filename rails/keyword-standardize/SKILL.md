@@ -242,8 +242,8 @@ needed.
 ### Step 7 — Log and hand off
 
 Log the choices, sources, counts and checks in `STATE.md`, then commit. Next comes a
-`machine-translate` run into a new track (`Dharmamitra/<tgt>-general/` or
-`Gemini/<tgt>-general/`) with the glossary and a `style.md` like the ones in the
+`machine-translate` run into a new track (`machine-drafts/primed/dharmamitra-<tgt>-general/` or
+`machine-drafts/primed/gemini-<tgt>-general/`) with the glossary and a `style.md` like the ones in the
 language sections. After that: `graded-translate` Phase 2 (enforce on the machine
 draft) and Phase 3 (drift), then the back-translation meaning check, the commentary
 light check, and a native reviewer, who starts with the flagged table.

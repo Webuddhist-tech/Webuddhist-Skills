@@ -198,7 +198,7 @@ Example (Twenty-One Tārās, general grade, after the fact-check):
 ```yaml
 draft: 3
 draft_history:
-  - 1 — DharmaMitra raw output (3-TRANSFORMATIONS/Translations/Dharmamitra/en-general/)
+  - 1 — DharmaMitra raw output (3-TRANSFORMATIONS/Translations/machine-drafts/primed/dharmamitra-en-general/)
   - 2 — termbase-enforced (graded-translate Phase 2); text kept in grade_file en_text
   - 3 — commentary fact-check fixes applied (this file)
 fact_checked: 2026-09-24
@@ -225,8 +225,11 @@ A reader should never have to guess which file to use.
 │   ├── <source stem>-<lang>-<grade>.md  ← the current translation (edited in place, draft N)
 │   └── reports/                       ← fact-check reports, consensus, fixes logs,
 │                                         back-translation and consistency checks, comparisons
-├── Dharmamitra/<tag>/                 ← machine drafts (machine-translate); raw, never edited by hand
-└── Gemini/<tag>/
+└── machine-drafts/                    ← raw machine output (machine-translate); never edited by hand, never the translation to use
+    ├── 00-INDEX.md                    ← what each folder is and which draft it fed
+    ├── zero-shot/<engine>-<tag>/      ← no word list (the scripts' default output, e.g. gemini-hi, dharmamitra-zh)
+    ├── primed/<engine>-<tag>-<grade>/ ← run with the word list as a per-verse glossary (always --out)
+    └── commentaries/<engine>-<tag>/   ← machine translations of the commentaries (reading aids)
 ```
 
 - Skills that write a report about a translation write it to `<translation-dir>/reports/`

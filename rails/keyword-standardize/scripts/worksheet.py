@@ -18,7 +18,7 @@ Usage:
     python3 worksheet.py --base-termbase <kw>/en/en-bo-en-termbase-general.json \\
         --base-grade-file <kw>/en/bo_en_keyword_general.json \\
         --meaning-text <en translation .md> --reference <$KEYWORDS/zh/references/zh-classical-*.md> \\
-        --mt-draft <Dharmamitra/zh/…-zh.md> -o <kw>/zh/zh-worksheet-general.md \\
+        --mt-draft <machine-drafts/zero-shot/dharmamitra-zh/…-zh.md> -o <kw>/zh/zh-worksheet-general.md \\
         [--template <kw>/zh/zh-decisions-general.json] [--decisions <existing decisions, shown per term>]
 """
 import argparse, json, sys

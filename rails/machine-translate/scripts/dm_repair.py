@@ -108,7 +108,7 @@ def tidy(text):
 def main():
     p = argparse.ArgumentParser(description=__doc__,
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument("--track", default="3-TRANSFORMATIONS/Translations/Dharmamitra/en")
+    p.add_argument("--track", default="3-TRANSFORMATIONS/Translations/machine-drafts/zero-shot/dharmamitra-en")
     p.add_argument("--sources", default="1-SOURCES/Text")
     p.add_argument("--lang", default="english")
     p.add_argument("--lang-tag", default="en")
