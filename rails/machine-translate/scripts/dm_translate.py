@@ -638,7 +638,13 @@ def render(out_md, units, ledger, meta, args, source_rel, prov=None, extra_fm=No
                             f"<={getattr(args, 'batch_max_chars', 0)} src chars, "
                             f"<={getattr(args, 'payload_cap', 0)} payload chars",
             },
-            "warning": DM_WARNING,
+            "warning": DM_WARNING if not args.glossary else (
+                "> [!warning] Machine draft — not a rails-governed translation.\n"
+                "> Every line below is raw DharmaMitra `cat-translate` output, produced in small "
+                f"batches of adjacent blocks, each given the locked terms of its verses from `{args.glossary}` "
+                "as a hint; it has not been checked against them, against verse-context rails, or by a "
+                "person. It is a drafting aid only; the checked translation lives in its own "
+                "`<lang>-<grade>/` folder. See `about.md` in this folder."),
         }
 
     kept = read_frontmatter(out_md)

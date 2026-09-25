@@ -648,11 +648,16 @@ def main():
                                             if r.get("line_parity") is False and not dm.is_heading_record(r)),
             },
             "warning": (
-                "> [!warning] Machine baseline — not a rails-governed translation.\n"
+                "> [!warning] Machine draft — not a rails-governed translation.\n"
                 "> Every line below is raw Google Gemini output (model in the frontmatter), "
-                "produced in small batches of adjacent blocks under a JSON line schema, with "
-                "no termbase, no verse-context rails, and no human review. It is a first "
-                "display translation and a drafting aid only. See `about.md` in this folder."
+                "produced in small batches of adjacent blocks under a JSON line schema. "
+                + (f"Each batch was given the locked terms of its verses from the track glossary "
+                   f"(`{args.glossary}`) as fixed terminology, but the text has not been checked "
+                   f"against them, against verse-context rails, or by a person. "
+                   if args.glossary else
+                   "No termbase or glossary, no verse-context rails, and no human review. ")
+                + "It is a drafting aid only; the checked translation lives in its own "
+                "`<lang>-<grade>/` folder. See `about.md` in this folder."
             ),
         }
         dm.render(out_md, units, ordered, meta, args, src_rel, prov=prov, extra_fm=extra_fm)
