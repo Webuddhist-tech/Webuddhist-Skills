@@ -322,6 +322,9 @@ light check, and a native reviewer, who starts with the flagged table.
   the named seed-syllable, अक्षर the generic ཡི་གེ.
 - **Lock stems (rule 6):** Sanskrit compounds hide the free word — lock the stem: महा (महान्, महाभयंकर,
   महानता), चन्द्र (चन्द्रमा, अर्धचन्द्र). Don't put `…` in a rendering; the checker searches it literally.
+  A stem is for the checker, not for the model: give such a term a `"hint"` (a whole word, e.g. महान्,
+  चन्द्रमा) in the decisions file, and the glossary sends the hint instead. Without one, the Nepali primed
+  run wrote bare महा and परम into the text.
 - **Engine:** Gemini (`gemini-translate`). A Gemini zero-shot already reached 90% of the locked words on the
   Tārās, because its `style.md` asks for the Sanskrit Buddhist vocabulary.
 - **style.md:** "Translate this Tibetan liturgical text into Hindi, line by line: render each Tibetan line as

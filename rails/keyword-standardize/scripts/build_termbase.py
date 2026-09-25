@@ -105,6 +105,8 @@ def main(argv=None):
     def entry(k, bo, en, rank, vids, d, zh_only=False):
         e = {"bo": bo, "en": en, L: d[L], "rank": rank, "verse_ids": vids,
              f"{L}_source": source_label(d["source"], meta.get("source_labels")), f"{L}_note": d.get("note", "")}
+        if d.get("hint"):          # a whole word to send the model when the lock is a stem (महा → महान्)
+            e[f"{L}_hint"] = d["hint"]
         if d.get("decision"):
             e[f"{L}_decision"] = d["decision"] if isinstance(d["decision"], str) else meta.get("decided_by", "flagged pick")
         e[f"{L}_evidence"] = evidence(d[L], vids)

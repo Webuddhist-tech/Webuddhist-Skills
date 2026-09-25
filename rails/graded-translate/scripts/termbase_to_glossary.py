@@ -33,7 +33,7 @@ def main(argv=None):
     rows = defaultdict(list)          # form -> [(en, verse_ids, key)]
     skipped = []
     for key, e in sorted(tb.items(), key=lambda kv: kv[1].get("rank", 10**9)):
-        en = (e.get(a.lang) or "").strip()
+        en = (e.get(f"{a.lang}_hint") or e.get(a.lang) or "").strip()   # a hint (whole word) beats a stem lock
         if not en:
             continue
         for f in (x.strip() for x in (e.get("bo") or "").split("/")):
