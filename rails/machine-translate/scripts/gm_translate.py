@@ -180,6 +180,15 @@ SAFETY_OFF = [
               "HARM_CATEGORY_SEXUALLY_EXPLICIT", "HARM_CATEGORY_DANGEROUS_CONTENT")
 ]
 
+PRIMED_NOTE = """
+**Primed run.** Unlike a zero-shot baseline, every batch was given the locked
+terms of its verses from the track glossary (`{glossary}`, built by
+`keyword-standardize`) as fixed terminology. The output has not been checked
+against them or by a person: the checked translation is built from it in its
+own `<lang>-<grade>/` folder.
+"""
+
+
 ABOUT_TEMPLATE = """---
 title: "{tag} — Gemini zero-shot ({lang})"
 track_type: machine-baseline
@@ -612,7 +621,8 @@ def main():
         if not about.exists():
             about.write_text(ABOUT_TEMPLATE.format(
                 tag=args.lang_tag, lang=args.lang, model=args.model, endpoint=endpoint,
-                today=_dt.date.today().isoformat(), track=out_dir), encoding="utf-8")
+                today=_dt.date.today().isoformat(), track=out_dir)
+                + (PRIMED_NOTE.format(glossary=args.glossary) if args.glossary else ""), encoding="utf-8")
             print(f"seeded {about}")
         style_md = out_dir / "style.md"
         if not style_md.exists():
