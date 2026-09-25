@@ -46,7 +46,7 @@ def main():
     ap.add_argument("--quiet", action="store_true")
     args = ap.parse_args()
     tag = args.lang_tag
-    track = pathlib.Path(args.track or VAULT / DEFAULT_TRACK_ROOT / f"gemini-{tag}")
+    track = pathlib.Path(args.track or VAULT / DEFAULT_TRACK_ROOT / tag)
     say = (lambda *a, **k: None) if args.quiet else print
     problems = []
 

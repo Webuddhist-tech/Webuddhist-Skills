@@ -123,7 +123,7 @@ DEFAULT_TRACK_PREAMBLE = (
 # FORK(21-taras-rails): track layout follows the Liturgy vault —
 # 3-TRANSFORMATIONS/Translations/<Generator>/<tag>/<source stem>-<tag>.md —
 # so the six imported tracks and any new one share one shape.
-DEFAULT_TRACK_ROOT = "3-TRANSFORMATIONS/Translations/machine-drafts/zero-shot"   # track = <root>/<engine>-<tag>
+DEFAULT_TRACK_ROOT = "3-TRANSFORMATIONS/Translations/Dharmamitra"
 
 # Full language names the vault linter accepts in `language:` (it patches the
 # field itself from `lang_tag` when they disagree, so this is a courtesy).
@@ -833,7 +833,7 @@ def main():
     elif args.track:
         out_dir = pathlib.Path(f"3-TRANSFORMATIONS/Translations/{args.track}")
     else:
-        out_dir = pathlib.Path(f"{DEFAULT_TRACK_ROOT}/dharmamitra-{args.lang_tag}")
+        out_dir = pathlib.Path(f"{DEFAULT_TRACK_ROOT}/{args.lang_tag}")
     work_dir = out_dir / "work"
     work_dir.mkdir(parents=True, exist_ok=True)
     extra_fm = json.loads(pathlib.Path(args.extra_fm).read_text(encoding="utf-8")) if args.extra_fm else None

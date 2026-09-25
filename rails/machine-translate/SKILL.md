@@ -88,7 +88,7 @@ An existing machine translation may be threaded into the prompt as **reference**
 ### Output
 
 ```
-$TRANSFORMATIONS/Translations/machine-drafts/zero-shot/gemini-<tag>/
+$TRANSFORMATIONS/Translations/Gemini/<tag>/
 ├── about.md                        # what this track is and is not (seeded)
 ├── style.md                        # system prompt, verbatim (seeded, editable)
 ├── context-header.md               # work-neutral preamble (seeded, editable)
@@ -200,7 +200,7 @@ This is the 21-taras-rails fork of the Liturgy-rails skill (imported 2026-09-17)
 
 | Topic | Rule here |
 |---|---|
-| Track folder | `$TRANSFORMATIONS/Translations/machine-drafts/zero-shot/dharmamitra-<tag>/` (the Liturgy layout; the old `<tag>-dharmamitra-zeroshot` folders were retired on 2026-09-17). |
+| Track folder | `$TRANSFORMATIONS/Translations/Dharmamitra/<tag>/` (the Liturgy layout; the old `<tag>-dharmamitra-zeroshot` folders were retired on 2026-09-17). |
 | Rendered file | `<source stem>-<tag>.md`, e.g. `bo-སྒྲོལ་མ་ཉེར་གཅིག་ལ་བསྟོད་པ།-en.md`. Never an English slug: the vault linter, parser and uploader derive the source from this filename. |
 | Ledger | `work/<source stem>-<tag>.jsonl`, one record per block (and one per translated heading, `kind: heading`). |
 | Layout | `--layout transclusion` (default): `![[<source stem>#^<id>]]` above each translated block — the form the vault parser reads the alignment from. `parallel` (blockquote copy) and `translation-only` still exist. |
@@ -228,7 +228,7 @@ If the target language is not stated in the user's request, ask before running. 
 ### Output
 
 ```
-$TRANSFORMATIONS/Translations/machine-drafts/zero-shot/dharmamitra-<tag>/
+$TRANSFORMATIONS/Translations/Dharmamitra/<tag>/
 ├── about.md                          # what this track is, and what it is not (seeded)
 ├── style.md                          # the style_instruction sent verbatim (seeded, editable)
 ├── context-header.md                 # work-neutral preamble (seeded, editable)
@@ -381,14 +381,14 @@ One call per `##` heading (level ≥ 2) under `HEADING_STYLE`; the H1 is never s
 1. `blocks_translated == blocks_total` and `headings_translated` equals the number of `##` headings, or state the shortfall.
 2. No `*[not yet translated]*` markers, no stray `[[n]]` markers:
    ```bash
-   grep -n '\[\[[0-9]\+\]\]\|not yet translated' "$TRANSFORMATIONS/Translations/machine-drafts/zero-shot/dharmamitra-<tag>/<stem>-<tag>.md" || echo clean
+   grep -n '\[\[[0-9]\+\]\]\|not yet translated' "$TRANSFORMATIONS/Translations/Dharmamitra/<tag>/<stem>-<tag>.md" || echo clean
    ```
 3. Block IDs match the source one-for-one (headings included):
    ```bash
    diff <(grep -o '\^[A-Za-z0-9-]*$' "$SOURCE_TEXTS/<file>.md") \
-        <(grep -o '\^[A-Za-z0-9-]*$' "$TRANSFORMATIONS/Translations/machine-drafts/zero-shot/dharmamitra-<tag>/<stem>-<tag>.md") && echo IDS OK
+        <(grep -o '\^[A-Za-z0-9-]*$' "$TRANSFORMATIONS/Translations/Dharmamitra/<tag>/<stem>-<tag>.md") && echo IDS OK
    ```
-4. Line parity per block and no Tibetan inside translation lines: `python3 $SKILLS/gemini-translate/scripts/gm_verify.py --lang-tag <tag> --track $TRANSFORMATIONS/Translations/machine-drafts/zero-shot/dharmamitra-<tag>` (the checker is generator-agnostic).
+4. Line parity per block and no Tibetan inside translation lines: `python3 $SKILLS/gemini-translate/scripts/gm_verify.py --lang-tag <tag> --track $TRANSFORMATIONS/Translations/Dharmamitra/<tag>` (the checker is generator-agnostic).
 5. Re-render at any time without calling the API: `--render-only` (add `--extra-fm work/extra-fm.json` to seed frontmatter keys).
 
 #### Step 5 — Report
