@@ -3,7 +3,7 @@
 Every skill in this repo. Generated from each skill's own frontmatter —
 run `python3 tools/build-catalog.py` after adding or changing one.
 
-- **56** text-processing skills in [`rails/`](rails/README.md)
+- **59** text-processing skills in [`rails/`](rails/README.md)
 - **4** library ingestion skills in [`library/`](library/README.md)
 - **17** org & engineering skills at the repo root
 
@@ -15,6 +15,12 @@ for the full mapping.
 
 ## rails/ — text processing
 
+
+### Orchestration
+
+| Skill | Does | Absorbs |
+|---|---|---|
+| [`rails-pipeline`](rails/rails-pipeline/SKILL.md) | Orchestrate the rails skills end to end: pick the right pipeline for a goal, detect what a text already has, then run each rails skill in order with its… | 0 |
 
 ### Intake & cleanup
 
@@ -74,6 +80,8 @@ for the full mapping.
 | [`pali-biterm-extraction`](rails/pali-biterm-extraction/SKILL.md) | For a block-aligned Pāli source file and an English translation file, extract every attested English rendering for each Pāli token's morphological family… | 1 |
 | [`term-definition`](rails/term-definition/SKILL.md) | Extract verbatim definitions of key terms from the commentaries and fill them into the Meaning column of the term-localization table, formatted in the… | 2 |
 | [`term-localization`](rails/term-localization/SKILL.md) | Translate a text's key terms in the term-localization table into the track's target languages, deriving each rendering from the commentary-based Meaning… | 1 |
+| [`keyword-standardize`](rails/keyword-standardize/SKILL.md) | Standardise the target-language keywords of a block-ID'd Tibetan text before it is translated, when no human translation in that language exists to attest… | 0 |
+| [`zh-keyword-standardize`](rails/zh-keyword-standardize/SKILL.md) | Alias of `keyword-standardize` (Chinese) | 0 |
 
 ### Summaries & context
 

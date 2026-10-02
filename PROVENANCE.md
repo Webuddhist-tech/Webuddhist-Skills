@@ -12,7 +12,7 @@ retire the vault copy when the team has moved over.
 ---
 
 
-**60 canonical skills, consolidated from 194 source files across 6 repos.**
+**63 canonical skills, consolidated from 194 source files across 6 repos.**
 
 ### `library/annotate-root-text`
 
@@ -256,6 +256,11 @@ retire the vault copy when the team has moved over.
 - `21-taras-rails/4-SYSTEM/Skills/english-keyword-extraction/SKILL.md`
 - `abhidhamma-rails/4-SYSTEM/Skills/pali-keyword-extraction/SKILL.md`
 
+### `rails/keyword-standardize`
+
+*profile: `rails-vault`* — absorbs 0 source file(s):
+
+
 ### `rails/local-wiki-article`
 
 *profile: `rails-vault`* — absorbs 3 source file(s):
@@ -342,6 +347,11 @@ retire the vault copy when the team has moved over.
 - `21-taras-rails/4-SYSTEM/Skills/property-creator/SKILL.md`
 - `abhidhamma-rails/4-SYSTEM/Skills/property-creator/SKILL.md`
 - `bodhisattvacharyavatara-rails/4-SYSTEM/Skills/property-creator/SKILL.md`
+
+### `rails/rails-pipeline`
+
+*profile: `any`* — absorbs 0 source file(s):
+
 
 ### `rails/raw-to-sources`
 
@@ -507,3 +517,8 @@ retire the vault copy when the team has moved over.
 - `bodhisattvacharyavatara-rails/4-SYSTEM/Skills/translate-zero-shot/SKILL.md`
 - `21-taras-rails/4-SYSTEM/Skills/zeroshot-translator/SKILL.md`
 - `abhidhamma-rails/4-SYSTEM/Skills/zero-shot-translate/SKILL.md`
+
+### `rails/zh-keyword-standardize`
+
+*profile: `rails-vault`* — absorbs 0 source file(s):
+

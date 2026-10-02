@@ -1,4 +1,4 @@
-# Annotation Conventions — Block IDs and Tag Schemes
+# Annotation Conventions — Block IDs, Tag Schemes and Translation History
 
 The authoritative reference for how a WeBuddhist text is marked up. Every skill
 under `rails/` and `library/` implements this document. When a skill and this
@@ -209,6 +209,88 @@ recognised deviations are:
 
 A deviation is registered once, in the annex, with the list of files it
 applies to. Files not listed follow §1–§2 unchanged.
+
+---
+
+## 8. Translation history properties
+
+A translation that goes through more than one pass (machine draft → termbase
+enforcement → commentary fact-check → translator decisions) records that history in
+its own frontmatter, so the file says what was done to it without a separate log.
+Use these keys; set only the ones that apply. The vault linters ignore keys they do
+not know, and `status` stays `draft` until a person has reviewed the text — no skill
+sets `complete`.
+
+| Key | Set by | Meaning |
+|---|---|---|
+| `draft` | each pass that edits the text | integer, the current draft number |
+| `draft_history` | each pass | list, one line per draft: number — what it was — where its text lives (a file path, the grade file's `<tgt>_text`, or a git commit) |
+| `generated` / `revised` | first write / later passes | ISO dates |
+| `rails_used` | each skill | skills and phases applied, e.g. `graded-translate (Phase 1, Phase 2); commentary-fact-check (Phase 1, Phase 2)` |
+| `termbase`, `grade_file` | graded-translate | paths of the locked termbase and grade file |
+| `fact_checked` | commentary-fact-check Phase 2 | ISO date of the fix pass |
+| `fact_check_commentaries` | commentary-fact-check | list of commentary paths checked |
+| `fact_check_consensus` | commentary-fact-check Phase 1b | path of the consensus table (when more than one commentary) |
+| `fact_check_fixes_log` | commentary-fact-check Phase 2 | path of the fixes log |
+| `fact_check_fixes_applied` | commentary-fact-check Phase 2 | integer |
+| `fact_check_open_items` | Phase 2, then the translator | integer: split readings and judgment calls still undecided (0 when settled) |
+| `translator_decisions` | the translator | integer: open items decided |
+| `translator_notes` | the translator | list of one-line notes a reader should see — a reading kept against a commentary, a textual variant followed |
+| `note` | each pass | one paragraph in plain language: how the text was made and what is still pending |
+
+Example (Twenty-One Tārās, general grade, after the fact-check):
+
+```yaml
+draft: 3
+draft_history:
+  - 1 — DharmaMitra raw output (3-TRANSFORMATIONS/Translations/Dharmamitra/en-general/)
+  - 2 — termbase-enforced (graded-translate Phase 2); text kept in grade_file en_text
+  - 3 — commentary fact-check fixes applied (this file)
+fact_checked: 2026-09-24
+fact_check_commentaries:
+  - 1-SOURCES/Commentaries/New raw data/bo-རྗེ་བཙུན་གྲགས་པ་རྒྱལ་མཚན།.md
+fact_check_fixes_applied: 11
+fact_check_open_items: 0
+translator_decisions: 7
+status: draft
+```
+
+---
+
+## 9. Translation track folder layout
+
+The current translation is the only note at the top of its track folder; the evidence
+behind it goes in `reports/`, and machine drafts live in their own track folders.
+A reader should never have to guess which file to use.
+
+```
+3-TRANSFORMATIONS/Translations/
+├── 00-INDEX-current-translations.md   ← one row per language: current file, draft, checks, what's left
+├── <lang>-<grade>/
+│   ├── <source stem>-<lang>-<grade>.md  ← the current translation (edited in place, draft N)
+│   └── reports/                       ← fact-check reports, consensus, fixes logs,
+│                                         back-translation and consistency checks, comparisons
+├── Dharmamitra/<tag>/                 ← machine drafts (machine-translate); raw, never edited by hand
+└── Gemini/<tag>/
+```
+
+- Skills that write a report about a translation write it to `<translation-dir>/reports/`
+  and link it from the translation's frontmatter (§8) by its full vault path.
+- A new draft replaces the text in place (§8 records the history); never add a second
+  "final" copy next to it.
+- Update the index row when a translation's draft number, checks or status change.
+
+The keywords folder (`$KEYWORDS`, the word-list work behind the translations) is laid out the same way:
+
+```
+$KEYWORDS/
+├── 00-INDEX.md        ← what each file is, and which one to edit or read
+├── STATE.md           ← running log
+├── shared/            ← keyword-extract output (Tibetan side, used by every language)
+├── <lang>/            ← one per target language: termbase, grade file, glossary
+│   ├── notes/         ← working notes from building the list
+│   └── references/    ← aligned reference texts (e.g. the classical Chinese version)
+```
 
 ---
 

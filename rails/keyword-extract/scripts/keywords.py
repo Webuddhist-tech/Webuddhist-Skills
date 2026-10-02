@@ -20,7 +20,7 @@ from pathlib import Path
 # Verse parsing (shared with generate_en_translation_idf.py logic)
 # ---------------------------------------------------------------------------
 
-_VERSE_MARKER = re.compile(r"\^([\w][\w\-]*\d+)\s*$")
+_VERSE_MARKER = re.compile(r"(?<!\S)\^((?:\w[\w\-]*)?\d)\s*$")   # ^0, ^1-5, ^I-0, ^a-1
 
 
 def _strip_frontmatter(text: str) -> str:
@@ -333,31 +333,47 @@ class KeywordExtractor:
 # ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    import sys
+    import argparse
 
-    OUTPUT_DIR = Path(__file__).resolve().parent
+    ap = argparse.ArgumentParser(
+        description="YAKE + spaCy keyword extraction from a block-ID'd English translation.")
+    ap.add_argument("source", type=Path, nargs="?", help="English translation .md (block IDs at line ends)")
+    ap.add_argument("--input", dest="input_path", type=Path, help="same as the positional source")
+    ap.add_argument("--outdir", type=Path, default=Path(__file__).resolve().parent / "output",
+                    help="where to write outputs (default: scripts/output/, created if missing)")
+    ap.add_argument("--threshold", type=float, default=0.3, help="YAKE score cut-off (default 0.3)")
+    args = ap.parse_args()
 
-    SOURCE_PATH = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(r"C:\Users\geshe lobzang tseten\repos\bodhisattvacharyavatara-rails\1-SOURCES\Translations\en-Wallace.md")
+    SOURCE_PATH = args.input_path or args.source
+    if SOURCE_PATH is None:
+        ap.error("give the English translation as SOURCE or --input")
     source_stem = SOURCE_PATH.stem
+    OUT = args.outdir
+    OUT.mkdir(parents=True, exist_ok=True)
 
-    with open(SOURCE_PATH, "r", encoding="utf-8") as f:
-        SOURCE = f.read()
+    # Corpus-level text = the verse texts only. The raw file also holds YAML
+    # frontmatter, transclusion lines and ^block-ids, which would otherwise
+    # surface as "keywords" (title_original, root_text, lang_tag, …).
+    verses = extract_verses(SOURCE_PATH)
+    if not verses:
+        raise SystemExit(f"No block-ID'd verses found in {SOURCE_PATH}")
+    SOURCE = "\n".join(v["text"] for v in verses)
 
-    extractor = KeywordExtractor(score_threshold=0.3)
+    extractor = KeywordExtractor(score_threshold=args.threshold)
 
     # Preview all scores first to tune threshold
-    extractor.preview_scores(SOURCE, OUTPUT_DIR / "output" / f"{source_stem}-preview.md")
+    extractor.preview_scores(SOURCE, OUT / f"{source_stem}-preview.md")
 
     # Extract keywords
     keywords = extractor.extract(SOURCE)
 
     # Save outputs
-    extractor.save_json(keywords, OUTPUT_DIR / "output" / f"{source_stem}-raw.json", OUTPUT_DIR / "output" / f"{source_stem}-normalized.json")
-    extractor.save_md(keywords, OUTPUT_DIR / "output" / f"{source_stem}-keywords.md")
+    extractor.save_json(keywords, OUT / f"{source_stem}-raw.json", OUT / f"{source_stem}-normalized.json")
+    extractor.save_md(keywords, OUT / f"{source_stem}-keywords.md")
 
     # Save verse-centric keyword index
     extractor.save_verse_keywords_json(
         keywords,
         SOURCE_PATH,
-        OUTPUT_DIR / "output" / f"{source_stem}-keyword_verses_yake.json",
+        OUT / f"{source_stem}-keyword_verses_yake.json",
     )

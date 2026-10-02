@@ -30,7 +30,7 @@ canonical, corpus-measured, mechanically-gated term list.
 
 | Phase | Does | Output |
 |---|---|---|
-| 1 | Candidate keywords from a block-aligned English translation (two modes) | `$WORK/keyword-extraction/<run>/verse-keywords.json` |
+| 1 | Candidate keywords from a block-aligned English translation (two modes) | `$WORK/keyword-extraction/<run>/<stem>-keyword_verses_yake.json` |
 | 2 | Locate every occurrence of every candidate, by block ID | `$WORK/keyword-extraction/<run>/occurrences.json` |
 | 3 | Map each occurrence to its source-language term, regroup by term, attach variants/synonyms/epithets | **`$KEYWORDS/source-term-registry.json`** |
 | 4 | Quote-excluded frequency matrix across the root text and every commentary | **`$KEYWORDS/frequency-matrix.json`** |
@@ -94,33 +94,61 @@ no standard reference corpus exists. This mode routes around the problem by extr
 keywords from an **English translation** — where YAKE/TF-IDF are well-conditioned — and then
 mapping each keyword back to the Tibetan term it renders, verse by verse (Phase 3).
 
-If the corpus has no English translation yet, produce one first with `zeroshot-translate`
-(block-ID-preserving), or use any existing published translation whose verses carry
-`^chapter-verse` IDs. A deliberately literal translation serves this purpose better than a
-published poetic one.
+If the corpus has no English translation yet, produce one first with `machine-translate`
+(DharmaMitra/Gemini baseline) or `zeroshot-translate` (block-ID-preserving), or use any
+existing published translation whose verses carry `^chapter-verse` IDs. A deliberately
+literal translation serves this purpose better than a published poetic one.
 
 #### Step 1 — extract keywords per verse (deterministic)
 
 ```bash
-python3 $SKILL/scripts/keywords.py \
-    --input <en-translation>.md \
-    --output $WORK/keyword-extraction/<run>/verse-keywords.json
+python3 $SKILL/scripts/keywords.py <en-translation>.md --outdir $WORK/keyword-extraction/<run>/
 ```
 
 `keywords.py` (YAKE + spaCy noun-phrase filtering) reads a block-ID'd English
-translation and writes `{verse_id: {text, keywords: [{key, rank, score, count}]}}`.
+translation and writes `$WORK/keyword-extraction/<run>/<stem>-keyword_verses_yake.json` —
+`{verse_id: {text, keywords: [{key, rank, score, count}]}}` — plus corpus-level
+`-keywords.md`, `-raw.json`, `-normalized.json` and `-preview.md`. `--outdir`
+defaults to `$SKILL/scripts/output/` and is created if missing; `--threshold` sets the
+YAKE cut-off (default 0.3). Only the verse texts are scored: YAML frontmatter,
+transclusion lines and `^block-ids` are stripped first (before 2026-09 the
+corpus-level files picked up frontmatter words such as `root_text`). Requires
+`pip install yake spacy` + the `en_core_web_sm` model (see
+`$SKILL/scripts/requirements.txt`).
 Treat **each verse as one document** — that is what makes IDF punish words recurring in
 every verse (similes' "like", a repeated homage formula).
 
-#### Step 2 (optional) — corpus-level TF-IDF report
+#### Step 2 — corpus-level TF-IDF report (required when building a termbase)
 
 ```bash
-python3 $SKILL/scripts/generate_en_translation_idf.py
+python3 $SKILL/scripts/generate_en_translation_idf.py --input <en-translation>.md \
+    --outdir $WORK/keyword-extraction/<run>/tfidf --keep-transliterated
 ```
 
-Ranks terms across the whole translation against the bundled general-English IDF table
-(`$SKILL/scripts/idf_corpus.py`, regenerable with `$SKILL/scripts/generate_idf_corpus.py`).
-Use this to pick the corpus-level top-N key terms rather than per-verse ones.
+Ranks terms across the whole translation against the bundled Reuters-21578
+general-English IDF table (`$SKILL/scripts/idf_corpus.py`, regenerable with
+`$SKILL/scripts/generate_idf_corpus.py`). `graded-translate`'s worked example
+(`references/worked-example.md`) treats this as step 1b; it is not optional when the keywords will feed a termbase, because
+YAKE can miss rare but distinctive terms (on the Twenty-One Tārās it missed
+*yakṣa*, which TF-IDF ranked 43rd).
+
+`--keep-transliterated` keeps words with IAST diacritics (yakṣa, vetāla, Tārā)
+in the JSON outputs. Use it for Mode 1: in a translation from Tibetan those
+Sanskrit loanwords are prime termbase candidates. Without it they are filtered
+out, as the Pāli workflow wants. The tokenizer handles the full IAST set
+(ś ṣ ṛ ḥ as well as the Pāli letters).
+
+#### Step 2b — gap report: TF-IDF terms YAKE missed
+
+```bash
+python3 $SKILL/scripts/keyword_gap_report.py \
+    --yake  $WORK/keyword-extraction/<run>/<stem>-keyword_verses_yake.json \
+    --tfidf $WORK/keyword-extraction/<run>/tfidf/<stem>_keyword_verses.json --top 60 --md $WORK/keyword-extraction/<run>/gap-report.md
+```
+
+Lists the top-N TF-IDF terms that are not among the YAKE keywords. Add the real
+content terms (names, classes of beings, technical vocabulary) to the verses'
+keyword lists before Step 3; ignore generic words.
 
 #### Step 3 — first-pass source-term enrichment
 
@@ -135,11 +163,18 @@ aligned source verse (same `^chapter-verse` ID in the root text) to see which wo
 translator was rendering. Write the enriched JSON into the same run folder with suffix
 `-enriched.json`. Checkpoint every 50 verses. Report totals and gaps when done.
 
-**(b) Batch via Gemini** (reads `GEMINI_API_KEY` from the environment, never hardcoded):
+While enriching, watch for one English keyword that renders **different**
+Tibetan words in different verses (the Twenty-One Tārās machine draft used
+"power" for ནུས, དབང and མཐུ). Give each Tibetan word its own `bo` — never copy
+the first verse's `bo` onto later ones — so Phase 1 can lock them separately.
+`graded-translate/scripts/validate_grade_file.py` flags these after Phase 1.
+
+**(b) Batch via Gemini** (reads `GEMINI_API_KEY` from the environment,
+never hardcoded):
 
 ```bash
 python3 $SKILL/scripts/enrich_en_bo_keyword_meaning.py \
-    --input $WORK/keyword-extraction/<run>/verse-keywords.json
+    --input $WORK/keyword-extraction/<run>/<stem>-keyword_verses_yake.json
 ```
 
 #### Output contract

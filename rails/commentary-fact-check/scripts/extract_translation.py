@@ -1,29 +1,63 @@
 #!/usr/bin/env python3
 """
-Parse a graded English BCA translation file (one verse per block, English text
-followed by its block ID: `{text} ^{verse_id}`) into a {verse_id: text} dict,
-optionally filtered to one chapter.
+Parse a translation file into a {verse_id: text} dict, optionally filtered to
+one chapter. A verse is every line of its block up to the line that ends in the
+block ID (`… ^1-5`), so multi-line verses are kept whole. Works for both
+layouts: one line per verse (`{text} ^{verse_id}`), and the transclusion layout
+(`![[<root>#^1-5]]` above each translated block — those lines are skipped).
+YAML frontmatter is ignored; heading markers (`## `) are stripped.
+
+Before 2026-09 this read one line at a time and kept only the line carrying
+the ID — for a four-line verse, only its last line.
 
 Usage:
-    python3 extract_translation.py <bca-en-<grade>.md> [--chapter 1] [--json out.json]
+    python3 extract_translation.py <translation>.md [--chapter 1] [--json out.json]
 """
 import argparse
 import json
 import re
 
 
+ID_RE = re.compile(r"(?<!\S)\^((?:\w[\w\-]*)?\d)\s*$")
+
+
+def strip_frontmatter(content):
+    if content.startswith("---"):
+        end = content.find("\n---", 3)
+        if end != -1:
+            return content[end + 4:]
+    return content
+
+
 def parse(content):
     verses = {}
-    for line in content.splitlines():
-        line = line.strip()
+    acc = []
+    for raw in strip_frontmatter(content).splitlines():
+        line = raw.strip()
         if not line:
+            acc = []                      # a block ends at a blank line
             continue
-        m = re.search(r"^\s*(?:#+\s*)?(.*?)\s*\^([a-zA-Z0-9-]+)\s*$", line)
+        if line.startswith("![["):        # transclusion of the source block
+            continue
+        m = ID_RE.search(line)
         if not m:
+            acc.append(re.sub(r"^#+\s*", "", line))
             continue
-        text, vid = m.group(1).strip(), m.group(2)
-        verses[vid] = text
+        last = re.sub(r"^#+\s*", "", line[: m.start()].strip()).strip()
+        if last:
+            acc.append(last)
+        vid = m.group(1)
+        if vid in verses:
+            print(f"warning: block ID ^{vid} appears more than once; keeping both", flush=True)
+            verses[vid] += "\n" + "\n".join(acc)
+        else:
+            verses[vid] = "\n".join(acc)
+        acc = []
     return verses
+
+
+def sort_key(vid):
+    return [(0, int(p), "") if p.isdigit() else (1, 0, p) for p in vid.split("-")]
 
 
 def main():
@@ -46,7 +80,7 @@ def main():
             json.dump(verses, f, ensure_ascii=False, indent=2)
         print(f"Wrote to {args.json}")
     else:
-        for vid in sorted(verses, key=lambda v: [int(p) if p.isdigit() else p for p in v.split("-")]):
+        for vid in sorted(verses, key=sort_key):
             print(f"{vid}: {verses[vid]}")
 
 

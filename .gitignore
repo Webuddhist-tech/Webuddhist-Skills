@@ -1,0 +1,6 @@
+# Python caches
+__pycache__/
+*.pyc
+
+# Default output folder of keyword-extract/scripts/keywords.py (run outputs, not skill files)
+rails/keyword-extract/scripts/output/

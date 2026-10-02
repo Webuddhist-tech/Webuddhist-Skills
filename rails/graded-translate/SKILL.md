@@ -31,17 +31,21 @@ supersedes:
 > paths resolve per repo — see `rails/PROFILES.md`. Block ID and heading rules
 > are in `rails/CONVENTIONS.md`; this skill implements them.
 >
-> Two locations this skill leans on: **`$KEYWORDS`** (`2-RAILS/Keywords/`) —
-> where `keyword-extract` writes its output — and **`$TERMBASES`**
-> (`2-RAILS/termbases/`), where this skill keeps its per-grade JSON build
-> cache. The canonical termbase for a track is always the track's own
-> `termbase.md`, not the JSON.
+> One extra location this skill leans on: **`$KEYWORDS`** (`2-RAILS/Keywords/`,
+> laid out per `rails/CONVENTIONS.md` §9) — `keyword-extract` writes its output to
+> `$KEYWORDS/shared/`, and this skill keeps each target language's termbase and
+> grade files in `$KEYWORDS/<tgt>/`. The track's `termbase.md` is exported from
+> that JSON; it is what reviewers and `translation-qa` read.
+>
+> The bundled scripts read the source-language fields as `bo` / `bo_text`, so for a
+> Tibetan source `<src>_text` below is `bo_text`. A non-Tibetan source needs the
+> scripts extended first.
 
 # Graded, term-locked translation
 
 | Phase | Does | Input | Output |
 |---|---|---|---|
-| 1 — Keyword grade | Builds the target-language termbase, one file per audience grade, on top of the source-enriched keyword inventory | keyword source (see below) · base termbase · optional attested translation | the track's `termbase.md` (canonical) + `$TERMBASES/<src>_<tgt>_keyword_<grade>.json` (build cache) |
+| 1 — Keyword grade | Builds the target-language termbase, one file per audience grade, on top of the source-enriched keyword inventory | keyword source (see below) · base termbase · optional attested translation | `$KEYWORDS/<tgt>/<src>_<tgt>_keyword_<grade>.json` + the track's `termbase.md` (exported from it) |
 | 2 — Translate | Translates chapter by chapter at the grade's register with every termbase rendering locked | one grade file from Phase 1 + the track contract | `$TRANSFORMATIONS/Translations/<tgt>-<grade>/<text-id>-<tgt>-<grade>.md` |
 | 3 — Drift check | Mechanically verifies that every locked rendering actually appears in every verse that needs it | termbase + translation (+ verse rails) | pass / MISSING table |
 
@@ -84,7 +88,7 @@ the most commonly available pivot.
 | **Source root text** | 1 | ✓ | The root text this vault translates, **per `$SYSTEM/Guidelines/vault-annex.md`** — canonical verse text with `^verse-id` markers under `$SOURCE_TEXTS/`. |
 | **Pivot translation** | 1 | ✓ | Any block-ID-aligned translation of the same text: a human translation in `$TRANSLATIONS/`, or a `zeroshot-translate` Mode 2 draft from `$WORK/zeroshot/`. Its keys are what the termbase is keyed on. |
 | **Keyword source** | 1 | ✓ | **Either** `keyword-extract`'s enriched output in `$KEYWORDS/` (`{verse_id: {text, keywords:[…]}}` with a source-language meaning per keyword), **or** the rails: the `concepts_in_verse:` and `concepts_in_commentary:` lists in `$VERSES/<id>.md`. Use the rails when no keyword-extract run exists — they are the descriptive record of which terms each verse turns on, which is exactly what the cutoff is applied to. Say in the report which source was used. |
-| **Base termbase** | 1 | ✓ (built if absent) | `$TERMBASES/<src>-<pivot>-<tgt>-termbase-general.json`. If missing, build it from another language's base (same pivot key set), dropping that language's field and filling `<tgt>` per §Registers. |
+| **Base termbase** | 1 | ✓ (built if absent) | `$KEYWORDS/<tgt>/<pivot>-<src>-<tgt>-termbase-general.json`. If missing, build it from another language's base (same pivot key set), dropping that language's field and filling `<tgt>` per §Registers. |
 | **Track contract** | 1, 2 | ✓ | `$TRANSFORMATIONS/Translations/<tgt>-<grade>/` must carry `requirements.md`, `audience.md` and `termbase.md`. If the folder or any contract file is missing, create the folder and the three files first (register/grade from §Registers, audience from the grade's row) — a track without its contract is not a track. |
 | **Attested translation** | 1 | optional | An existing human or reviewed translation in `<tgt>`, block-ID aligned. Its renderings are authoritative and override the base termbase. Its frontmatter `track:` may name the grade it seeds (default: general/intermediate). |
 | **Source text to translate** | 2 | ✓ | The `<src>_text` (source language) or the pivot `text` field of the grade file. Prefer the source language when the translator can read it; say which in the output frontmatter. |
@@ -127,12 +131,13 @@ When a keyword sits on a boundary, assign the lower (more accessible) grade.
 
 ### Termbase structures
 
-**The canonical termbase is the track's `termbase.md`.** It is the contract the
-rest of the vault reads, the thing `translation-qa` checks against, and the file
-a human reviews. The JSON files below are a **build cache**: they exist so a
-long run is resumable and machine-checkable, they live under `$TERMBASES/`, and
-they are regenerable from the markdown. When the two disagree, the markdown
-wins — regenerate the cache, never the reverse.
+**The termbase is built as JSON and published as markdown.** The JSON files below,
+under `$KEYWORDS/<tgt>/`, are what this skill and its scripts build, validate and
+check against. The track's `termbase.md` is exported from them with
+`termbase_to_md.py`; it is the contract the rest of the vault reads, the thing
+`translation-qa` checks against, and the file a human reviews. Change a rendering
+in the JSON (or in `keyword-standardize`'s decisions file) and re-export — never
+edit only the markdown, or the two drift apart.
 
 Track termbase — `$TRANSFORMATIONS/Translations/<tgt>-<grade>/termbase.md`:
 
@@ -142,7 +147,7 @@ Track termbase — `$TRANSFORMATIONS/Translations/<tgt>-<grade>/termbase.md`:
 | <lemma> | <rendering> | <short gloss> | 1-1, 2-3 |
 ```
 
-Base termbase cache — `$TERMBASES/<src>-<pivot>-<tgt>-termbase-general.json`:
+Base termbase cache — `$KEYWORDS/<tgt>/<pivot>-<src>-<tgt>-termbase-general.json`:
 
 ```json
 {
@@ -158,7 +163,7 @@ Base termbase cache — `$TERMBASES/<src>-<pivot>-<tgt>-termbase-general.json`:
 `verse_ids` is populated from the keyword source in Step 2 and lets every term
 be traced back to the verses it occurs in.
 
-Grade file cache — `$TERMBASES/<src>_<tgt>_keyword_<grade>.json` (also Phase 2's
+Grade file cache — `$KEYWORDS/<tgt>/<src>_<tgt>_keyword_<grade>.json` (also Phase 2's
 input and write-back target):
 
 ```json
@@ -193,7 +198,7 @@ the requirements from the grade's register row, the audience from the grade's
 audience row, and an empty `termbase.md` with the table header above.
 
 **Step 1 — Load the base termbase.** If
-`$TERMBASES/<src>-<pivot>-<tgt>-termbase-general.json` does not exist, build it:
+`$KEYWORDS/<tgt>/<pivot>-<src>-<tgt>-termbase-general.json` does not exist, build it:
 take the key set of any existing base for another target language (same pivot
 key set), drop that language's field, and fill `<tgt>` for each key using the
 register table and — first — any attested translation supplied.
@@ -225,8 +230,16 @@ rendering off the attested text. Attested beats base beats invented.
 unfilled cell that looks filled. Treat it as empty, and report it among the
 keywords still needing a rendering.
 
-Save the updated base termbase cache **and** write the confirmed rows into the
-track's `termbase.md`.
+Save the updated base termbase (`termbase.md` is exported from it in Step 8).
+
+**Step 4b — No attested translation.** Fill each `<tgt>` value from the
+sources the language's register section lists, most trusted first, and record
+where each came from (`<tgt>_source`) and why (`<tgt>_note`). Values chosen
+where the sources disagree get `<tgt>_decision`. The machine draft is never the
+only evidence for a value unless the note says no other source had the word. If
+the target language needs distinctions the pivot termbase does not lock
+(mantra syllables, a Tibetan word English merged), add target-only entries
+with the same schema and say so in their note.
 
 **Step 5 — Parse the source root text** into `{verse_id → <src>_text}`, joining
 the lines of a multi-line verse and applying the same two parse rules as Step 3
@@ -245,12 +258,44 @@ empty until Phase 2), and the keywords that survive the rank cutoff, each with
 its grade-adapted `<tgt>` and `grade`.
 
 **Step 8 — Save and verify.** Write each file to a temp path, then copy into
-`$TERMBASES/` and re-load it to confirm it parses. Export the grade's locked
-rows into the track's `termbase.md`. Print per grade: verse count, keyword
+`$KEYWORDS/<tgt>/` and re-load it to confirm it parses. Export the termbase into
+the track's `termbase.md` (`scripts/termbase_to_md.py <termbase>.json -o termbase.md`). Print per grade: verse count, keyword
 count, and every keyword whose `<tgt>` is still empty (or equal to its key) —
 those must be filled before Phase 2 uses the file.
 
-Phase 1 writes only to `$TERMBASES/` and the track's `termbase.md`. It never
+**Step 9 — Validate.** Run the validator on the termbase and every grade file:
+
+```bash
+python3 $SKILL/scripts/validate_grade_file.py --lang <tgt> \
+    --termbase   $KEYWORDS/<tgt>/<pivot>-<src>-<tgt>-termbase-<grade>.json \
+    --grade-file $KEYWORDS/<tgt>/<src>_<tgt>_keyword_<grade>.json
+```
+
+`--lang` names the field that holds the locked rendering (default `en`). The
+same flag exists on `check_termbase_consistency.py --grade-file` and on
+`termbase_to_glossary.py`.
+
+Fix every **E** line before Phase 2 (exit code 1 until they are gone); read every
+**W** line. What it enforces, and why:
+
+- **A keyword's Tibetan is copied from that verse's `bo_text`**, in the verse's own
+  word order and spelling (E2). A form that is not literally in the verse can never
+  be checked or glossed.
+- **A keyword's Tibetan is one of its term's forms** (E3). On the Twenty-One Tārās,
+  1-21's མཐུ was filed under `power` (locked to དབང) because the English draft said
+  "power"; only the commentary fact-check caught it.
+- **Context-dependent senses are separate entries with disjoint `verse_ids`** (E5).
+  One Tibetan form may carry two renderings (དབང: "power" at 1-10, "empowerment" at
+  2-3) only when each entry lists the verses it applies to.
+- **No `...` in a Tibetan form** (W1). Write each contiguous part, or leave the phrase
+  out; a gapped form matches nothing.
+- **One English word for several locked Tibetan terms** (W2) is the signature of a
+  base draft that merged distinctions ("power" for ནུས / དབང / མཐུ). Confirm each
+  split is intended.
+- **Nested terms** (W5 — "Tara" inside the Sanskrit title) are reported as COVERED
+  by the Phase 3 check; make sure that is what you want.
+
+Phase 1 writes only to `$KEYWORDS/<tgt>/` and the track's `termbase.md`. It never
 modifies `$SOURCE_TEXTS/`, `$TRANSLATIONS/`, the keyword source, or the attested
 translation.
 
@@ -260,21 +305,23 @@ translation.
 - [ ] Base termbase loaded (or built and saved) for `<tgt>`.
 - [ ] `verse_ids` populated from the keyword source; the report says which source was used.
 - [ ] Pivot and attested translation parsed with lines starting `![[` or `#` skipped.
-- [ ] Attested translation's renderings folded into the termbase; changes logged.
+- [ ] Attested translation's renderings folded into the termbase; changes logged
+      (or, with none, every value has a `<tgt>_source`, per Step 4b).
 - [ ] `<src>_text` set for every verse.
 - [ ] Every keyword in every grade file has a `<tgt>` that is non-empty **and not equal to its key**, plus a `grade`; rank cutoff applied.
-- [ ] Track `termbase.md` updated from the grade rows — it, not the JSON, is the contract.
-- [ ] Files re-loaded after writing; nothing outside `$TERMBASES/` and the track folder touched.
+- [ ] Track `termbase.md` exported from the termbase JSON (`termbase_to_md.py`).
+- [ ] Files re-loaded after writing; nothing outside `$KEYWORDS/<tgt>/` and the track folder touched.
+- [ ] `validate_grade_file.py` reports 0 errors; its warnings were read.
 
 ---
 
 ## Phase 2 — Translate with the termbase locked
 
-**Step 1 — Load the grade file** `$TERMBASES/<src>_<tgt>_keyword_<grade>.json`
+**Step 1 — Load the grade file** `$KEYWORDS/<tgt>/<src>_<tgt>_keyword_<grade>.json`
 and build a flat `key → <tgt>` dict (first occurrence wins), **skipping any
 entry whose rendering equals its key** — that is an unfilled cell, not a
-rendering. Reconcile the dict against the track's `termbase.md`; where they
-disagree, the markdown wins. This dict is the single source of truth for
+rendering. Check the dict against the track's `termbase.md`; if they disagree, one
+was edited without the other — fix the JSON, re-export, and only then go on. This dict is the single source of truth for
 terminology in this run. **If the grade file does not exist, stop and say Phase
 1 must be run first** — do not choose renderings ad hoc.
 
@@ -294,9 +341,24 @@ chapter `0`, roman-numeral front matter, and lettered back matter.
 Rules: locked terms override register · translate line by line · never add
 content · inflection and natural target-language word order are allowed.
 
+**Variant — enforce on a machine draft.** When the base is a `machine-translate`
+draft (DharmaMitra), keep its wording and only substitute the locked terms verse by
+verse. Give DharmaMitra the termbase as a hint first
+(`scripts/termbase_to_glossary.py --lang <tgt> --scope-all` → `dm_translate.py
+--glossary`; `--scope-all` hints each term only in the verses where it is locked, so
+1-8's ཆུ་སྐྱེས་ཞལ "her lotus face" is not pushed onto 1-1, where the same Tibetan is
+the Lord's face), but do not rely on it: on the Twenty-One Tārās the glossary-primed draft was ~88% identical to the
+unprimed one and still used "zombies" and "yakṣas". The enforcement pass here is what
+makes the terms stick (locked-term adherence 87% → 99%).
+
 **Step 4 — Consistency pass.** Re-scan the whole output for every locked term;
 fix any verse that used a non-termbase form. Write each verse's `<tgt>_text`
 back into the grade file.
+
+`<tgt>_text` is the **Phase 2 snapshot**. Later edits — `commentary-fact-check`
+Phase 2 fixes, translator decisions — go into the translation `.md` only; do not
+rewrite `<tgt>_text`. The file's `draft_history` property (rails/CONVENTIONS.md)
+and git record which text is which draft.
 
 **Step 5 — Write the markdown.** One block per verse, translated text followed
 by its block ID, blank line between blocks; headings (`id` ends in `-0`) as
@@ -319,7 +381,7 @@ lang_tag: <tgt>
 root_text: 1-SOURCES/Text/<lang>-root-text.md
 pivot_translation: <path to the pivot used>
 translated_from: <src>_text | text        # say which field was the base
-grade_file: 2-RAILS/termbases/<src>_<tgt>_keyword_<grade>.json
+grade_file: 2-RAILS/Keywords/<tgt>/<src>_<tgt>_keyword_<grade>.json
 context_packages:
   - 3-TRANSFORMATIONS/Translations/<tgt>-<grade>/requirements.md
   - 3-TRANSFORMATIONS/Translations/<tgt>-<grade>/termbase.md
@@ -349,7 +411,7 @@ identical.
 
 - [ ] Grade specified; the matching grade file loaded (or the run stopped because it is missing).
 - [ ] Locked-term dict built from the whole file, first occurrence wins, key-equals-rendering entries skipped.
-- [ ] Dict reconciled against the track's `termbase.md`; markdown wins on any conflict.
+- [ ] Dict checked against the track's `termbase.md`; any disagreement fixed in the JSON and re-exported.
 - [ ] Chapters read off the root's `^N-0` headings and processed in the text's own order; locked terms identified per chapter before translating.
 - [ ] Register matches the grade table for `<tgt>` and the track's `requirements.md`.
 - [ ] Consistency pass done; same rendering for the same term throughout.
@@ -361,6 +423,23 @@ identical.
 
 ## Phase 3 — Mechanical drift check
 
+**Without verse rails (grade-file mode)** — the usual case right after Phase 2:
+
+```bash
+python3 $SKILL/scripts/check_termbase_consistency.py \
+    --grade-file  $KEYWORDS/<tgt>/<src>_<tgt>_keyword_<grade>.json \
+    --translation $TRANSFORMATIONS/Translations/<tgt>-<grade>/<text>-<tgt>-<grade>.md \
+    --strict-diacritics
+```
+
+Each verse's expected terms are its keyword list in the grade file. A term whose
+Tibetan sits inside a longer locked phrase present in the same verse is
+**COVERED**. Pass `--strict-diacritics` whenever the termbase locks IAST spellings:
+without it accents are folded, and "Tārā" passes for "Tara" (on the Twenty-One Tārās
+machine draft that hid 11 of 21 misses).
+
+**With verse rails:**
+
 ```bash
 python3 $SKILL/scripts/check_termbase_consistency.py \
     --termbase   $TRANSFORMATIONS/Translations/<track>/termbase.md \
@@ -368,6 +447,9 @@ python3 $SKILL/scripts/check_termbase_consistency.py \
     --rails-dir  $VERSES \
     --verses 1-1 1-2 1-3
 ```
+
+`scripts/termbase_to_md.py <termbase>.json -o termbase.md` writes the JSON termbase
+as that table (it is also the `termbase.md` that `translation-qa` reads).
 
 The script parses a `termbase.md` table (`| source lemma | locked rendering |
 note |`, several source variants per row separated by ` / `, parenthetical
@@ -381,15 +463,18 @@ paraphrase or real drift.
 
 Two things to know:
 
-- It reads the **markdown termbase**, the `termbase.md` a track keeps under
-  `$TRANSFORMATIONS/Translations/<track>/`. That file is the contract and Phase
-  1 Step 8 already wrote it; the grade JSON is only the build cache. If the two
-  have drifted, regenerate the cache from the markdown and re-run — do not
-  check against the JSON instead.
-- It needs verse rails (`$VERSES/<id>.md` with `concepts_in_verse:`) to know
-  which lemmas to expect in which verse. Where no rails exist yet, use the
-  keyword source's own per-verse keyword lists as the expectation instead —
-  that is exactly what Phase 2 Step 4 does by hand.
+- In rails mode it reads the **markdown termbase**, the `termbase.md` a track
+  keeps under `$TRANSFORMATIONS/Translations/<track>/`, exported from the JSON
+  by `termbase_to_md.py`. If the two have drifted, fix the JSON and re-export
+  before checking.
+- Rails mode needs verse rails (`$VERSES/<id>.md` with `concepts_in_verse:`) to
+  know which lemmas to expect in which verse. Where no rails exist yet, use
+  grade-file mode above: it takes each verse's expected terms from the grade
+  file's own keyword lists.
+
+Block IDs of every shape are read (`^0`, `^1-5`, `^I-1`, `^a-1`), multi-line
+verses are joined, and transclusion lines (`![[…#^id]]`) are skipped, so the
+check runs on transclusion-layout files as they are.
 
 Every MISSING must be either fixed or explained in the translation's notes
 before the file is handed to `commentary-fact-check`.
@@ -447,6 +532,10 @@ general → intermediate keeps the Sanskrit and may add a qualifier
 (`पुण्य` → `पुण्य / कुशल`); general → advanced adds the technical Sanskrit in
 parentheses (`शून्यता` → `शून्यता (सर्वधर्मनिःस्वभावता)`). Keep values 1–5 words.
 
+Liturgy (general): mantra syllables and Sanskrit title lines in Devanagari (ॐ तारे तुत्तारे तुरे स्वाहा);
+avoid जिन / जिनपुत्र for a general reader (they read as Jain) — बुद्ध / बोधिसत्त्व. With no attested Hindi
+translation, build the word list with `keyword-standardize` (§Hindi).
+
 ### Vietnamese (`vi`)
 
 | Grade | Style |
@@ -480,6 +569,60 @@ general → intermediate keeps the Sino-Vietnamese term, may add a qualifier
 form in parentheses (`tánh không` → `tánh không (vô tự tính)`). Keep values 1–6
 words; prefer a form attested in an existing Vietnamese translation over a new
 one. Natural Vietnamese particles (rồi, thì, mà, vậy) are allowed in prose.
+
+### Chinese (`zh`)
+
+WeBuddhist writes **Traditional characters** (`zh-Hant`) unless a project says
+otherwise. For Simplified, convert the finished termbase and text with a
+character converter (e.g. OpenCC `t2s`); never re-choose terms by hand.
+
+| Grade | Style |
+|---|---|
+| **beginner** | Plain modern written Chinese (白話), short sentences. A Buddhist term is glossed in parentheses on first use: 菩提心（為利益一切眾生而求覺悟的心）. |
+| **general** | Standard modern written Chinese. Common Buddhist terms used freely (菩提心、涅槃、灌頂、功德). Clear sentences, with no classical grammar (之乎者也) and no lines forced to seven characters. |
+| **intermediate** | Modern Chinese + exact Buddhist terms used without gloss (煩惱、般若、波羅蜜、三摩地). |
+| **advanced** | Term-dense, may lean on classical canon wording. Sanskrit/Tibetan in parentheses for key terms. |
+
+| English | beginner | general | intermediate | advanced |
+|---|---|---|---|---|
+| compassion | 慈悲心（希望眾生離苦） | 慈悲 | 悲心 | 悲心（karuṇā） |
+| emptiness | 一切事物沒有固定不變的本質 | 空性 | 空性 | 空性（śūnyatā，無自性） |
+| merit | 善行帶來的福報 | 福德 | 福德／功德 | 福德資糧（puṇya） |
+| bodhichitta | 為利益一切眾生而求覺悟的心 | 菩提心 | 菩提心 | 菩提心（bodhicitta） |
+| suffering | 痛苦 | 苦 | 苦 | 苦（duḥkha，三苦） |
+| liberation | 從痛苦中解脫 | 解脫 | 解脫 | 解脫（mokṣa） |
+
+Adaptation: general → beginner replaces a term with its plain gloss, or adds the
+gloss once; general → intermediate keeps the term and may pick the narrower one
+(慈悲 → 悲心); general → advanced adds the Sanskrit in parentheses. Keep values
+1–6 characters where possible.
+
+Conventions for every grade:
+
+- **Mantra syllables are written in Chinese characters, never Latin.** Where the
+  syllable belongs to a mantra that people commonly recite, use that recitation
+  form (Tārā: 嗡 達咧 都達咧 都咧 梭哈; also 吽, 呸). Otherwise use the form of the
+  classical canon translation (CBETA). Lock every syllable in the termbase, since
+  the English termbase often leaves them unlocked.
+- **Names use their established Chinese forms** (度母、阿彌陀佛、須彌山、帝釋、梵天、
+  夜叉). A Sanskrit title line stays in IAST, as in English.
+- **Classical vocabulary is evidence, not the target.** A classical translation
+  (e.g. CBETA) shows which words Chinese readers already know. Keep a classical
+  word a modern reader understands (敬禮、無餘、起屍). Replace a transliteration
+  they cannot parse (部多 → 鬼神). Do not copy classical lines into the text.
+- **Line count follows the Tibetan**, one Chinese line per Tibetan line, with
+  full-width punctuation （，。；：！、）.
+
+**No attested Chinese translation?** This is the usual case. Use the
+[`keyword-standardize`](../keyword-standardize/SKILL.md) skill, which does
+the steps below with scripts and one editable decisions file. It builds the base
+termbase from, in order of trust: (1) a classical canon translation of the same
+text (CBETA), aligned by block ID in a reference file; (2) the established
+Buddhist term (Mahāvyutpatti pairs, 佛學大辭典); (3) the zero-shot machine draft,
+which may suggest but never confirm. Record the source of every value in
+`zh_source` and the reason for any choice between sources in `zh_note`. A value
+decided without agreement between sources gets `zh_decision` saying who
+decided, so the native reviewer can find it.
 
 ### Adding a language
 
