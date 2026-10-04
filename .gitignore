@@ -4,3 +4,8 @@ __pycache__/
 
 # Default output folder of keyword-extract/scripts/keywords.py (run outputs, not skill files)
 rails/keyword-extract/scripts/output/
+
+# Local credentials (API keys) — never commit
+.env
+.env.*
+*.env
