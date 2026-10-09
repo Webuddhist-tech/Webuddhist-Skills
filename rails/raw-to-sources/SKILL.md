@@ -111,7 +111,7 @@ NOT yet resegmented into sense units, NOT yet block-ID'd>
 4. **`covers_verses`, `bdrc_work_id`, `school`, `copyright` stay blank.** These need judgment or an external lookup (`bdrc_fetch.py`) this skill does not perform. Leaving them blank is correct output, not incomplete output.
 5. **`registered_id` is assigned by `frontmatter` (Variant 2), never invented here.** That skill already owns the uniqueness check against the vault annex.
 5a. **Work type decides the folder, and `root_text:` is set only on exact title evidence** (see the two rules at the top).
-6. **The body stays unsegmented and un-block-ID'd.** Do not run `segment-commentary` (Phase 2), `format-tibetan-root-text`, or any block-ID skill as part of this one — those are separate steps with their own verification.
+6. **The body stays unsegmented and un-block-ID'd.** Do not run `commentary-segment`, `format-tibetan-root-text`, or any block-ID skill as part of this one — those are separate steps with their own verification.
 7. **The raw source file is read-only.** Never edit or move anything under `$INBOX/raw-data/`.
 8. **`status: 0-raw` is this skill's exit marker.** Later steps update it; this skill only ever sets that one initial value. Promotion beyond it is a human decision.
 

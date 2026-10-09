@@ -44,7 +44,7 @@ preserves that original-language terminology *and* adds an English translation
 alongside it. Translating in Phase 1 destroys the evidence and cannot be recovered
 from the summary.
 
-Node IDs come from `toc-generate`. Run that first — there is nothing to summarise
+Node IDs come from `commentary-toc-extract`. Run that first — there is nothing to summarise
 per-node until the tree exists.
 
 ---

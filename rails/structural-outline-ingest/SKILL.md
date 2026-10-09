@@ -9,7 +9,7 @@ description: >
   divisions are stated separately from the running prose (a table of contents, an
   editor's synopsis, titled/numbered sections, adhikara labels), or must be inferred
   from topic transitions. A Tibetan text that announces its own divisions *inline*
-  (sa bcad) uses `toc-generate` instead; a vault running that pipeline already has
+  (sa bcad) uses `commentary-toc-extract` instead; a vault running that pipeline already has
   this structure in the QC-clean tree at $SECTIONS_RAW/toc-tree/<id>.md and does not
   need this skill for that source.
 profile: rails-vault
@@ -27,7 +27,7 @@ supersedes:
 > rules are in `rails/CONVENTIONS.md`.
 
 > **Which skill do you want?** This one, when the source's structure is stated
-> **separately** from its prose, or must be inferred. `toc-generate`, when a
+> **separately** from its prose, or must be inferred. `commentary-toc-extract`, when a
 > Tibetan text announces its divisions **inline** (*sa bcad*) — that pipeline
 > produces a QC-verified tree rail at `$SECTIONS_RAW/toc-tree/<id>.md` which
 > already carries this structure, so do not run both on the same source.

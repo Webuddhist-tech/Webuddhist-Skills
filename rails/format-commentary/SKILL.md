@@ -8,7 +8,7 @@ description: >
   Trigger on "format this commentary", "normalise this commentary", "fix the OCR in
   this file", "clean up the headings", "prepare this commentary".
 
-  Runs BEFORE `segment-commentary`. This is where OCR repair belongs — the segmentation
+  Runs BEFORE `commentary-segment`. This is where OCR repair belongs — the segmentation
   skills are forbidden from altering text, so anything not fixed here stays broken.
 profile: any
 supersedes:
@@ -44,7 +44,7 @@ re-measure on your own file before trusting any of them.
 (`། ` / `།།` / `། །`) ends a line, with Botok Unicode normalisation, wikilink
 unwrapping and `>`-marker removal. Run it when a file arrives as fixed-width
 wrapped text or one giant run, and you want the one-clause-per-line shape that
-`segment-commentary` Phase 2 expects.
+`commentary-segment` expects.
 
 ```bash
 python3 $SKILL/scripts/shad_linebreak.py <input.md>   # -> <input>_segmented.md
@@ -54,9 +54,9 @@ It writes a new `_segmented` file and never touches the original, sets
 `status: 1-segmented` in the frontmatter, and keeps a leading `༄༅། །` yig-mgo
 attached to the text that follows it. It **does** normalise Unicode, so it is a
 `format-commentary` step (this is the OCR/normalisation stage), not a
-`segment-commentary` one.
+`commentary-segment` one.
 
-**This is the OCR-repair step, and the only one.** `segment-commentary` and
+**This is the OCR-repair step, and the only one.** `commentary-segment` and
 `add-block-ids` are both bound by a no-loss assertion and cannot fix a broken
 character. If a commentary reaches them still damaged, the damage is permanent for
 everything downstream that cites it. Do the repair here, and where a reading is

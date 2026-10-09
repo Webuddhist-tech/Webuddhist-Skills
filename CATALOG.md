@@ -3,13 +3,14 @@
 Every skill in this repo. Generated from each skill's own frontmatter —
 run `python3 tools/build-catalog.py` after adding or changing one.
 
-- **59** text-processing skills in [`rails/`](rails/README.md)
+- **72** text-processing skills in [`rails/`](rails/README.md)
 - **4** library ingestion skills in [`library/`](library/README.md)
 - **17** org & engineering skills at the repo root
 
-The rails and library skills consolidate **194**
-skill files that were duplicated across six repos. See [`PROVENANCE.md`](PROVENANCE.md)
-for the full mapping.
+The rails and library skills consolidate **196**
+skill files from 8 repos. See [`PROVENANCE.md`](PROVENANCE.md)
+for the full mapping. Retired skills are kept in [`deprecated/`](deprecated/README.md) for
+reference and are never installed.
 
 ---
 
@@ -42,22 +43,50 @@ for the full mapping.
 | [`format-sanskrit-root-text`](rails/format-sanskrit-root-text/SKILL.md) | Format and re-index a Sanskrit root-text file using the four-zone block ID scheme (^T-n pre-title, ^I-n front matter, ^N-V verses, ^N-a colophons/back… | 2 |
 | [`format-commentary`](rails/format-commentary/SKILL.md) | Format a commentary for the collection: repair OCR damage, structure the headings, normalise spacing and punctuation, and apply block IDs — producing a… | 5 |
 
+### Segmentation & TOC workflows — root texts
+
+| Skill | Does | Absorbs |
+|---|---|---|
+| [`root-text-pipeline`](rails/root-text-pipeline/SKILL.md) | Run the WHOLE root-text workflow on one Tibetan ROOT TEXT — a treatise, praise, ritual, sādhana, prayer or letter in its own voice, not a commentary:… | 1 |
+| [`root-text-classify`](rails/root-text-classify/SKILL.md) | Step 1 of root-text-pipeline: decide whether a Tibetan text from the root folder is a VERSE text, a PROSE text, MIXED (prose with verse passages) — or… | 1 |
+| [`root-text-segment`](rails/root-text-segment/SKILL.md) | Step 2 of root-text-pipeline: cut a Tibetan root text into units — pādas for a verse text, sentences plus verse lines for a prose text — keeping the… | 1 |
+| [`root-text-toc-extract`](rails/root-text-toc-extract/SKILL.md) | Step 3 of root-text-pipeline: build the heading tree of a Tibetan ROOT TEXT that announces its own parts — chapters closed by …ལེའུ་དང་པོའོ།, rites… | 1 |
+| [`root-text-toc-ingest`](rails/root-text-toc-ingest/SKILL.md) | Step 4 of root-text-pipeline: put the top-level parts of a root text's anchored heading tree (from root-text-toc-extract) into the segmented text as ##… | 1 |
+| [`root-text-group`](rails/root-text-group/SKILL.md) | Step 5 of root-text-pipeline — the model step: group the units of a segmented root text into blocks by sense: verse lines into stanzas (no fixed length),… | 1 |
+| [`root-text-block-ids`](rails/root-text-block-ids/SKILL.md) | Step 6 of root-text-pipeline: build the final root-text file from the grouping (verse lines one per line inside a stanza, a prose paragraph on one line),… | 1 |
+
+### Segmentation & TOC workflows — commentaries
+
+| Skill | Does | Absorbs |
+|---|---|---|
+| [`commentary-pipeline`](rails/commentary-pipeline/SKILL.md) | Run the WHOLE commentary workflow on one Tibetan commentary: pre-clean → segment into functional units → sa bcad / heading tree extraction → TOC ingest →… | 0 |
+| [`commentary-preclean`](rails/commentary-preclean/SKILL.md) | Step 1 of commentary-pipeline (optional): strip earlier scaffolding from a Tibetan commentary — standalone OCR index numbers, outline numbers, block /… | 1 |
+| [`commentary-segment`](rails/commentary-segment/SKILL.md) | Step 2 of commentary-pipeline: segment an OCR-clean but under-segmented Tibetan commentary into short, individually-referenceable blocks (functional… | 2 |
+| [`commentary-toc-extract`](rails/commentary-toc-extract/SKILL.md) | Step 3 of commentary-pipeline: build the full nested, decimal-numbered ས་བཅད (sa bcad) TOC TREE of a Tibetan Buddhist commentary — candidates, verbatim… | 3 |
+| [`commentary-toc-ingest`](rails/commentary-toc-ingest/SKILL.md) | Step 4 of commentary-pipeline: ingest an anchored TOC tree (written by commentary-toc-extract's pass 5) into a segmented commentary by inserting markdown… | 1 |
+| [`commentary-resegment`](rails/commentary-resegment/SKILL.md) | Step 5 of commentary-pipeline: re-draw block boundaries in a segmented Tibetan commentary (with its TOC headings in) to produce semantically coherent,… | 2 |
+| [`commentary-block-ids`](rails/commentary-block-ids/SKILL.md) | Step 6 of commentary-pipeline: stamp the derived body block IDs on a finished, headed and re-segmented Tibetan commentary: every content block numbered by… | 0 |
+
+### Segmentation & TOC workflows — shared library
+
+| Skill | Does | Absorbs |
+|---|---|---|
+| [`seg-toc-lib`](rails/seg-toc-lib/SKILL.md) | Support library — not run on its own | 0 |
+
 ### Structure & table of contents
 
 | Skill | Does | Absorbs |
 |---|---|---|
-| [`toc-generate`](rails/toc-generate/SKILL.md) | Build a Tibetan Buddhist text's ས་བཅད (sa bcad) table of contents end to end — scan the text for structural-outline candidates, copy the… | 8 |
 | [`add-toc`](rails/add-toc/SKILL.md) | Generate a nested, decimal-numbered Table of Contents (TOC / dkar-chag) from a flat draft list at the top of a markdown document | 5 |
 | [`tag-inline-toc`](rails/tag-inline-toc/SKILL.md) | Identify inline structural announcement phrases (sa bcad) in a formatted text file, wrap the announced terms in wikilinks, and insert standalone markdown… | 4 |
 | [`outline-extract`](rails/outline-extract/SKILL.md) | Extract the structural outline (ས་བཅད། / sa bcad) already embedded in a Tibetan commentary and emit it as a standalone nested file — YAML frontmatter,… | 3 |
 | [`structural-outline-ingest`](rails/structural-outline-ingest/SKILL.md) | Extract the structural outline of one source (root text, commentary, translation or reference) and write it as a citable rail at… | 4 |
 | [`spine-map`](rails/spine-map/SKILL.md) | Build one commentary's routing index from its own TOC nodes and claim IDs onto the canonical spine slots of the root text — the once-per-commentary… | 1 |
 
-### Segmentation, block IDs & transclusion
+### Block IDs & transclusion
 
 | Skill | Does | Absorbs |
 |---|---|---|
-| [`segment-commentary`](rails/segment-commentary/SKILL.md) | Break a commentary into short, individually-referenceable blocks — prose paragraphs, verse stanzas, quotations — so every claim can later cite one | 6 |
 | [`add-block-ids`](rails/add-block-ids/SKILL.md) | Add Obsidian block IDs to a text so every verse, prose block, and heading can be cited and transcluded | 7 |
 | [`transclusion`](rails/transclusion/SKILL.md) | Insert Obsidian block-transclusion links (`![[root#^N-V]]`) for root-text verses into a commentary or a second version of the root text, placing each… | 5 |
 
@@ -149,6 +178,13 @@ for the full mapping.
 | Skill | Does | Absorbs |
 |---|---|---|
 | [`create-skill`](rails/create-skill/SKILL.md) | Scaffold a new skill completely and correctly — creates the SKILL.md with the required structure, registers it in SKILLS-CATALOG.md, creates the slash… | 3 |
+
+### Deprecated — kept for reference, not installed
+
+| Skill | Replaced by |
+|---|---|
+| [`segment-commentary`](deprecated/segment-commentary/SKILL.md) | `commentary-pipeline`, `commentary-segment`, `commentary-resegment` |
+| [`toc-generate`](deprecated/toc-generate/SKILL.md) | `commentary-toc-extract`, `commentary-toc-ingest`, `root-text-toc-extract` |
 
 ---
 

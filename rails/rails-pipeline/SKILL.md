@@ -107,6 +107,11 @@ frontmatter (`registered_id` on commentaries) and passes the formatter's check.
 
 Root text:
 
+- `root-text-pipeline` (Tibetan) — classify → segment → TOC tree of the parts the
+  text announces (`root-text-toc-extract`, QC'd against the text) → headings
+  (`root-text-toc-ingest`) → stanzas / paragraphs (`root-text-group`) → block IDs
+  (`root-text-block-ids`), ending in the strict text gate (letters and spacing vs
+  the source). Each step is its own skill and can be run alone.
 - `structural-outline-ingest` (optional — only if the author/edition provides
   divisions beyond chapter/verse) and/or `tag-inline-toc` (only for texts that
   announce their own sections inline; run after a `format-*-root-text`).
@@ -114,18 +119,20 @@ Root text:
 
 Commentary (order matters):
 
-1. `segment-commentary` — Phase 1 (continuous prose) or Phase 2 (one clause per
-   line) into citable blocks.
-2. `toc-generate` — full run Phase 0 → E builds the verified sa bcad tree and
-   ingests it as headings. **Build the tree after segmentation**: its `[[N]]`
-   pointers are computed against exact file bytes. Shorter entries: Phase 0 → A
-   (candidate scan only — never citable), Phase E only (tree already exists),
-   Simple mode (quick two-level TOC).
-3. If headings shifted block boundaries, re-run `segment-commentary` (its
-   re-draw case) **before anything cites the file**.
-4. `add-block-ids` — every `##` must already carry its hand-written `^label-0`
-   (Mode 1). Never generate or edit `##` labels.
-5. `transclusion` — insert `![[root#^N-V]]` for root verses (Mode 1 verbatim
+1. `commentary-pipeline` — `commentary-preclean` (optional) → `commentary-segment`
+   (functional units) → `commentary-toc-extract` (the verified sa bcad tree: passes
+   0–5, pass 6 QC against the text, published to `$SECTIONS_RAW/toc-tree/`) →
+   `commentary-toc-ingest` (headings) → `commentary-resegment` (meaning-based
+   re-draw after the headings) → `commentary-block-ids` (body IDs, strict text
+   gate). Each step is its own skill and can be run alone. **Build the tree after
+   segmentation**: its anchors are copied from the segmented text. Candidate scan
+   only: `commentary-toc-extract` passes 0–2 — never citable.
+2. Any later re-draw of block boundaries happens **before anything cites the
+   file**.
+3. `add-block-ids` — for files outside `commentary-pipeline`: every `##` must
+   already carry its hand-written `^label-0` (Mode 1). Never generate or edit `##`
+   labels.
+4. `transclusion` — insert `![[root#^N-V]]` for root verses (Mode 1 verbatim
    quotes / Mode 2 sa bcad-introduced; Stages 1 → 2 → 3).
 
 Standalone outline for readers: `outline-extract` (writes the flat and nested
@@ -146,7 +153,7 @@ Requires P2 on every commentary involved.
   disambiguated restatement) → `$VERSES/<verse-id>.md`. Needs the verse to exist
   in a `$SOURCE_TEXTS/` file first.
 - `commentary-claims` — one claims file per commentary (Strategy 1 tree-guided,
-  needs the `toc-generate` tree) → `$CLAIMS/raw/tree-guided/<registered-id>.md`.
+  needs the `commentary-toc-extract` tree) → `$CLAIMS/raw/tree-guided/<registered-id>.md`.
 
 ### P4 — Terminology: glossary, keywords, definitions
 
@@ -297,7 +304,8 @@ report older than the translation.
 3. Stop at every human gate and wait:
    - `raw-to-sources` / `clean-raw-text`: root vs commentary, missing text-id.
    - `add-block-ids` Mode 1: `##` labels are hand-written by a contributor.
-   - `toc-generate` Phase D: QC failures or repair decisions.
+   - `commentary-toc-extract` / `root-text-toc-extract` QC (passes 4 and 6):
+     failures or repair decisions.
    - `bilingual-glossary` Phase 3 → 4: which rendering wins for contested terms.
    - Article queue / subject list review (P6 steps 1–2) when the methodology
      calls for it; never auto-seed a ledger from keyword output.
@@ -307,8 +315,8 @@ report older than the translation.
    - Any promotion to `status: complete`.
 4. Long, per-unit skills (per commentary, per TOC node, per verse, per topic):
    batch them, checkpoint after each unit in the run log so a later session can
-   resume, and use isolated subagents where the skill says so (`toc-generate`,
-   `commentary-claims`).
+   resume, and use isolated subagents where the skill says so (`commentary-toc-extract`,
+   `root-text-toc-extract`, `root-text-group`, `commentary-claims`).
 
 ### Run log
 
@@ -321,7 +329,7 @@ goal: <goal>  profile: <rails-vault|library-pipeline>
 | # | date | skill | phase/mode | input | output | check | notes |
 |---|---|---|---|---|---|---|---|
 | 1 | 2026-09-23 | clean-raw-text | Mode 2 | raw.md | cleaned.md | pass | |
-| 2 | ... | toc-generate | 0→E | ... | ... | FAIL | QC: 3 orphan nodes — waiting on human |
+| 2 | ... | commentary-toc-extract | passes 0–6 | ... | ... | FAIL | QC: 3 orphan nodes — waiting on human |
 
 next: <the next step, or the gate being waited on>
 ```
@@ -360,9 +368,10 @@ the canonical rails skill (and phase) before loading:
 | `section-summary-raw` / `section-summary-combined` | `section-summary` Phase 1 / 2 |
 | `claims-consolidation` / `claims-consolidation-audit` | `claims-consolidate` Phase 1 / 2 |
 | `commentary-fact-check-apply-fixes` | `commentary-fact-check` Phase 2 |
-| `toc-candidate-extraction` | `toc-generate` Phase 0 → A |
-| `toc-tree-extraction` + `toc-tree-ingest` / `TOC-to-HEADING` | `toc-generate` full run / Phase E |
-| `commentary-segmentation` / `commentary-resegment` / `block-resegmentation` | `segment-commentary` |
+| `toc-candidate-extraction` | `commentary-toc-extract` passes 0–2 (stop after the merge) |
+| `toc-tree-extraction` + `toc-tree-ingest` / `TOC-to-HEADING` | `commentary-toc-extract` + `commentary-toc-ingest` |
+| `commentary-segmentation` / `commentary-resegment` (line-wise) / `block-resegmentation` | `commentary-segment` / `commentary-resegment` (both inside `commentary-pipeline`) |
+| `root-text-segmentation` | `root-text-pipeline` |
 | `Obsidian-Block-ID-to-Commentary` / `commentary-verse-id` / `add-block-id-root-text` | `add-block-ids` |
 | `Transclude-Rootexto-Commentary` | `transclusion` |
 | `Outline-Extractor` | `outline-extract` |

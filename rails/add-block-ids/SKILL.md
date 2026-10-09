@@ -542,7 +542,7 @@ Each of these aborts one file with a reason rather than guessing:
 A heading deeper than `###` is a genuine limit of this script, not of the
 convention — `rails/CONVENTIONS.md` §2 allows the full decimal path to any
 depth. For a deeper tree, stamp the headings from the outline (Mode 1, or
-`toc-generate`) and use this script only on the flat parts.
+`commentary-toc-extract`) and use this script only on the flat parts.
 
 ### Running it
 

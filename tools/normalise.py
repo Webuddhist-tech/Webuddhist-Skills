@@ -3,6 +3,15 @@
 post-consolidation skill names. Frontmatter (incl. `supersedes:`) is never touched.
 
 Idempotent — safe to re-run.  python3 tools/normalise.py [--dry-run]
+
+Guards that keep a re-run from undoing later work:
+- RENAME maps only names that are retired. A name that is a live skill folder
+  in rails/ or library/ is never rewritten, whatever the table says (e.g.
+  `commentary-resegment` was merged away once and is a live skill again).
+- A line that already names the new skill (a legacy-name table) or says
+  "former" (a history note) keeps the old name.
+- Line endings are kept as found, so a run on Windows does not rewrite every
+  file it touches with CRLF.
 """
 import os, re, sys
 
@@ -10,7 +19,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DRY = "--dry-run" in sys.argv
 
 PATHS = [
-  ("0-INBOX/temp/", "$WORK/"), ("0-INBOX/", "$WORK/"),
+  ("0-INBOX/temp/", "$WORK/"), ("0-INBOX/", "$INBOX/"),
   ("1-SOURCES/Commentaries/", "$COMMENTARIES/"),
   ("1-SOURCES/Translations/", "$TRANSLATIONS/"),
   ("1-SOURCES/References/", "$REFERENCES/"),
@@ -27,18 +36,21 @@ PATHS = [
 
 # old skill name -> (new name, optional phase hint)
 RENAME = {
- "toc-tree-extraction": ("toc-generate", None),
- "toc-candidate-extraction": ("toc-generate", "Phase A"),
- "toc-tree-ingest": ("toc-generate", "Phase E"),
- "TOC-to-HEADING": ("toc-generate", "Phase E"),
- "toc-generator": ("toc-generate", "Simple mode"),
+ # toc-generate and segment-commentary are retired too (deprecated/): the
+ # segmentation + TOC workflows replaced them, one skill per step.
+ "toc-generate": ("commentary-toc-extract", None),
+ "toc-tree-extraction": ("commentary-toc-extract", None),
+ "toc-candidate-extraction": ("commentary-toc-extract", None),
+ "toc-tree-ingest": ("commentary-toc-ingest", None),
+ "TOC-to-HEADING": ("commentary-toc-ingest", None),
  "root-text-frontmatter": ("frontmatter", "Variant 1"),
  "commentary-frontmatter": ("frontmatter", "Variant 2"),
  "translation-frontmatter": ("frontmatter", "Variant 3"),
  "reference-frontmatter": ("frontmatter", "Variant 4"),
- "commentary-segmentation": ("segment-commentary", "Phase 1"),
- "commentary-resegment": ("segment-commentary", "Phase 2"),
- "block-resegmentation": ("segment-commentary", "Phase 3"),
+ "segment-commentary": ("commentary-segment", None),
+ "commentary-segmentation": ("commentary-segment", None),
+ "block-resegmentation": ("commentary-resegment", None),
+ "root-text-segmentation": ("root-text-pipeline", None),
  "section-summary-raw": ("section-summary", "Phase 1"),
  "section-summary-combined": ("section-summary", "Phase 2"),
  "glossary-extract-raw": ("bilingual-glossary", "Phase 1"),
@@ -78,13 +90,21 @@ RENAME = {
  "term-definition-from-commentaries": ("term-definition", None),
 }
 
+LIVE = {d for b in ("rails", "library") for d in os.listdir(os.path.join(ROOT, b))
+        if os.path.isfile(os.path.join(ROOT, b, d, "SKILL.md"))}
+assert all(new in LIVE for new, _ in RENAME.values()), \
+    "RENAME points at a skill that does not exist: " + \
+    ", ".join(sorted({n for n, _ in RENAME.values()} - LIVE))
+
 changed = 0
 for bucket in ("rails", "library"):
     for d in sorted(os.listdir(os.path.join(ROOT, bucket))):
         p = os.path.join(ROOT, bucket, d, "SKILL.md")
         if not os.path.isfile(p):
             continue
-        raw = open(p, encoding="utf-8").read()
+        raw = open(p, encoding="utf-8", newline="").read()
+        crlf = "\r\n" in raw
+        raw = raw.replace("\r\n", "\n")
         m = re.match(r"^---\n.*?\n---\n", raw, re.S)
         fm, body = (raw[:m.end()], raw[m.end():]) if m else ("", raw)
         orig = body
@@ -94,12 +114,21 @@ for bucket in ("rails", "library"):
         for old, (new, phase) in RENAME.items():
             if old == d or new == d:      # don't rewrite a skill's own name
                 continue
+            if old in LIVE:               # a live skill is never "renamed"
+                continue
             repl = f"`{new}`" + (f" ({phase})" if phase else "")
-            body = re.sub(rf"`{re.escape(old)}`(?! \((?:Phase|Mode|Variant|Engine|Strategy|Simple))",
-                          repl.replace("\\", "\\\\"), body)
+            pat = re.compile(rf"`{re.escape(old)}`(?! \((?:Phase|Mode|Variant|Engine|Strategy|Simple))")
+            # A line that already names the new skill (a legacy-name table row) or
+            # says "former" (a history note) is about the old name — keep it.
+            body = "\n".join(
+                l if f"`{new}`" in l or re.search(r"\bformer\b", l, re.I)
+                else pat.sub(repl.replace("\\", "\\\\"), l)
+                for l in body.split("\n"))
         if body != orig:
             changed += 1
             if not DRY:
-                open(p, "w", encoding="utf-8").write(fm + body)
+                out = fm + body
+                open(p, "w", encoding="utf-8", newline="").write(
+                    out.replace("\n", "\r\n") if crlf else out)
             print(f"  {'would fix' if DRY else 'fixed'}: {bucket}/{d}")
 print(f"\n{changed} skill files normalised")

@@ -33,11 +33,15 @@ epub-to-markdown ─┐
                   ├─→ clean-raw-text ─→ format-*-root-text ─→ frontmatter
 raw-to-sources ───┘                     format-commentary     extract-source-metadata
                                               │
-                                              ▼
-                              toc-generate ──→ segment-commentary ──→ add-block-ids
-                                   │                                       │
-                                   ▼                                       ▼
-                    outline-extract / structural-outline-ingest      transclusion
+                     ┌────────────────────────┴───────────────────┐
+                     ▼                                            ▼
+      root-text-pipeline (root texts)             commentary-pipeline (commentaries)
+      classify → segment → toc-extract →          preclean → segment → toc-extract →
+      toc-ingest → group → block-ids              toc-ingest → resegment → block-ids
+                     │                                            │
+                     └──────────────┬─────────────────────────────┘
+                                    ▼
+          outline-extract / structural-outline-ingest · add-block-ids · transclusion
                                    │
           ┌────────────────────────┼────────────────────────┐
           ▼                        ▼                        ▼
@@ -56,11 +60,36 @@ Not every text needs every step, and several skills have separately addressable
 phases — run the phase asked for, not the whole pipeline. Each skill's own
 `Phases` / `Modes` table says which parts are independently useful.
 
+## Segmentation and TOC — two workflows, one skill per step
+
+Root texts and commentaries each have a pipeline skill that runs the whole
+workflow, and one skill per step that can be run alone:
+
+| Step | Root texts | Commentaries |
+|---|---|---|
+| whole workflow | `root-text-pipeline` | `commentary-pipeline` |
+| 1 | `root-text-classify` | `commentary-preclean` (optional) |
+| 2 | `root-text-segment` | `commentary-segment` |
+| 3 | `root-text-toc-extract` | `commentary-toc-extract` (publishes to `$SECTIONS_RAW/toc-tree/`) |
+| 4 | `root-text-toc-ingest` | `commentary-toc-ingest` |
+| 5 | `root-text-group` | `commentary-resegment` |
+| 6 | `root-text-block-ids` | `commentary-block-ids` |
+
+The shared scripts and prompts are in [`seg-toc-lib`](seg-toc-lib/SKILL.md), a
+support library that is installed like a skill but never run on its own. Its
+`SKILL.md` gives the model rule (Gemini API by default, Claude agents only when the
+prompt asks) and each step's text check. Both workflows end in `verify_text.py`:
+the output's letters **and** spacing must match the source.
+
+These skills are `profile: rails-vault` — their scripts use the vault layout
+(`4-SYSTEM/Skills/`, `0-INBOX/`). They replace `toc-generate` and
+`segment-commentary`, now in [`../deprecated/`](../deprecated/README.md).
+
 ## Ordering constraints that actually bite
 
-- **`toc-generate`'s `[[N]]` pointers are computed against exact file bytes.**
-  Re-segmenting a commentary after building its tree invalidates every pointer.
-  Build the tree after segmentation, not before.
+- **A TOC tree's anchors are copied from the segmented text.** Re-segmenting a
+  text after building its tree makes the tree stale — rebuild it. Build the tree
+  after segmentation, not before.
 - **Block IDs are citations.** Once anything cites a file, re-segmenting it
   breaks those citations silently. Re-run every downstream rail if you must.
 - **OCR repair happens in `format-commentary`, and nowhere else.** The

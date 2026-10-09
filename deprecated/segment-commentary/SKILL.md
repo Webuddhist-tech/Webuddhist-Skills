@@ -21,7 +21,13 @@ supersedes:
   - bodhisattvacharyavatara-rails/4-SYSTEM/Skills/commentary-resegment/SKILL.md
   - 21-taras-rails/4-SYSTEM/Skills/block-resegmentation/SKILL.md
   - bodhisattvacharyavatara-rails/4-SYSTEM/Skills/block-resegmentation/SKILL.md
+replaced_by:
+  - commentary-pipeline
+  - commentary-segment
+  - commentary-resegment
 ---
+
+> **Deprecated (2026-10-09).** Replaced by `commentary-pipeline` and its steps `commentary-preclean`, `commentary-segment`, `commentary-resegment`, `commentary-block-ids`. Kept for reference; never installed.
 
 > **Locations.** `$SKILL` is this skill's own directory. All other `$NAME`
 > paths resolve per repo — see `rails/PROFILES.md`. Block ID and heading rules

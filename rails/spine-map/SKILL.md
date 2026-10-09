@@ -38,7 +38,7 @@ It is an index over `$CLAIMS/raw/tree-guided/`, read-only on everything it touch
 
 - **The commentary's finished TOC tree** — `$SECTIONS_RAW/toc-tree/<registered-id>.md`,
   `status: complete`. This is the structure being mapped *from*. If it is missing or not
-  QC-clean, stop: run `toc-generate` first.
+  QC-clean, stop: run `commentary-toc-extract` first.
 - **The commentary's raw claims file** — `$CLAIMS/raw/tree-guided/<registered-id>.md`.
   Read its **claim heading lines** (`##### c-… <title>`) for routing; you do not need to read
   claim bodies except to resolve a genuine ambiguity.

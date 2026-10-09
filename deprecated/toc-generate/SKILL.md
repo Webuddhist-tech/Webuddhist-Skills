@@ -33,7 +33,13 @@ supersedes:
   - bodhisattvacharyavatara-rails/4-SYSTEM/Skills/toc-tree-ingest/SKILL.md
   - 21-taras-rails/4-SYSTEM/Skills/TOC-to-HEADING/SKILL.md
   - bodhisattvacharyavatara-rails/4-SYSTEM/TOC-GENERATOR/SKILL.md
+replaced_by:
+  - commentary-toc-extract
+  - commentary-toc-ingest
+  - root-text-toc-extract
 ---
+
+> **Deprecated (2026-10-09).** Replaced by the TOC steps of the segmentation + TOC workflows: `commentary-toc-extract` (tree, QC, publish), `commentary-toc-ingest` (headings), `root-text-toc-extract` (root texts). Not carried over: Simple mode, the `--recall` candidate prompt and the E2 read-and-place ingest. Kept for reference; never installed.
 
 > **Locations.** `$SKILL` is this skill's own directory. `$SOURCES`, `$COMMENTARIES`,
 > `$WORK`, `$SECTIONS_RAW` and `$RAILS` resolve per repo — see `rails/PROFILES.md`.

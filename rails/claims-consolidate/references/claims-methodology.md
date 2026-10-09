@@ -28,7 +28,7 @@ granularity (a 24 KB digest vs a 400 KB treatise) map onto it badly. Extraction 
 merge errors contaminate each other and neither can be redone alone. This is why the
 alternatives in §5 were considered and rejected.
 
-Meaning-based segmentation of the source (`segment-commentary`) improves citation quality
+Meaning-based segmentation of the source (`commentary-segment`) improves citation quality
 and within-commentary consistency, and is part of the pipeline — but it does **not** fix the
 cross-commentary granularity problem, which is about the topic space, not the text units.
 
@@ -38,8 +38,8 @@ cross-commentary granularity problem, which is about the topic space, not the te
 
 ```
 per commentary (isolation):
-  1. clean + frontmatter + resegment          (raw-to-sources, segment-commentary)
-  2. TOC tree                                 (toc-generate, QC-gated)
+  1. clean + frontmatter + resegment          (raw-to-sources, commentary-segment)
+  2. TOC tree                                 (commentary-toc-extract, QC-gated)
      → $SECTIONS_RAW/toc-tree/<id>.md
   3. tree-guided claims extraction            (commentary-claims Strategy 1, per-node subagents)
      → $CLAIMS/raw/tree-guided/<id>.md

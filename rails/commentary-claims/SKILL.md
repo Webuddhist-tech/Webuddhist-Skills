@@ -26,7 +26,7 @@ supersedes:
 
 | Strategy | Use when | Cost / fidelity |
 |---|---|---|
-| 1 — Tree-guided | A `toc-generate` tree exists. **Default.** | Highest fidelity; one isolated subagent per node |
+| 1 — Tree-guided | A `commentary-toc-extract` tree exists. **Default.** | Highest fidelity; one isolated subagent per node |
 | 2 — TOC-scaffolded | A tree exists but a single consolidated pass is enough | Cheaper; output organised by the tree |
 | 3 — Flat | **No tree exists** | Lowest fidelity; no structural scaffold to keep the extractor oriented |
 
@@ -39,7 +39,7 @@ node 1.
 
 Strategy 3 is the fallback for a commentary with no tree. If you find yourself
 reaching for it on a commentary that *could* have a tree, build the tree first
-(`toc-generate`) — it pays for itself here and again in `section-summary`.
+(`commentary-toc-extract`) — it pays for itself here and again in `section-summary`.
 
 **All three share the same output contract:** the commentary's own language, a short
 English gloss, and a block-ID citation on every claim. A claim without a citation is
@@ -70,7 +70,7 @@ structurally impossible.
 paraphrased-from, or checked against any earlier extraction run's existing files. The
 orchestrating agent must not open those files while running this strategy, and per-node
 subagents (see Procedure) are never given their paths at all — the same structural isolation
-`toc-generate` uses to keep its phases from contaminating one another applies here to keep
+`commentary-toc-extract` uses to keep its phases from contaminating one another applies here to keep
 this extraction independent of any earlier one.
 
 Five guards make a tree-scaffolded run trustworthy. They are load-bearing rules of this
@@ -107,13 +107,13 @@ final; see its own docstring for exactly what it checks.
 |---|---|---|
 | **Commentary file** | Exactly one file from `$COMMENTARIES/`. Must carry frontmatter with `registered_id`, `title`, `author`, `lang_tag`. | `$COMMENTARIES/<filename>.md` |
 | **`registered_id`** | The short ID from that file's frontmatter. Names the output file. | e.g. `<author-shortname>` |
-| **TOC tree** | The decimal-numbered ས་བཅད tree for this same commentary, built by `toc-generate`, **QC'd clean (or human-reviewed past its flags) by both `qc_check_tree.py` and `qc_tree_vs_source.py`** — see `toc-generate` Phase D. A tree that has not been checked against the source itself is not a scaffold, it is a guess. | `$SECTIONS_RAW/toc-tree/<id>.md` (promoted, preferred), or its pre-promotion `$WORK/toc-tree-<id>.md` working copy |
+| **TOC tree** | The decimal-numbered ས་བཅད tree for this same commentary, built by `commentary-toc-extract`, **QC'd clean (or human-reviewed past its flags) by both `qc_check_tree.py` and `qc_tree_vs_source.py`** — see `commentary-toc-extract` pass 6. A tree that has not been checked against the source itself is not a scaffold, it is a guess. | `$SECTIONS_RAW/toc-tree/<id>.md` (promoted, preferred), or its pre-promotion `$WORK/toc-tree-<id>.md` working copy |
 | **Segment addressing** | How the commentary's blocks are addressed. Determined by inspection, same as Strategy 3 Step 2 — use the block-ID scheme the file declares in its `verse_id_format` frontmatter field. | block ID (preferred when present), else line number |
 
 If the commentary file has no `registered_id`, **stop** and run `frontmatter` (Variant 2)
 first. If no TOC tree exists for this `registered_id`, or the tree exists but has not been
 run through `qc_tree_vs_source.py` against this exact file version, **stop** and run
-`toc-generate` Phase D first — do not invent a structure and do not scaffold against
+`commentary-toc-extract` pass 6 first — do not invent a structure and do not scaffold against
 an unchecked tree.
 
 If the human contributor supplies more than one commentary, run this skill once per
@@ -322,7 +322,7 @@ or scribal matter, so a reviewer can see nothing was skipped silently.>
    re-found claim or evidence this rule was violated — not something to reconcile by hand.
 2. **S1-R2 — The TOC tree is the scaffold, never re-derived.** Use node titles, decimal numbers,
    and document order exactly as the tree gives them. A wrong tree is a
-   `toc-generate`/QC problem, not something to silently fix here — stop and say so.
+   `commentary-toc-extract`/QC problem, not something to silently fix here — stop and say so.
 3. **S1-R3 — Claim IDs are `c-<decimal-with-dashes>-<n>`, never a bare decimal.** Node `1.2.3`'s
    third claim is `c-1-2-3-3`. This string can never be mistaken for a node heading
    (`## 1.2.3 …`) even out of context — the load-bearing property the `toc-scaffolded`
@@ -376,7 +376,7 @@ or scribal matter, so a reviewer can see nothing was skipped silently.>
 
 ### Procedure
 
-**This is an orchestrator skill, structured like `toc-generate`: you (the
+**This is an orchestrator skill, structured like `commentary-toc-extract`: you (the
 orchestrating agent) do the bookkeeping — loading, windowing, merging, running the
 verifier — and dispatch one ISOLATED subagent per node for the actual extraction. Do not
 extract claims yourself in this context; a subagent that only ever sees one node's own
@@ -396,7 +396,7 @@ b. Load the TOC tree (`$SECTIONS_RAW/toc-tree/<id>.md`, or its pre-promotion `$W
    `toc_tree_source`.
 c. Confirm both QC reports exist and are recent (`qc_check_tree.py`'s and
    `qc_tree_vs_source.py`'s, the latter checked against this *exact* file). If either is
-   missing, stop and run `toc-generate` Phase D first. Record both report paths.
+   missing, stop and run `commentary-toc-extract` pass 6 first. Record both report paths.
 d. Parse every tree line into an ordered list: decimal, depth, title, pointer (`[[N]]`,
    `[[?]]`, or none).
 
@@ -442,7 +442,7 @@ multiple subagent calls.
 #### Step 5 — Assemble, don't re-derive
 
 Merge each subagent's reply into the output file at the node's position in tree order.
-This is mechanical assembly (like `toc-generate`'s merge step) — do not re-read the
+This is mechanical assembly (like `commentary-toc-extract`'s merge step) — do not re-read the
 source yourself and second-guess a subagent's extraction; if a reply looks wrong, dispatch
 a fresh subagent for that node rather than editing its claims in this context.
 
@@ -541,10 +541,10 @@ Correct output looks like this: a reader who has never opened the commentary can
 |---|---|---|
 | **Commentary file** | Exactly one file from `$COMMENTARIES/`. Must carry frontmatter with `registered_id`, `title`, `author`, `lang_tag`. | `$COMMENTARIES/<filename>.md` |
 | **`registered_id`** | The short ID from that file's frontmatter. Names the output file. | e.g. `<author-shortname>` |
-| **TOC tree** | The decimal-numbered structural-outline tree for this same commentary, built by `toc-generate`. This is the scaffold every heading in the output is drawn from. | `$WORK/toc-tree-<id>.md`, or `$WORK/TOC-<id>/toc-tree-<id>.md` |
+| **TOC tree** | The decimal-numbered structural-outline tree for this same commentary, built by `commentary-toc-extract`. This is the scaffold every heading in the output is drawn from. | `$WORK/toc-tree-<id>.md`, or `$WORK/TOC-<id>/toc-tree-<id>.md` |
 | **Segment addressing** | How the commentary's blocks are addressed. Determined by inspection, same as Strategy 3 Step 2 — use the block-ID scheme the file declares in its `verse_id_format` frontmatter field. | numbered segments, or line numbers |
 
-If the commentary file has no `registered_id`, **stop** and run `frontmatter` (Variant 2) first. If no TOC tree exists for this `registered_id` under either path above, **stop** and run `toc-generate` on this commentary first — do not invent a structure or fall back to the A–I categories.
+If the commentary file has no `registered_id`, **stop** and run `frontmatter` (Variant 2) first. If no TOC tree exists for this `registered_id` under either path above, **stop** and run `commentary-toc-extract` on this commentary first — do not invent a structure or fall back to the A–I categories.
 
 If the human contributor supplies more than one commentary, run this skill once per commentary. Never merge two commentaries into one file.
 
@@ -742,7 +742,7 @@ skipped silently.>
 
 ### Rules
 
-1. **S2-R1 — The TOC tree is the scaffold, never re-derived.** Use the node titles, decimal numbers, and document order exactly as they appear in the tree file. Do not renumber, reorder, merge, or split nodes — if the tree is wrong, that is a `toc-generate` problem, not something to silently fix here.
+1. **S2-R1 — The TOC tree is the scaffold, never re-derived.** Use the node titles, decimal numbers, and document order exactly as they appear in the tree file. Do not renumber, reorder, merge, or split nodes — if the tree is wrong, that is a `commentary-toc-extract` problem, not something to silently fix here.
 2. **S2-R2 — One commentary per file, read in isolation.** Same as Strategy 3 Rule S3-R1: do not open a second commentary, do not consult the root text to decide what a passage means.
 3. **S2-R3 — Every claim carries a citation**, exactly as in Strategy 3 Rule S3-R4. A claim with no `($COMMENTARIES/<filename>.md §<n>)` reference is not a claim — delete it.
 4. **S2-R4 — The commentator's own vocabulary, verbatim** — Strategy 3 Rule S3-R3, unchanged.
@@ -773,7 +773,7 @@ c. If `registered_id` is absent, stop and report; run `frontmatter` (Variant 2) 
 #### Step 2 — Load the TOC tree
 
 a. Look for `$WORK/toc-tree-<registered-id>.md`; if absent, look for `$WORK/TOC-<registered-id>/toc-tree-<registered-id>.md`.
-b. If neither exists, stop and report: run `toc-generate` on this commentary first.
+b. If neither exists, stop and report: run `commentary-toc-extract` on this commentary first.
 c. Record the path actually used as `toc_tree_source`.
 d. Parse every tree line (`* <decimal> <title> [[<line>]]`) into an ordered list, in the exact document order the tree file lists them, keeping decimal, depth (number of decimal segments), title text, and the line number (or `?` if unattested).
 
@@ -847,7 +847,7 @@ f. Confirm `claim_count` equals the number of claim entries actually present, an
 ### Completion check
 
 - [ ] Commentary read in isolation, from first line to last
-- [ ] TOC tree loaded from an existing `toc-generate` output; skill stopped and reported if none was found — no structure was invented
+- [ ] TOC tree loaded from an existing `commentary-toc-extract` output; skill stopped and reported if none was found — no structure was invented
 - [ ] Output written to `$CLAIMS/raw/toc-scaffolded/<registered-id>.md` with `<registered-id>` matching the source frontmatter
 - [ ] Frontmatter complete: `registered_id`, `title`, `author`, `source_file`, `toc_tree_source`, `citation_form`, `scaffold: toc-tree`, `claim_count`, `status: draft`
 - [ ] Every TOC-tree node has a heading, in the tree's own document order and decimal numbering, none skipped or renumbered

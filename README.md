@@ -8,6 +8,7 @@ skill the team uses, so the same job is not re-implemented in each new repo.
 ```
 rails/      text processing — intake, structure, terminology, translation, claims
 library/    getting an annotated text into the WeBuddhist library backend
+deprecated/ retired skills, kept for reference — never installed
 tools/      build-catalog.py — regenerates CATALOG.md and PROVENANCE.md
 */          org & engineering skills — GitHub workflow, API, docs, design
 ```
@@ -47,11 +48,22 @@ skills implement it rather than restating it differently each time.
 **Multi-step families became one skill with phases.** The clearest case:
 candidate extraction → enumeration → tree building → QC → ingest were five
 skills that only ever ran in sequence and only ever read each other's output.
-They are now [`rails/toc-generate`](rails/toc-generate/SKILL.md), one skill with
-five phases and documented entry points, so you can still run just the candidate
-scan or just the ingest. The same applies to
+They became one skill with phases, `toc-generate`. The same applies to
 [`bilingual-glossary`](rails/bilingual-glossary/SKILL.md) (extract → combine →
-contest → select) and [`segment-commentary`](rails/segment-commentary/SKILL.md).
+contest → select).
+
+**Segmentation and TOC later went the other way — one skill per step, plus a
+pipeline.** Running them on the Nalanda root texts and commentaries showed the
+steps need different models, different checks and different inputs for root
+texts and commentaries, and are often re-run one at a time. So `toc-generate` and
+`segment-commentary` were replaced (2026-10-09) by two workflows:
+[`root-text-pipeline`](rails/root-text-pipeline/SKILL.md) (classify → segment →
+TOC extract → TOC ingest → group → block IDs) and
+[`commentary-pipeline`](rails/commentary-pipeline/SKILL.md) (pre-clean → segment →
+TOC extract → TOC ingest → re-segment → block IDs), each step its own skill, with
+the shared scripts and prompts in [`seg-toc-lib`](rails/seg-toc-lib/SKILL.md). Both
+end in a strict text gate: the output's letters and spacing must match the
+source. The two old skills are kept in [`deprecated/`](deprecated/README.md).
 
 The intent was that nothing be summarised away — each phase should carry the
 full text of the skill it replaced. **A later review found that was not always

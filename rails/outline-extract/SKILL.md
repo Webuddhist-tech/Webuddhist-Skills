@@ -9,7 +9,7 @@ description: >
   Trigger on "extract the outline", "pull out the sa bcad", "give me this commentary's
   structure as a file", "build the outline file".
 
-  Different from `toc-generate`: this reads an outline the commentary already states
+  Different from `commentary-toc-extract`: this reads an outline the commentary already states
   explicitly, rather than reconstructing one from scattered announcements.
 profile: any
 supersedes:
@@ -29,11 +29,11 @@ supersedes:
 | The commentary | Use |
 |---|---|
 | States its outline explicitly, in one place, as a list | **This skill** |
-| Announces its structure inline, scattered through the prose | `toc-generate` |
-| Already has a tree, needs it turned into headings | `toc-generate` Phase E |
+| Announces its structure inline, scattered through the prose | `commentary-toc-extract` |
+| Already has a tree, needs it turned into headings | `commentary-toc-ingest` |
 
 This skill is the cheap path and only works when the outline is already written down.
-If you find yourself inferring hierarchy from prose, stop and use `toc-generate` —
+If you find yourself inferring hierarchy from prose, stop and use `commentary-toc-extract` —
 that is what its four verified passes are for.
 
 > **`^TOC-N` IDs — where they are and are not allowed.** This skill's two outputs
