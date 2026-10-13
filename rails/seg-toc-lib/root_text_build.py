@@ -33,9 +33,10 @@ segment / toc-ingest (one routine, `prepare`; toc-ingest re-derives the units fr
              "། །") stay pāda by pāda.
              Raw paragraph breaks are kept: the printed edition's paragraphs follow the
              sense, so a unit always ends at one and no block may run across one (marked ¶
-             in group-in.md; finish refuses a grouping that crosses it). A paragraph that
-             ends mid-sentence (no shad, or a connective: …ཏེ། …ནས། …དང་།) is not kept but
-             listed in breaks-review.md. Headings may still fall inside a paragraph.
+             in group-in.md; finish refuses a grouping that crosses it) — every one: a
+             paragraph that ends mid-sentence (no shad, or a connective: …ཏེ། …ནས། …དང་།
+             …ཅེས།) is kept too and only listed in breaks-review.md. Headings may still
+             fall inside a paragraph.
           2. frame, by pattern only (added only when present):
              Sanskrit (or Chinese: རྒྱའི་སྐད་དུ།) title + Tibetan title + homage, or the
              title repeated + homage → ## <front-title> ^I-0
@@ -158,9 +159,11 @@ def raw_paragraphs(lines):
     """The body as one run (paragraphs joined by a space, as before) and its raw paragraph
     breaks. The printed edition's paragraphs follow the sense (565 Nalanda files: page
     breaks fall inside paragraphs 95% of the time, paragraphs end at a sentence or verse
-    line 99%), so each break is kept — unless the paragraph ends mid-sentence (no shad, or
-    a connective): those are listed for review instead.
-    Returns run, kept break offsets (start of the next paragraph), doubtful breaks."""
+    line 99%), so every break is kept. A paragraph that ends mid-sentence (no shad, or a
+    connective) is kept as well — in the Nalanda texts these are the editor's own breaks: a
+    quotation after "…ཞལ་ནས།" / "…ཅེས།", part 1 after its announcement, a stanza that runs
+    on into the next (review 2026-10-12) — and only listed, for a person to look at.
+    Returns run, kept break offsets (start of the next paragraph), mid-sentence breaks."""
     paras = [re.sub(r"\s*\n\s*", " ", p).strip() for p in re.split(r"\n[ \t]*\n", "\n".join(lines))]
     paras = [p for p in paras if p]
     run, kept, doubtful = "", set(), []
@@ -169,9 +172,8 @@ def raw_paragraphs(lines):
             prev = re.sub(FN, "", paras[k - 1]).replace("༌", "་").rstrip()
             core_end = re.sub(r"[།༔\s]+$", "", prev).rstrip("་")
             last = re.split(r"[་\s]", core_end)[-1] if core_end else ""
-            if re.search(r"[།༔]$", prev) and last not in CONNECTIVE:
-                kept.add(len(run) + 1)
-            else:
+            kept.add(len(run) + 1)
+            if not (re.search(r"[།༔]$", prev) and last not in CONNECTIVE):
                 doubtful.append((len(run) + 1, paras[k - 1][-40:], p[:30]))
             run += " "
         run += p
@@ -291,6 +293,192 @@ def prose_units(run, a, b, cuts=frozenset()):
     return [run[x:y].strip() for x, y in units], types, [y for _, y in units]
 
 
+RUN_MAX = 80            # syllables: a non-verse run longer than this starts a new line
+CLOSE_O = re.compile(r"(?:འོ|(?<![ཀ-ྼ])[སཏནརལདངག]ོ)[\s་]*$")
+
+
+def verse_units(run, spans, metre, cuts=frozenset()):
+    """Verse body → units: one pāda per unit, except that the clauses which are not verse —
+    mantras, the label or rubric that closes them ("ཨོཾ་…སྭཱ་ཧཱ། རྡོ་རྗེ་མཁའ་འགྲོ་མའིའོ། །"),
+    "ཞེས་…" quotation closes, prose instructions and lists — run on as one unit, i.e. one line
+    (the editors' layout, review of Ar_3CBa_ 2026-10-09). A pāda is verse when it is closed
+    like verse ("། །", "ག །", "༔") and in the metre — the text's main metre or a neighbouring
+    pāda's (±1: contractions, a second metre) — and stands next to another verse pāda. A
+    line in the metre that closes a non-verse run with a final verb ("…ཕྱག་རྒྱའོ། །") is its
+    label and joins it, and ends the line. A run never crosses a kept raw paragraph break and starts a new
+    line after RUN_MAX syllables. Returns texts, end offsets."""
+    n = len(spans)
+    txt = [run[x:y] for x, y in spans]
+    lens = [syl(t) for t in txt]
+    clean = [re.sub(r"[།༔\s]+$", "", re.sub(FN, "", t)).replace("༌", "་").strip() for t in txt]
+    dbl = [bool(DOUBLE.search(t)) and not c.startswith("ཞེས") for t, c in zip(txt, clean)]
+    like = [dbl[k] and lens[k] >= 4 and (abs(lens[k] - metre) <= 1 or any(
+        0 <= j < n and dbl[j] and lens[j] >= 4 and abs(lens[k] - lens[j]) <= 1 for j in (k - 1, k + 1)))
+        for k in range(n)]
+    isv = [like[k] and ((k > 0 and like[k - 1]) or (k + 1 < n and like[k + 1])) for k in range(n)]
+    label = [False] * n
+    for k in range(1, n):
+        if isv[k] and not isv[k - 1] and FINAL.search(clean[k]) and spans[k - 1][1] not in cuts:
+            isv[k], label[k] = False, True
+    units, ends, start, size = [], [], None, 0
+    for k, (x, y) in enumerate(spans):
+        if isv[k]:
+            if start is not None:
+                units.append(run[start:x].strip())
+                ends.append(x)
+                start, size = None, 0
+            units.append(run[x:y].strip())
+            ends.append(y)
+            continue
+        if start is not None and size + lens[k] > RUN_MAX:
+            units.append(run[start:x].strip())
+            ends.append(x)
+            start, size = None, 0
+        start = x if start is None else start
+        size += lens[k]
+        # a printed paragraph ends here, or a label / rubric closed with "…འོ། །" ("…ཕྱག་རྒྱའོ། །",
+        # "…མའིའོ། །"); a "…ཤིག །" inside an instruction runs on
+        if y in cuts or label[k] or (dbl[k] and CLOSE_O.search(clean[k])):
+            units.append(run[start:y].strip())
+            ends.append(y)
+            start, size = None, 0
+    if start is not None:
+        units.append(run[start:spans[-1][1]].strip())
+        ends.append(spans[-1][1])
+    return units, ends
+
+
+TREE_LINE = re.compile(r"^(\s*\*\s+\S+.*?)\s*\[\[(.*)\]\]\s*$")
+ANCHOR_DROP = re.compile(r"[\s།༎༑༔]")
+
+
+def unique_anchors(all_lines, keep, text):
+    """Only the top-level nodes are ingested, so a kept node whose anchor words occur more
+    than once (a refrain opening two rite sections) loses the dropped children that put it
+    after the first occurrence. Walk the whole tree in order to find each node's place, and
+    lengthen such an anchor with the text's own following words until it occurs once.
+    Also returns each kept node's place (heading ID → offset in the canonical text), for
+    relocate_headings: the ingest reads only an anchor's first 60 characters, which in a
+    sutra of repeated formulas can be the same for many paragraphs."""
+    spots = {}
+    body = "\n".join(l for l in re.split(r"(?m)^\[\^\d+\]:", text)[0].split("\n")
+                     if not l.lstrip().startswith("#"))
+    flat, idx = [], []
+    for i, ch in enumerate(body):
+        if not ANCHOR_DROP.match(ch):
+            flat.append(ch)
+            idx.append(i)
+    flat = "".join(flat)
+    place, pos = {}, 0
+    for l in all_lines:
+        m = TREE_LINE.match(l)
+        a = ANCHOR_DROP.sub("", m.group(2)) if m else ""
+        if not a or a == "?":
+            continue
+        j = flat.find(a, pos)
+        if j >= 0:
+            place[l] = (j, len(a))
+            pos = j + 1
+    out, longer = [], 0
+    for l in keep:
+        m = TREE_LINE.match(l)
+        n = re.match(r"^\s*\*\s+(II|\d+(?:\.\d+)*)\.?\s", l)
+        if m and n and l in place:
+            spots["^" + n.group(1).replace(".", "-") + "-0"] = place[l][0]
+        if m and l in place and flat.count(flat[place[l][0]:sum(place[l])]) > 1:
+            j, end = place[l][0], sum(place[l])
+            # the ingest falls back to the anchor's first half inside one block: that half
+            # must be unique too, so only its search across blocks matches, at this place
+            while end < len(flat) and (flat.count(flat[j:end]) > 1
+                                       or flat.count(flat[j:j + max(12, (end - j) // 2)]) > 1):
+                end += 1
+            while end < len(flat) and flat[end - 1] != "་" and idx[end] == idx[end - 1] + 1:
+                end += 1                                 # finish the syllable
+            words = re.sub(r"\s+", " ", body[idx[j]:idx[end - 1] + 1]).strip()
+            l = f"{m.group(1)} [[{words}]]"
+            longer += 1
+        out.append(l)
+    return out, longer, spots
+
+
+MARKS_ONLY = re.compile(r"[༄-༔\s]+")
+FINAL_VERB = re.compile(r"(?:འོ|[སཏནརལདངགབམ]ོ|ཞེ་ན|ཤོག|ཅིག|གྱུར་ན|ནས)[་༌]?\s*[།༔]")
+
+
+def frame_like(block):
+    """A block before the first part that belongs in the front matter: a homage
+    ("…ལ་ཕྱག་འཚལ་ལོ།", ≤ 30 syllables) or a short title clause (≤ 20 syllables, no final
+    verb: "༄༅། །རྣལ་འབྱོར་སྤྱོད་པའི་ས་ལས་རྣམ་གྲངས་བསྡུ་བ། སྤྱི་སྡོམ་ནི།")."""
+    b = re.sub(r"\[\^\d+\]|\s*\^\S+\s*$", "", block)
+    n = syl(b)
+    if re.search(r"འཚལ་ལོ", b):
+        return n <= 30
+    return n <= 20 and not FINAL_VERB.search(b)
+
+
+def marks_into_part(path):
+    """The ingest cuts a block at a part's anchor, so opening marks ("༄༅༅། །") left in front
+    of a heading stand alone. The heading goes above them and the marks open the part's
+    first block again ("## … ^1-0" / "༄༅༅། །མནོས་ནས་སུ།"). Returns how many were joined."""
+    t = path.read_text(encoding="utf-8")
+    m = re.search(r"(?m)^\[\^\d+\]:", t)
+    main, notes = (t[:m.start()], t[m.start():]) if m else (t, "")
+    bl = re.split(r"\n[ \t]*\n", main.strip("\n"))
+    n, k = 0, 0
+    while k < len(bl) - 2:
+        if MARKS_ONLY.fullmatch(bl[k]) and bl[k + 1].lstrip().startswith("#") \
+                and not bl[k + 2].lstrip().startswith("#"):
+            bl[k:k + 3] = [bl[k + 1], bl[k].strip() + bl[k + 2]]
+            n += 1
+        k += 1
+    if n:
+        new = "\n\n".join(bl) + "\n" + ("\n" + notes if notes else "")
+        assert no_headings(new) == no_headings(t), "marks_into_part changed the text"
+        path.write_text(new, encoding="utf-8")
+    return n
+
+
+def relocate_headings(path, spots):
+    """After the ingest: a numbered or II heading that did not land right before the block
+    at its place (spots, from unique_anchors) is moved there. Only block starts count; a
+    place inside a block is left to the ingest. Returns the number of headings moved."""
+    t = path.read_text(encoding="utf-8")
+    m = re.search(r"(?m)^\[\^\d+\]:", t)
+    main, notes = (t[:m.start()], t[m.start():]) if m else (t, "")
+    blocks = [b for b in re.split(r"\n[ \t]*\n", main.strip("\n"))]
+    is_head = lambda b: b.lstrip().startswith("#")
+    starts, c = {}, 0
+    for k, b in enumerate(blocks):
+        if not is_head(b):
+            starts[c] = starts.get(c, k)
+            c += len(ANCHOR_DROP.sub("", "\n".join(l for l in b.split("\n") if not l.lstrip().startswith("#"))))
+    hid = lambda b: (re.search(r"\^(\S+)\s*$", b.strip()) or [None, None])[1]
+    moves = {}
+    for k, b in enumerate(blocks):
+        if not is_head(b) or ("^" + str(hid(b))) not in spots:
+            continue
+        target = starts.get(spots["^" + hid(b)])
+        if target is None:
+            continue
+        j = target - 1
+        while j >= 0 and is_head(blocks[j]) and j != k:
+            j -= 1
+        if j != k:                                   # not in the run of headings before it
+            moves[k] = target
+    if not moves:
+        return 0
+    out = []
+    for k, b in enumerate(blocks):
+        if k in moves:
+            continue
+        out += [blocks[h] for h in sorted(x for x, tg in moves.items() if tg == k)]
+        out.append(b)
+    new = "\n\n".join(out) + "\n" + ("\n" + notes if notes else "")
+    assert no_headings(new) == no_headings(t), "relocate_headings changed the text"
+    path.write_text(new, encoding="utf-8")
+    return len(moves)
+
+
 def prepare(src, work, tree, front_title, body_title, form="auto"):
     work.mkdir(parents=True, exist_ok=True)
     text = src.read_text(encoding="utf-8")
@@ -309,15 +497,35 @@ def prepare(src, work, tree, front_title, body_title, form="auto"):
     i = run.find("བོད་སྐད་དུ")
     hom_re = re.compile(r"ཕྱག་འཚལ་ལོ")
     if SRC_LANG.search(run[:200]) and 0 < i < 600:
+        lang = "Chinese" if "རྒྱ་གར་སྐད" not in run[:200] else "Sanskrit"
+        # the Tibetan title ends at the clause after "བོད་སྐད་དུ།"
+        ends = [m.end() for m in END.finditer(run, i)][:2]
+        t_end = ends[-1] if len(ends) == 2 else len(run)
         h = hom_re.search(run, i)
+        if not (h and h.start() - i < 600):
+            # an edition may lack ཕྱག ("…ལ༌[^1]འཚལ་ལོ།"): a clause right after the title
+            h = re.compile(r"འཚལ་ལོ").search(run, t_end)
+            if h and END.search(run, t_end, h.start()):
+                h = None
         if h and h.start() - i < 600:
             hcuts = [m.end() for m in END.finditer(run, i, h.start())]
             hom = hcuts[-1] if hcuts else h.start()
             m = END.search(run, h.end())
             pos = m.end() if m else len(run)
-            front = [run[:i].strip(), run[i:hom].strip(), run[hom:pos].strip()]
-            lang = "Chinese" if "རྒྱ་གར་སྐད" not in run[:200] else "Sanskrit"
+            # the source-language title and the Tibetan title are one block (the editors'
+            # layout, review of 2026-10-09): ^I-1 titles, ^I-2 homage
+            bounds = {hom}
             report.append(f"front matter ({lang} title, Tibetan title, homage)")
+        else:
+            # no separate homage: the author's own homage verse (or homage running on into
+            # the text, "…ཕྱག་འཚལ་ཏེ།") stays in the body; the titles alone are ^I-1
+            pos, bounds = t_end, set()
+            report.append(f"front matter ({lang} title, Tibetan title)")
+        # a printed paragraph break inside the front matter (a "…བཞུགས་སོ།" title line before
+        # the language labels) splits it too: no block runs across a raw break
+        bounds |= {c for c in cuts if 0 < c < pos}
+        edges = [0] + sorted(bounds) + [pos]
+        front = [run[a:b].strip() for a, b in zip(edges, edges[1:]) if run[a:b].strip()]
     elif title_line:
         # leading clauses that repeat the title or pay homage (a prose text may put the
         # homage before the title); the opening marks (༄༅། །) join the next clause. In a
@@ -334,7 +542,9 @@ def prepare(src, work, tree, front_title, body_title, form="auto"):
         kinds = []
         for x, y in segs:
             c = core(run[x:y]).split("་")
-            if len(t_core) >= 3 and c[:3] == t_core[:3]:
+            # the title repeated — not a sentence of the body that opens with the title's
+            # words ("ཆུ་གཏོར་གྱི་ཡོ་བྱད་རྣམས་…" after the title ཆུ་གཏོར་གྱི་ཆོ་ག)
+            if len(t_core) >= 3 and c[:3] == t_core[:3] and len(c) <= len(t_core) + 6:
                 kinds.append("title")
             elif hom_re.search(run[x:y]) and form == "prose" and syl(run[x:y]) <= 20:
                 kinds.append("homage")
@@ -371,6 +581,26 @@ def prepare(src, work, tree, front_title, body_title, form="auto"):
         k = next((j for j in range(max(0, len(spans) - 16), len(spans))
                   if is_author(run[spans[j][0]:spans[j][1]]) or is_translator(run[spans[j][0]:spans[j][1]])),
                  len(spans))
+    # the body closes with the work's own closing line ("…འདུལ་བའི་མདོ་རྫོགས་སོ།། །།"):
+    # everything after it is colophon, even an author's colophon without "…མཛད་པ་རྫོགས་སོ"
+    work_closed = False
+    t_core = core(re.sub(r"བཞུགས(?:་སོ)?", "", title_line or ""))
+    if len(t_core.split("་")) >= 2:
+        done = re.compile(re.escape(t_core) + r"[་]*(?:ཞེས་བྱ་བ[་]*)?རྫོགས")
+        j = next((j for j in range(len(spans) - 1, max(-1, len(spans) - 40), -1)
+                  if done.search(norm(run[spans[j][0]:spans[j][1]]))), None)
+        if j is not None and j + 1 < len(spans) and j + 1 < k and is_translator(run[spans[j + 1][0]:]) \
+                and not is_author(run[spans[j][0]:spans[j][1]]):
+            k, work_closed = j + 1, True
+    # the translators' colophon often begins in the clause before its wording, cut by a
+    # paragraph break in mid-sentence: "རྒྱ་གར་གྱི་མཁན་པོ་ཤྲདྡྷ་ཀ་ར་ཝརྨ་དང་།" ‖ "ལོ་ཙཱ་བ་…"
+    while 0 < k < len(spans) and k - 1 >= 0:
+        prev = run[spans[k - 1][0]:spans[k - 1][1]]
+        if re.search(r"དང[་༌]?\s*།\s*$", re.sub(FN, "", prev)) and not is_author(prev) \
+                and re.search(r"མཁན་པོ|པཎྜི་ཏ|བཀའ་ལུང་གིས|ལོ་ཙཱ", norm(prev)):
+            k -= 1
+        else:
+            break
     tail = run[spans[k][0]:].strip() if k < len(spans) else ""
     if tail and not (is_author(tail) or is_translator(tail)):
         k, tail = len(spans), ""                 # out-of-metre lines, but no colophon
@@ -379,6 +609,14 @@ def prepare(src, work, tree, front_title, body_title, form="auto"):
         # the author's colophon ends with the first clause that completes its wording
         ends = [m.end() for m in END.finditer(tail)] + [len(tail)]
         cut = next((e for e in ends if is_author(tail[:e])), None)
+        if cut is None and work_closed:
+            # no author wording: the translators' colophon starts at its first clause with
+            # translators' wording, the royal order ("…བཀའ་ལུང་གིས") or the Indian scholar
+            # ("རྒྱ་གར་གྱི་མཁན་པོ…", "པཎྜི་ཏ…"); what comes before it is the author's colophon
+            for s, e2 in zip([0] + ends[:-1], ends):
+                if is_translator(tail[s:e2]) or re.search(r"བཀའ་ལུང་གིས|མཁན་པོ|པཎྜི་ཏ", norm(tail[s:e2])):
+                    cut = s or None              # at the very start: no author's colophon
+                    break
         if cut is not None:
             colophons.append(("author", tail[:cut].strip()))
             rest = tail[cut:].strip()
@@ -394,19 +632,30 @@ def prepare(src, work, tree, front_title, body_title, form="auto"):
     if form == "prose":
         padas, types, ends = prose_units(run, pos, spans[k][0] if k < len(spans) else len(run), cuts)
     else:
-        padas = [run[a:b].strip() for a, b in spans[:k]]
+        padas, ends = verse_units(run, spans[:k], metre, cuts)
         types = ["P"] * len(padas)
-        ends = [b for _, b in spans[:k]]
+    # a unit of opening marks only ("༄༅༅། །") is not a sentence or a pāda: it opens the
+    # next one ("༄༅༅། །མནོས་ནས་སུ།"), unless a printed paragraph break comes between them
+    j = 0
+    while j < len(padas) - 1:
+        if re.fullmatch(r"[༄-༔\s]+", padas[j]) and ends[j] not in cuts:
+            gap = " " if run[ends[j] - 1].isspace() else ""
+            padas[j:j + 2] = [padas[j] + gap + padas[j + 1]]
+            types[j:j + 2] = [types[j + 1]]
+            del ends[j]
+        else:
+            j += 1
     # body units followed by a kept raw paragraph break: no block may run across one
     breaks = [i for i, e in enumerate(ends[:-1], 1) if e in cuts]
     body_end = ends[-1] if ends else pos
     flagged = [d for d in doubtful if pos < d[0] < body_end]
     if flagged:
         (work / "breaks-review.md").write_text(
-            "# Raw paragraph breaks that end mid-sentence — not kept, check by hand\n\n"
+            "# Raw paragraph breaks that end mid-sentence — kept as breaks like all others; listed "
+            "for a look (a real mid-sentence page break would split one sentence in two)\n\n"
             + "\n".join(f"- …{a} ‖ {b}…" for _, a, b in flagged) + "\n", encoding="utf-8")
     report.append(f"raw paragraph breaks kept: {len(breaks)}"
-                  + (f", {len(flagged)} flagged (breaks-review.md)" if flagged else ""))
+                  + (f", {len(flagged)} of them mid-sentence (breaks-review.md)" if flagged else ""))
 
     out = []
     if title_line:
@@ -434,6 +683,10 @@ def prepare(src, work, tree, front_title, body_title, form="auto"):
 
     # 3. body headings: top-level tree nodes only
     nf = "no tree"
+    tmd, tjs = work / "tree-top.md", work / "tree-top.json"
+    for f in (tmd, tjs):                    # a tree from an earlier run must not stamp this one
+        if f.exists():
+            f.unlink()
     if tree:
         tl = tree.read_text(encoding="utf-8").splitlines()
         # top-level nodes only — but a tree with a single numbered top node (one rite
@@ -441,7 +694,9 @@ def prepare(src, work, tree, front_title, body_title, form="auto"):
         child = len([l for l in tl if re.match(r"^\* \d+\. ", l)]) == 1
         keep = [l for l in tl if l.startswith("## ") or not l.strip() or re.match(r"^\* (?:\d+|II)\.? ", l)
                 or (child and re.match(r"^\s+\* \d+\.\d+ ", l))]
-        tmd, tjs = work / "tree-top.md", work / "tree-top.json"
+        keep, longer, spots = unique_anchors(tl, keep, prepared.read_text(encoding="utf-8"))
+        if longer:
+            report.append(f"{longer} repeated anchor(s) lengthened to their own place")
         tmd.write_text("\n".join(keep) + "\n", encoding="utf-8")
         subprocess.run([PY, "-X", "utf8", str(ING), "parse", "--input", str(tmd), "--out", str(tjs)],
                        check=True, capture_output=True)
@@ -451,6 +706,11 @@ def prepare(src, work, tree, front_title, body_title, form="auto"):
         assert "Integrity: text unchanged" in r.stdout, r.stdout + r.stderr
         m = re.search(r"Not found:\s+(\d+)", r.stdout)
         nf = f"{m.group(1) if m else '?'} not placed"
+        moved = relocate_headings(prepared, spots)
+        if moved:
+            report.append(f"{moved} heading(s) moved to their anchor's own place")
+        if marks_into_part(prepared):
+            report.append("opening marks joined to the first part")
         # the front-matter section holds only its frame blocks: the author's own opening
         # verses belong to the body, so the first body heading moves up to meet them
         if front:
@@ -464,13 +724,70 @@ def prepare(src, work, tree, front_title, body_title, form="auto"):
                 bl.insert(fi + 1 + len(front), bl.pop(nxt))
                 prepared.write_text(f2 + "\n\n".join(bl) + "\n" + ("\n" + n2 if n2 else ""), encoding="utf-8")
                 report.append(f"first body heading moved up {gap} pāda(s) to follow the front matter")
+        # no tree heading placed before the body (every anchor missed): the body would sit
+        # under the front-matter frame and get no grouping — give it the body heading
+        t = prepared.read_text(encoding="utf-8")
+        f2, b2, n2 = split_doc(t)
+        bl = [x.strip() for x in re.split(r"\n\s*\n", b2) if x.strip()]
+        start = next((j for j, x in enumerate(bl) if x.startswith("## ") and "^I-0" in x), None)
+        start = start + 1 + len(front) if start is not None else \
+            next((j + 1 for j, x in enumerate(bl) if re.match(r"# ", x)), 0)   # after the title
+        if padas and start < len(bl) and not (bl[start].startswith("#")
+                                              and not any(s in bl[start] for s in FRAME_SECTIONS)):
+            # text before the first part (editors' decision, 2026-10-13): a leading homage
+            # ("…ལ་ཕྱག་འཚལ་ལོ།") or title clause is front matter (## ཀླད་ཀྱི་དོན། ^I-0); the
+            # rest of it belongs to the first part, whose heading moves up to it. Only when
+            # no part heading follows at all does the body heading stand there.
+            nxt = next((j for j in range(start, len(bl)) if bl[j].startswith("#")), None)
+            if nxt is not None and not any(s in bl[nxt] for s in FRAME_SECTIONS):
+                lead = 0
+                while start + lead < nxt and frame_like(bl[start + lead]):
+                    lead += 1
+                if lead:
+                    if not front:
+                        bl.insert(start, f"## {front_title} ^I-0")
+                        start, nxt = start + 1, nxt + 1
+                    report.append(f"{lead} opening block(s) before the first part put in the front matter")
+                if start + lead < nxt:
+                    bl.insert(start + lead, bl.pop(nxt))
+                    report.append(f"first part heading moved up {nxt - start - lead} block(s) to the opening text")
+            else:
+                bl.insert(start, f"## {body_title} ^1-0")
+                report.append(f"body heading '{body_title}' added (no TOC part placed before the body)")
+            prepared.write_text(f2 + "\n\n".join(bl) + "\n" + ("\n" + n2 if n2 else ""), encoding="utf-8")
 
     # 4. grouping input — one version: free (verse) or prose
     translated = "རྒྱ་གར་སྐད་དུ" in run[:300]
     modes = ["prose"] if form == "prose" else ["free"]
     t = split_doc(prepared.read_text(encoding="utf-8"))[1]
+    blocks = [x.strip() for x in re.split(r"\n\s*\n", t) if x.strip()]
+    # a heading whose anchor falls inside a unit (a long prose sentence holding several
+    # parts) splits that unit: each piece keeps the unit's type, and a printed paragraph
+    # break stays after the piece that ends the unit
+    body, sec = [], None
+    for b in blocks:
+        if b.startswith("#"):
+            sec = b
+        elif not (sec and any(s in sec for s in FRAME_SECTIONS)):
+            body.append(b)
+    if len(body) != len(types):
+        cum, c = [], 0
+        for p in padas:
+            c += len(squeeze(p))
+            cum.append(c)
+        new_types, new_breaks, c, u = [], [], 0, 0
+        for j, b in enumerate(body, 1):
+            c += len(squeeze(b))
+            while u < len(cum) - 1 and c > cum[u]:
+                u += 1
+            new_types.append(types[u])
+            if c == cum[u] and (u + 1) in breaks:
+                new_breaks.append(j)
+        if len(body) > len(types):              # fewer: an opening unit went to the front matter
+            report.append(f"{len(body) - len(types)} unit(s) split by a heading inside them")
+        types, breaks = new_types, new_breaks
     lst, n, sec = [], 0, None
-    for b in [x.strip() for x in re.split(r"\n\s*\n", t) if x.strip()]:
+    for b in blocks:
         if b.startswith("#"):
             sec = b
             lst.append("\n" + b)
@@ -591,6 +908,8 @@ def group_split(work, max_lines=750):
     part at least max_lines − 150 lines (a part with no units joins the one before)."""
     mode = json.loads((work / "state.json").read_text(encoding="utf-8"))["modes"][0]
     lines = (work / "group-in.md").read_text(encoding="utf-8").split("\n")
+    for old in work.glob("group-in-part*.md"):     # parts of an earlier, longer input
+        old.unlink()
     if len(lines) <= max_lines:
         print(f"{len(lines)} lines — no split needed: one subagent on group-in.md → groups-{mode}.json")
         return
