@@ -57,6 +57,13 @@ headings; `tree-top.md` / `tree-top.json` (the nodes used).
    never shortened or reworded.
 5. `not placed` must be 0 — a node whose anchor is not found is inserted by hand
    (`## <title> ^N-0` before the part's first block) and the step re-run.
+6. **Each heading at its own anchor's place.** The place of every node is found by walking
+   the whole tree in order with the full anchors. A repeated anchor (a refrain opening two
+   sections) is lengthened with the text's own words, and a heading the ingest put
+   elsewhere — it reads only an anchor's first 60 characters, the same formula in many
+   paragraphs of a sūtra — is moved to the block at its place (report: `N heading(s)
+   moved`). A part titled from its closing line starts right after the previous part's
+   closing line; anchor it there with words long enough to occur once.
 
 Heading standardisation agreed with the editors (2026-10-09), to be applied by this step:
 one ordinal form per file, ordinal first (`དང་པོ་…`, `གཉིས་པ་…`, taken from the closing line

@@ -91,6 +91,33 @@ def canon(s: str) -> str:
     return CANON_DROP.sub("", s)
 
 
+# a footnote marker, or the start of one cut off at the end (anchors are cut at 60 chars)
+FN_MARK = re.compile(r"\[\^[^\]]*(?:\]|$)")
+
+
+def search_map(s: str):
+    """canon_map for the anchor search only: footnote markers ([^n]) are skipped and the
+    non-breaking tsheg counts as a tsheg — an anchor copied from the text without its
+    footnote marker ("…ཆེན༌དང་", text "…ཆེན༌[^2]དང་") still matches. The integrity check
+    keeps the strict canon()."""
+    out, idx, i = [], [], 0
+    while i < len(s):
+        m = FN_MARK.match(s, i)
+        if m:
+            i = m.end()
+            continue
+        ch = s[i]
+        if not CANON_DROP.match(ch):
+            out.append("་" if ch == "༌" else ch)
+            idx.append(i)
+        i += 1
+    return "".join(out), idx
+
+
+def search_canon(s: str) -> str:
+    return search_map(s)[0]
+
+
 def decimal_to_block_id(decimal_id: str) -> str:
     """'1.3.2.2' -> '^1-3-2-2-0';  'b.1' -> '^b-1-0';  'I' -> '^I-0'"""
     return "^" + "-".join(decimal_id.rstrip(".").split(".")) + "-0"
@@ -250,14 +277,14 @@ def content_stream(paras):
     for pi, p in enumerate(paras):
         if is_heading(p) or p.lstrip().startswith("![["):
             continue
-        cs, _ = canon_map(ID_RE.sub("", p))
+        cs, _ = search_map(ID_RE.sub("", p))
         chars.append(cs)
         owner.extend((pi, j) for j in range(len(cs)))
     return "".join(chars), owner
 
 
 def _find(stream, node, lo, hi):
-    a = canon(node.get("context_anchor", ""))
+    a = search_canon(node.get("context_anchor", ""))
     if not a or a == "?":
         return None
     for cand in (a, a[:max(12, len(a) // 2)]):
@@ -276,7 +303,7 @@ _ORD_RE = re.compile(r"^(?:" + "|".join(sorted(map(re.escape, _ORD), key=len, re
 def opener_ordinal(node):
     """1 for a context opening 'དང་པོ…', 2 for 'གཉིས་པ…' … — the commentary's own count of
     which part this is; None when the context does not open with an ordinal."""
-    m = _ORD_RE.match(canon(node.get("context_anchor", "")))
+    m = _ORD_RE.match(search_canon(node.get("context_anchor", "")))
     return _ORD.index(m.group(0)) + 1 if m else None
 
 
@@ -450,7 +477,7 @@ def cmd_ingest(args):
 
     # canonical view of every block, for anchor search
     def views():
-        return [canon_map(p) if not is_heading(p) else ("", []) for p in paras]
+        return [search_map(p) if not is_heading(p) else ("", []) for p in paras]
 
     existing = {m.group(1) for p in paras if is_heading(p) for m in [ID_RE.search(p)] if m}
     inserts = {}            # para index -> list of heading lines (doc order)
@@ -462,7 +489,7 @@ def cmd_ingest(args):
         bid = node["block_id"]
         if bid.lstrip("^") in existing:
             continue
-        anchor = canon(node.get("context_anchor", ""))
+        anchor = search_canon(node.get("context_anchor", ""))
         if not anchor or anchor == "?":
             not_found.append((node["decimal_id"], node["label"], "empty context [[?]]"))
             continue

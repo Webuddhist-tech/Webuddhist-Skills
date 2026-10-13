@@ -92,7 +92,9 @@ No `^toc` block IDs; no frame nodes `I.` / `a.` / `b.`. A preamble before part 1
 2. **Pass 1 — candidates**, one isolated subagent per chunk, in parallel, skipping chunks
    whose file exists:
    > Read `$SKILLS/seg-toc-lib/prompts/pass1-candidates-root.md` and follow it
-   > exactly. Read ONLY lines START–END of `<input-file>`. Write your output to
+   > exactly. Read ONLY lines START–END of `<input-file>`. Lines starting with `#` are
+   > editorial headings added by root-text-segment, not the author's text — never take them
+   > as candidates. Write your output to
    > `$WORK/TOC-<id>/candidates/chunk_NNN.md`, starting with
    > `<!-- chunk NNN | lines START–END | source: <id> -->`, then the candidate blocks — or
    > `<!-- no candidates -->`. Reply only with the path.
@@ -126,7 +128,10 @@ No `^toc` block IDs; no frame nodes `I.` / `a.` / `b.`. A preamble before part 1
    > Read `$SKILLS/seg-toc-lib/prompts/pass5-anchors.md` and follow it exactly. The
    > tree is `…/toc-tree-<id>.md`; the text is `<input-file>` (read all of it). **Numbered
    > nodes only — do not add the frame nodes I. / a. / b.; the front matter and colophons
-   > are headed by root-text-segment.** A preamble before node 1 may be `II.`. Write the
+   > are headed by root-text-segment.** Lines starting with `#` in the text (`## ཀླད་ཀྱི་དོན།`,
+   > `## གཞུང་དངོས།`, `## མཇུག་བྱང།` …) are those editorial headings, not the author's text:
+   > never anchor on them, never make them nodes, never nest the tree under them. A preamble
+   > before node 1 may be `II.`. Write the
    > anchored tree to `$WORK/TOC-<id>/toc-tree-anchored-<id>.md`.
 8. **Pass 6 — QC against the text itself.** The pass-4 checker only compares the tree with
    the model's own candidates; this one reads the text:

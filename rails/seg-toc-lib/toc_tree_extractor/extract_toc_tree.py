@@ -55,7 +55,9 @@ from pathlib import Path
 
 
 # ── Gemini API key ────────────────────────────────────────────────────────────
-_KEY_NAMES = ("GEMINI_API_KEY", "GOOGLE_API_KEY")
+# GEMINI_KEY_SLOT=2 in the environment selects a second key, GEMINI_API_KEY_2.
+_KEY_NAMES = (("GEMINI_API_KEY_2",) if os.environ.get("GEMINI_KEY_SLOT", "").strip() == "2"
+              else ("GEMINI_API_KEY", "GOOGLE_API_KEY"))
 
 
 def _gemini_api_key():
@@ -122,7 +124,7 @@ DEFAULT_FALLBACK_MODEL = ""   # gemini-2.0-flash was retired (June 2026); no fal
 # counts against max_output_tokens; temperature stays at the API default (Google advises
 # against lowering it on 3.x — it causes looping). A reply cut off at the limit is an
 # error and is retried, never used as an answer.
-GEMINI_THINKING   = "high"
+GEMINI_THINKING   = "medium"
 GEMINI_MAX_OUTPUT = 65536
 
 
