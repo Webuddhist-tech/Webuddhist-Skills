@@ -2,8 +2,8 @@ name: Sanity Check GitHub Tracker
 
 on:
   schedule:
-    # 17:00 IST = 11:30 UTC
-    - cron: "30 11 * * *"
+    # 10:00 IST = 04:30 UTC
+    - cron: "30 4 * * *"
   workflow_dispatch:
 
 concurrency:
