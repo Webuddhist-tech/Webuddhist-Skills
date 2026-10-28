@@ -507,7 +507,7 @@ def run_monitor():
                 lines.append(f"- {repo_name} @ `{branch}`: {n}")
             lines.append("")
 
-    lines.append("**Inactive**")
+    lines.append("**Developers who need to commit more:**")
     inactive = sorted(
         (u for u in members if meta_by_user[u]["unique_commits_in_window"] == 0),
         key=str.lower,
