@@ -9,9 +9,9 @@ import requests
 from datetime import datetime, timedelta, timezone
 
 
-ORG = "OpenPecha"
+ORG = os.getenv("GITHUB_ORG", "Webuddhist-tech")
 WINDOW_DAYS = 3
-TEAM_SLUG = "openpecha-dev-team"
+TEAM_SLUG = os.getenv("GITHUB_TEAM", "openpecha-dev-team")
 _ISO_TZ_OFFSET = "+00:00"
 # (connect, read) avoids hanging indefinitely on slow TLS/handshake vs slow body.
 _REQUEST_TIMEOUT = (15, 120)
