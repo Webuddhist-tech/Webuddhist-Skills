@@ -1,0 +1,98 @@
+name: Sanity Check GitHub Tracker
+
+on:
+  schedule:
+    # 17:00 IST = 11:30 UTC
+    - cron: "30 11 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: sanity-check-github-tracker
+  cancel-in-progress: false
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: sanity-check-github-tracker/scripts
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install requests
+
+      # state.json keeps cumulative skip counts between runs.
+      - name: Restore state
+        uses: actions/cache/restore@v4
+        with:
+          path: sanity-check-github-tracker/scripts/state.json
+          key: monitor-state-${{ github.run_id }}
+          restore-keys: monitor-state-
+
+      - name: Run monitor
+        env:
+          # The default Actions token cannot read org team members or other
+          # repos, so this needs a PAT with repo + read:org scope.
+          GITHUB_TOKEN: ${{ secrets.ORG_MONITOR_TOKEN }}
+        run: |
+          python monitor.py | tee report.txt
+          {
+            echo '## Org Commit Monitor'
+            echo '```'
+            cat report.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Post to Discord
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        shell: python
+        run: |
+          import os, time, requests
+
+          url = os.environ["DISCORD_WEBHOOK_URL"]
+          report = open("report.txt", encoding="utf-8").read().strip()
+
+          # Discord caps content at 2000 chars; leave room for the code fence.
+          chunks, current = [], ""
+          for line in report.splitlines():
+              if len(current) + len(line) + 1 > 1900:
+                  chunks.append(current)
+                  current = ""
+              current += line + "\n"
+          if current:
+              chunks.append(current)
+
+          for i, chunk in enumerate(chunks):
+              header = "**Org Commit Monitor**\n" if i == 0 else ""
+              r = requests.post(
+                  url,
+                  json={"username": "Commit Monitor", "content": f"{header}```\n{chunk}```"},
+                  timeout=30,
+              )
+              r.raise_for_status()
+              time.sleep(1)
+
+      - name: Save state
+        if: success()
+        uses: actions/cache/save@v4
+        with:
+          path: sanity-check-github-tracker/scripts/state.json
+          key: monitor-state-${{ github.run_id }}
+
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: monitor-report-${{ github.run_id }}
+          path: |
+            sanity-check-github-tracker/scripts/report.txt
+            sanity-check-github-tracker/scripts/state.json
+            sanity-check-github-tracker/scripts/monitor.log
+          if-no-files-found: ignore
+          retention-days: 30
