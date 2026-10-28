@@ -1,6 +1,6 @@
 ---
 name: openpecha-backend-codebase
-description: Master guide for the OpenPecha backend codebase — a Tibetan Buddhist digital library API. Use when working on any code in openpecha-backend: writing routes, database queries, models, annotations, tests, or when the user asks about how this project works, its patterns, or conventions.
+description: "Master guide for the OpenPecha backend codebase \u2014 a Tibetan Buddhist digital library API. Use when working on any code in openpecha-backend: writing routes, database queries, models, annotations, tests, or when the user asks about how this project works, its patterns, or conventions."
 ---
 
 # OpenPecha Backend Master Guide
