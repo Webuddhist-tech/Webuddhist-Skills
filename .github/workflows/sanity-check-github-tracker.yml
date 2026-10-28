@@ -34,6 +34,25 @@ jobs:
           key: monitor-state-${{ github.run_id }}
           restore-keys: monitor-state-
 
+      - name: Check token access
+        env:
+          GITHUB_TOKEN: ${{ secrets.ORG_MONITOR_TOKEN }}
+        run: |
+          if [ -z "$GITHUB_TOKEN" ]; then
+            echo "::error::ORG_MONITOR_TOKEN secret is empty or missing"; exit 1
+          fi
+          auth=(-H "Authorization: Bearer $GITHUB_TOKEN" -H "Accept: application/vnd.github+json")
+          echo "Token user:   $(curl -s "${auth[@]}" https://api.github.com/user | python -c 'import sys,json; print(json.load(sys.stdin).get("login"))')"
+          echo "Token scopes: $(curl -sI "${auth[@]}" https://api.github.com/user | grep -i '^x-oauth-scopes:' | cut -d' ' -f2- || echo 'n/a (fine-grained token)')"
+          org=$(curl -s -o /dev/null -w '%{http_code}' "${auth[@]}" https://api.github.com/orgs/OpenPecha/members?per_page=1)
+          team=$(curl -s -o /dev/null -w '%{http_code}' "${auth[@]}" https://api.github.com/orgs/OpenPecha/teams/openpecha-dev-team/members?per_page=1)
+          echo "Org members:  HTTP $org"
+          echo "Team members: HTTP $team"
+          if [ "$team" != "200" ]; then
+            echo "::error::Token cannot read openpecha-dev-team (HTTP $team). Needs repo + read:org scope, OpenPecha membership, and SSO authorization if enabled."
+            exit 1
+          fi
+
       - name: Run monitor
         env:
           # The default Actions token cannot read org team members or other
