@@ -13,6 +13,9 @@ ORG = os.getenv("GITHUB_ORG", "Webuddhist-tech")
 WINDOW_DAYS = 1
 TEAM_SLUG = os.getenv("GITHUB_TEAM", "openpecha-dev-team")
 _ISO_TZ_OFFSET = "+00:00"
+# A "day" runs 01:00 IST to 01:00 IST the next day.
+_DAY_TZ = timezone(timedelta(hours=5, minutes=30))
+_DAY_START_HOUR = 1
 # (connect, read) avoids hanging indefinitely on slow TLS/handshake vs slow body.
 _REQUEST_TIMEOUT = (15, 120)
 # Initial request + 2 retries for transient API failures.
@@ -53,17 +56,22 @@ def load_data(file, default):
     return default
 
 
-def _utc_today_date():
-    return datetime.now(timezone.utc).date()
+def _work_day(dt):
+    """Calendar day a timestamp belongs to, with days starting 01:00 IST."""
+    return (dt.astimezone(_DAY_TZ) - timedelta(hours=_DAY_START_HOUR)).date()
+
+
+def _today_work_day():
+    return _work_day(datetime.now(timezone.utc))
 
 
 def commit_window_bounds():
     """
-    Last WINDOW_DAYS calendar days in UTC, excluding the day of execution.
+    Last WINDOW_DAYS days (01:00 IST boundaries), excluding the day of execution.
     Returns (start_date, end_date_exclusive) as date objects,
     and a range string for display (same as former GitHub committer-date search).
     """
-    today = _utc_today_date()
+    today = _today_work_day()
     end = today  # exclusive upper bound (today is not included)
     start = today - timedelta(days=WINDOW_DAYS)
     last_inclusive = end - timedelta(days=1)
@@ -72,34 +80,19 @@ def commit_window_bounds():
 
 
 def _window_to_since_until_iso(window_start, window_end_exclusive):
-    """ISO timestamps for GET /repos/.../commits (since / until)."""
-    since_dt = datetime(
-        window_start.year,
-        window_start.month,
-        window_start.day,
-        0,
-        0,
-        0,
-        tzinfo=timezone.utc,
-    )
-    until_dt = datetime(
-        window_end_exclusive.year,
-        window_end_exclusive.month,
-        window_end_exclusive.day,
-        0,
-        0,
-        0,
-        tzinfo=timezone.utc,
-    )
+    """UTC ISO timestamps for GET /repos/.../commits (since / until)."""
+    since_dt = _day_start_utc(window_start)
+    until_dt = _day_start_utc(window_end_exclusive)
     return (
         since_dt.isoformat().replace(_ISO_TZ_OFFSET, "Z"),
         until_dt.isoformat().replace(_ISO_TZ_OFFSET, "Z"),
     )
 
 
-def _datetime_utc_midnight(d):
-    """Start of calendar day d in UTC."""
-    return datetime(d.year, d.month, d.day, 0, 0, 0, tzinfo=timezone.utc)
+def _day_start_utc(d):
+    """Start of day d (01:00 IST) as a UTC datetime."""
+    start = datetime(d.year, d.month, d.day, _DAY_START_HOUR, 0, 0, tzinfo=_DAY_TZ)
+    return start.astimezone(timezone.utc)
 
 
 def _parse_github_iso_datetime(raw):
@@ -113,14 +106,14 @@ def _parse_github_iso_datetime(raw):
 
 def _repo_pushed_before_window(repo, window_start_date):
     """
-    True if repo's last push was strictly before the commit window start (UTC).
+    True if repo's last push was strictly before the commit window start.
     Unknown/missing pushed_at -> False (still scan). Heuristic: can miss rare
     backdated commits pushed before the window.
     """
     pushed = _parse_github_iso_datetime(repo.get("pushed_at"))
     if pushed is None:
         return False
-    window_start = _datetime_utc_midnight(window_start_date)
+    window_start = _day_start_utc(window_start_date)
     return pushed < window_start
 
 
@@ -219,13 +212,8 @@ def _iter_repo_branches(headers, owner, repo):
 def _committer_date(commit_obj):
     commit = commit_obj.get("commit") or {}
     committer = commit.get("committer") or {}
-    raw = committer.get("date")
-    if not raw:
-        return None
-    try:
-        return datetime.fromisoformat(raw.replace("Z", _ISO_TZ_OFFSET)).date()
-    except ValueError:
-        return None
+    dt = _parse_github_iso_datetime(committer.get("date"))
+    return _work_day(dt) if dt else None
 
 
 def _commit_author_login(commit_obj):
@@ -266,9 +254,7 @@ def _paginate_commits_for_branch(
             break
         oldest = _committer_date(batch[-1])
         if oldest is not None:
-            window_start = datetime.fromisoformat(
-                since_iso.replace("Z", _ISO_TZ_OFFSET)
-            ).date()
+            window_start = _work_day(_parse_github_iso_datetime(since_iso))
             if oldest < window_start:
                 break
         page += 1
@@ -281,7 +267,7 @@ def fetch_team_commit_days_all_branches(members, window_start, window_end_exclus
     team), attribute by author login, dedupe by SHA per user.
 
     Org repos are listed with sort=pushed desc. On the first repo whose
-    pushed_at is before the commit window start (UTC), we stop: all later
+    pushed_at is before the commit window start, we stop: all later
     repos are older or equal and are omitted (saves API calls). Rare false
     negatives if commits are backdated and pushed before the window.
 
@@ -452,7 +438,7 @@ def run_monitor():
     window_dates = [
         (start_d + timedelta(days=i)).isoformat() for i in range(WINDOW_DAYS)
     ]
-    logger.info("Window (UTC): %s (exclusive of today, %s days)", date_range, WINDOW_DAYS)
+    logger.info("Window (01:00 IST days): %s (exclusive of today, %s days)", date_range, WINDOW_DAYS)
     days_by_user, meta_by_user = fetch_team_commit_days_all_branches(
         members, start_d, end_d
     )
@@ -516,7 +502,7 @@ def run_monitor():
         lines.append("(none)")
     else:
         headers = _api_headers()
-        today = _utc_today_date()
+        today = _today_work_day()
         entries = []
         for user in inactive:
             known = state[user].get("last_commit_date")
