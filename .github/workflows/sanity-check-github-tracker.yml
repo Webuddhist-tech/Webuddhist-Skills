@@ -65,7 +65,7 @@ jobs:
         run: |
           python monitor.py | tee report.txt
           {
-            echo '## Org Commit Monitor'
+            echo '## Webuddhist commit checker'
             cat report.txt
           } >> "$GITHUB_STEP_SUMMARY"
 
@@ -92,7 +92,7 @@ jobs:
           for chunk in chunks:
               r = requests.post(
                   url,
-                  json={"username": "Commit Monitor", "content": chunk},
+                  json={"username": "Webuddhist commit checker", "content": chunk},
                   timeout=30,
               )
               r.raise_for_status()
