@@ -391,6 +391,44 @@ def _breakdown_rows_sorted_by_commit_count(bd):
     return rows
 
 
+def _search_last_commit_date(headers, user):
+    """
+    Most recent commit by user in the org via /search/commits (default branches
+    only), or None if nothing is found.
+    """
+    data = _get_json_allow_missing(
+        "https://api.github.com/search/commits",
+        headers,
+        {
+            "q": f"author:{user} org:{ORG}",
+            "sort": "committer-date",
+            "order": "desc",
+            "per_page": 1,
+        },
+    )
+    items = (data or {}).get("items") or []
+    if not items:
+        return None
+    return _committer_date(items[0])
+
+
+def _plural(n, word):
+    return f"{n} {word}" if n == 1 else f"{n} {word}s"
+
+
+def _display_name(user):
+    return f"**{user[:1].upper()}{user[1:]}**"
+
+
+def _days_ago_text(last_date, today):
+    if last_date is None:
+        return "no commits found"
+    days = (today - last_date).days
+    if days <= 0:
+        return "last commit today"
+    return f"last commit {_plural(days, 'day')} ago"
+
+
 def _apply_skip_credits(state_user, skip_dates_iso):
     """
     Increment total_skips once per calendar day with no commits, only the first time we credit it.
@@ -414,22 +452,17 @@ def run_monitor():
     window_dates = [
         (start_d + timedelta(days=i)).isoformat() for i in range(WINDOW_DAYS)
     ]
-    lines = [
-        f"Window (UTC): {date_range} (exclusive of today, {WINDOW_DAYS} days); "
-        f"commits from all branches (not search API); "
-        f"repos listed sort=pushed desc; stop at first pushed_at before window (omit rest)"
-    ]
+    logger.info("Window (UTC): %s (exclusive of today, %s days)", date_range, WINDOW_DAYS)
     days_by_user, meta_by_user = fetch_team_commit_days_all_branches(
         members, start_d, end_d
     )
     if members:
         fm = meta_by_user[members[0]]
-        rss = fm["repos_skipped_stale_push"]
-        rss_s = "unknown" if rss is None else str(rss)
-        lines.append(
-            f"Repo pass: repos_scanned={fm['repos_scanned']}, "
-            f"repos_skipped_stale_push={rss_s}, "
-            f"branch_requests={fm['branch_requests']}"
+        logger.info(
+            "Repo pass: repos_scanned=%s, repos_skipped_stale_push=%s, branch_requests=%s",
+            fm["repos_scanned"],
+            fm["repos_skipped_stale_push"],
+            fm["branch_requests"],
         )
     for user in members:
         days_with_commits = days_by_user[user]
@@ -451,9 +484,12 @@ def run_monitor():
         state[user]["window_skip_days"] = window_skip_days
         state[user]["window_dates"] = window_dates
         state[user]["days_with_commits_in_window"] = sorted(days_with_commits)
+        if days_with_commits:
+            newest = max(days_with_commits)
+            if newest > (state[user].get("last_commit_date") or ""):
+                state[user]["last_commit_date"] = newest
 
-    lines.append("")
-    lines.append("Active:")
+    lines = ["**Active**", ""]
     active = []
     for user in members:
         bd = meta_by_user[user].get("commit_breakdown") or {}
@@ -462,23 +498,36 @@ def run_monitor():
             active.append((user, total, bd))
     active.sort(key=lambda x: (-x[1], x[0]))
     if not active:
-        lines.append("  (none)")
+        lines.extend(["(none)", ""])
     else:
-        for user, _total, bd in active:
-            lines.append(user)
+        for user, total, bd in active:
+            lines.append(f"{_display_name(user)} — {_plural(total, 'commit')}")
             for repo, branch, n in _breakdown_rows_sorted_by_commit_count(bd):
-                lines.append(f"  {repo} @ {branch}: {n} commit(s)")
+                repo_name = repo.split("/", 1)[-1]
+                lines.append(f"- {repo_name} @ `{branch}`: {n}")
+            lines.append("")
 
-    lines.append("")
-    lines.append("Inactive:")
+    lines.append("**Inactive**")
     inactive = sorted(
-        u for u in members if meta_by_user[u]["unique_commits_in_window"] == 0
+        (u for u in members if meta_by_user[u]["unique_commits_in_window"] == 0),
+        key=str.lower,
     )
     if not inactive:
-        lines.append("  (none)")
+        lines.append("(none)")
     else:
+        headers = _api_headers()
+        today = _utc_today_date()
+        entries = []
         for user in inactive:
-            lines.append(user)
+            known = state[user].get("last_commit_date")
+            candidates = [d for d in (_search_last_commit_date(headers, user),) if d]
+            if known:
+                candidates.append(datetime.fromisoformat(known).date())
+            last = max(candidates) if candidates else None
+            if last:
+                state[user]["last_commit_date"] = last.isoformat()
+            entries.append(f"{_display_name(user)} ({_days_ago_text(last, today)})")
+        lines.append(", ".join(entries))
 
     with open("state.json", "w") as f:
         json.dump(state, f, indent=4)
