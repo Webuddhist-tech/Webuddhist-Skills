@@ -185,7 +185,7 @@ LANG_NAMES = {
 PRESERVE_FM_KEYS = [
     "title", "title_original", "title_attested", "title_source", "alt_titles",
     "translator", "license", "category_id", "edition_type", "source",
-    "bdrc_work_id", "text_id", "edition_id", "toc_id", "previous_edition_id",
+    "bdrc_work_id", "text_id", "edition_id", "toc_id", "aligned_to_edition_id", "previous_edition_id",
     "translation_of", "translation_of_text_id", "translation_of_edition_id",
     "imported_from", "import_note",
 ]
@@ -335,15 +335,22 @@ def load_glossary(path):
     return entries
 
 
-def build_context(header, done, unit, glossary, window, char_cap):
-    """Compose the `context` field: work header + glossary hits + rolling prior blocks."""
+def build_context(header, done, unit, glossary, window, char_cap, max_hits=15):
+    """Compose the `context` field: work header + glossary hits + rolling prior blocks.
+
+    `max_hits` (`--glossary-max-hits`) caps the glossary entries offered per call.
+    It was a hard-coded 15; a term-locked run that sends a whole termbase must
+    raise it, and a truncation is reported on stderr rather than dropped silently."""
     parts = [header.strip()] if header.strip() else []
 
     ids = set(unit.get("ids") or ([unit["id"]] if unit.get("id") else []))
     hits = [f"{s} → {t}" for s, t, scope in glossary
             if s and s in unit["text"] and (scope is None or not ids or scope & ids)]
     if hits:
-        parts.append("Terminology already fixed for this text:\n" + "\n".join(hits[:15]))
+        if len(hits) > max_hits:
+            print(f"    ! glossary: {len(hits)} entries match, only {max_hits} sent "
+                  f"(raise --glossary-max-hits)", file=sys.stderr)
+        parts.append("Terminology already fixed for this text:\n" + "\n".join(hits[:max_hits]))
 
     rolling = []
     for rec in done[-window:] if window > 0 else []:
@@ -392,7 +399,7 @@ A **machine baseline**, not a rails-governed translation track.
 
 Every file here is raw output of DharmaMitra's public `cat-translate` endpoint,
 produced in small batches of adjacent block IDs by
-`4-SYSTEM/Skills/dharmamitra-translate/scripts/dm_translate.py`, then split back
+`4-SYSTEM/Skills/machine-translate/scripts/dm_translate.py`, then split back
 apart on segment markers so each block keeps its own record. Nothing in it
 passed through `2-RAILS/`: no verse-context package, no consolidated bilingual
 glossary, no per-track `termbase.md`, no human review. It therefore does **not**
@@ -429,7 +436,7 @@ transformation.
 Regenerate or extend with:
 
 ```bash
-python3 4-SYSTEM/Skills/dharmamitra-translate/scripts/dm_translate.py \\
+python3 4-SYSTEM/Skills/machine-translate/scripts/dm_translate.py \\
   --source "{src}" --lang {lang}
 ```
 """
@@ -824,6 +831,10 @@ def main():
     p.add_argument("--style-file", default=None, help="file whose contents are the style_instruction")
     p.add_argument("--context-header", default=None,
                    help="file with the fixed work-level context prepended to every call")
+    p.add_argument("--glossary-max-hits", type=int, default=15,
+                   help="max glossary entries offered per call (default 15). A term-locked run "
+                        "that sends a whole termbase must raise it, or locks past the cap are "
+                        "dropped (a warning names how many)")
     p.add_argument("--glossary", default=None,
                    help="optional 'source<TAB>target[<TAB>block ids]' lines; entries whose source "
                         "occurs in a batch join its context as a HINT (not enforced)")
@@ -864,6 +875,11 @@ def main():
     p.add_argument("--heading-batch", type=int, default=1,
                    help="with --headings: headings per call, split on [[n]] markers "
                         "(1 = one call each, the default; a bad split falls back to singles)")
+    p.add_argument("--strip-marks", action="store_true",
+                   help="remove the Tibetan emphasis mark ༷ (U+0F37) from the source before sending. "
+                        "Commentaries mark quoted root words with it, and DharmaMitra then copies "
+                        "those words in Tibetan script instead of translating them. Recorded in the "
+                        "ledger as source_marks_stripped.")
     p.add_argument("--extra-fm", default=None,
                    help="JSON file of frontmatter keys to seed/override on render "
                         "(researched title, backend ids, import provenance)")
@@ -887,6 +903,10 @@ def main():
         print(f"note: source is outside 1-SOURCES/ ({src_path})", file=sys.stderr)
 
     meta, units = parse_source(src_path)
+    if args.strip_marks:
+        for u in units:
+            if u["kind"] == "block" and u.get("text"):
+                u["text"] = u["text"].replace("\u0f37", "")
     blocks = [u for u in units if u["kind"] == "block" and u["id"]]
 
     if args.list:
@@ -1114,6 +1134,7 @@ def main():
             "block_id": unit["id"],
             "heading": unit["heading"],
             "source": unit["text"],
+            **({"source_marks_stripped": True} if args.strip_marks else {}),
             "translation": translation,
             "target_language": args.lang,
             "focus": args.focus,
@@ -1148,7 +1169,7 @@ def main():
                                       if b in order and b not in ids and order[b] < first_pos)]
         combined = {"text": "\n".join(u["text"] for u in batch), "ids": [u["id"] for u in batch]}
         return build_context(header, prior, combined, glossary,
-                             args.context_blocks, args.context_cap)
+                             args.context_blocks, args.context_cap, args.glossary_max_hits)
 
     def log(msg, err=False):
         with lock:

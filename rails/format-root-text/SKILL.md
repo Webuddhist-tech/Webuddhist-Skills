@@ -105,7 +105,7 @@ A commentary or translation carries three obligations a root text does not:
 
 - **Its own block ID system**, declared in its own `verse_id_format:`. A commentary's IDs are its own sequential counters, not the root's verse numbers.
 - **`root_text:`** — the full vault-relative path of the root it belongs to — and **`covers_verses:`**, the range it covers (e.g. `1-1–6-33`).
-- **Root transclusions** — the relevant root verse(s) transcluded immediately before the commentary on them: `![[1-SOURCES/Text/<root-text>.md#^1-1]]`. Use sequential individual transclusions for a multi-verse section; Obsidian has no range syntax. Placement is `transclusion`'s job, not this skill's.
+- **Root transclusions** — the relevant root verse(s) transcluded immediately before the commentary on them: `![[$SOURCE_TEXTS/<root-text>.md#^1-1]]`. Use sequential individual transclusions for a multi-verse section; Obsidian has no range syntax. Placement is `transclusion`'s job, not this skill's.
 
 ---
 

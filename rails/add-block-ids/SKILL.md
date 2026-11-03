@@ -105,7 +105,7 @@ Given input where the `##` headings already carry hand-written labels:
 
 དེའང་རྗེ་བཙུན་སྒྲོལ་མའི་ཡོན་ཏན་...
 
-![[1-SOURCES/Text/bo-root-text.md#^1-1]]
+![[$SOURCE_TEXTS/bo-root-text.md#^1-1]]
 
 ཨོཾ་ནི་མགོ་འདྲེན། རྒྱལ་བ་ཀུན་གྱི་...
 ```
@@ -125,7 +125,7 @@ Output:
 
 དེའང་རྗེ་བཙུན་སྒྲོལ་མའི་ཡོན་ཏན་... ^1-1
 
-![[1-SOURCES/Text/bo-root-text.md#^1-1]]
+![[$SOURCE_TEXTS/bo-root-text.md#^1-1]]
 
 ཨོཾ་ནི་མགོ་འདྲེན། རྒྱལ་བ་ཀུན་གྱི་... ^1-2
 ```
@@ -171,6 +171,8 @@ body text segment ^II-2
    - Body-text blocks (a run of consecutive non-blank, non-heading, non-transclusion lines) get `^{label}-{n}`, where `n` is a counter starting at 1 that increments for every body block in that section — it does **not** reset at `###`/`####` sub-headings, only at the next `##`. A body block sitting under a `####` still gets the two-segment `^{label}-{n}` form, never `^{label}-{h3}-{n}` or deeper.
    - Concretely: a `##` heading manually tagged `^I-0` produces body ids `^I-1`, `^I-2`, …; one tagged `^1-0` produces `^1-1`, `^1-2`, …; one tagged `^a-0` produces `^a-1`, `^a-2`, ….
    - `#####` and deeper are **not supported** — abort and flag for human review rather than inventing a fifth tier.
+   - Exception: a `#####`-or-deeper heading that **already** carries an id (e.g. a full-path structural id such as `^2-4-1-2-1-0` ingested from an outline) is left untouched and does not abort the run; only an *untagged* `#####`+ heading aborts. Pre-existing `###`/`####` ids are likewise kept (Rule 7).
+   - Footnote definition lines (`[^n]: …`) are treated like transclusions: never tagged, never counted.
 3. **Transclusion lines are never modified and never receive an id**, and they never consume a body-counter value — treat them as invisible to the numbering, not merely unlabeled.
 4. **A heading line always starts a new block**, even if it directly abuts the previous or next line with no blank line around it. Some raw commentary files are missing a blank line before a heading; the heading still gets its own id (or, for `##`, is still recognized and its label still extracted).
 5. **The id is appended to the end of the block's last line only** (` ^id`), never inserted as a separate line. A multi-line verse stanza gets exactly one id, on its final line. `##` heading lines are never appended to, since their id is already there.
@@ -630,7 +632,7 @@ Given input (note: the first two lines appear *before* any transclusion):
 
 > རྒྱ་གར་སྐད་དུ། ...
 
-![[1-SOURCES/Text/bo-root-text.md#^1-1]]
+![[$SOURCE_TEXTS/bo-root-text.md#^1-1]]
 > བདེ་གཤེགས་ཆོས་ཀྱི་སྐུ་མངའ་སྲས་བཅས་དང་། །ཕྱག་འོས་ཀུན་ལའང་གུས་པས་ཕྱག་འཚལ་ཏེ། །
 
 ཞེས་ཏེ་བདེ་གཤེགས་... (commentary paragraph)
@@ -645,7 +647,7 @@ Output:
 
 > རྒྱ་གར་སྐད་དུ། ... ^0-2
 
-![[1-SOURCES/Text/bo-root-text.md#^1-1]]
+![[$SOURCE_TEXTS/bo-root-text.md#^1-1]]
 > བདེ་གཤེགས་ཆོས་ཀྱི་སྐུ་མངའ་སྲས་བཅས་དང་། །ཕྱག་འོས་ཀུན་ལའང་གུས་པས་ཕྱག་འཚལ་ཏེ། ། ^1-1
 
 ཞེས་ཏེ་བདེ་གཤེགས་... (commentary paragraph) ^1-2

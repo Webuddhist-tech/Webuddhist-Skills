@@ -69,7 +69,7 @@ class TagError(Exception):
 # target like  #^1-2-0  or  file#^1-2-0.
 _WIKILINK_RE = re.compile(r"\[\[(?:[^\]|]*\|)?([^\]]*)\]\]")
 # A heading line we are allowed to have inserted: "## ... ^N-...-0"
-_HEADING_RE = re.compile(r"^#{2,6}\s.*\s\^[0-9]+(?:-[0-9]+)*-0\s*$")
+_HEADING_RE = re.compile(r"^#{2,}\s.*\s\^[0-9]+(?:-[0-9]+)*-0\s*$")
 
 
 def unwrap_links(text: str) -> str:
@@ -78,8 +78,8 @@ def unwrap_links(text: str) -> str:
 
 
 def heading_level(depth: int) -> str:
-    """depth 1 -> '##', depth 2 -> '###', ... capped at 6 '#'s (###### )."""
-    return "#" * min(depth + 1, 6)
+    """depth 1 -> '##', depth 2 -> '###', ... one '#' per level, no cap."""
+    return "#" * (depth + 1)
 
 
 # --------------------------------------------------------------------------- #
@@ -258,7 +258,9 @@ def render(source: str, annot: dict) -> tuple[str, dict]:
             },
             f"section ^{block_id} body",
         )
-        heading_line = f"{heading_level(sec['depth'])} {title} ^{block_id}"
+        already_bold = title.startswith("**") and title.endswith("**")
+        shown = f"**{title}**" if sec["depth"] > 5 and not already_bold else title
+        heading_line = f"{heading_level(sec['depth'])} {shown} ^{block_id}"
         edits_for(body_idx).headings.append(heading_line)
         n_headings += 1
 

@@ -14,6 +14,7 @@ whenever you discover a new pattern, fix a bug, or make a design decision.
 | `epub_to_markdown.py` | Generic fallback (template) | Stable |
 | `vajra-vidya-library.py` | Vajra Vidya Library | Stable |
 | `lekphi.py` | LEK-PHI series (Khenpo Kunzang Palden) | Stable |
+| `84000.py` | 84000 print-edition EPUBs (`tohNN.epub`) — stdlib only | Stable (tested on Toh 76) |
 
 Supporting scripts (in parent directory):
 
@@ -249,6 +250,66 @@ p=('Tibetan-Commentary-Non-Indent',) span=('Tibetan-External-Citations',) n=3
 - `[!lung]` callouts: 11 (4 verse groups + 7 inline prose citations)
 - Root marker bold spans: 11,545
 - Remaining `༷` in output: 0
+
+---
+
+### 84000 — `84000.py`
+
+**Source**: 84000: Translating the Words of the Buddha. Download the print EPUB from
+`https://api.84000.co/storage/v1/object/public/assets/epub/tohNN.epub` (the `tohNN-scholar.epub`
+is a different edition; the imprint links it as `scholar_edition_url`). Verified on Toh 76.
+
+```bash
+python3 $SKILL/converters/84000.py $INBOX/raw-data/toh76.epub $WORK/toh76.md
+```
+
+No CSS colour coding here — structure is carried by semantic classes, so none of the
+span co-occurrence / run-based machinery above applies. Needs only the stdlib (no bs4).
+
+| Source markup | Output |
+|---|---|
+| `h3/h4.section-heading[data-bm="tr. The Translation"]` | `## The Translation ^tr-0` |
+| `div.passage` (label `i.7`, `1.158`) | one block ending `^i-7`, `^1-158`; paragraphs/verse lines joined by hard breaks |
+| `blockquote` passage | `> ` lines, ID on its own line after a blank line |
+| `a.endnote-ref` / `div.endnote` | `[^N]` / `[^N]: …` under `## Notes` |
+| `div.gloss-entry` | `### term ^g-N` + Tibetan / Wylie / Sanskrit + definition |
+| `a.glossary-link` | plain text |
+| imprint + disclaimer pages | frontmatter (`title_bo`, `title_wylie`, `title_sa`, `toh`, `kangyur_reference`, `tibetan_translators`, `source_url`, `scholar_edition_url`) |
+
+**Frontmatter fields left empty on purpose** (not in the EPUB, never guess): `author`, `translator`
+(English translators appear only in prose, section `ac.1`), `license`, `root_text`, `covers_verses`.
+
+**Mechanical changes only**: U+00AD / U+200B / U+200D removed; whitespace collapsed. After writing,
+the script diffs the source's words against the output's and warns on any loss (Toh 76: none).
+
+**IDs are intake anchors.** `^label` is 84000's own passage numbering respelled for Obsidian
+(chapter 1 passage 1.158 happens to match `^chapter-verse`). The vault annex decides the final
+scheme; `add-block-ids` restamps on promotion to `$SOURCES/`.
+
+**Known limits**: images skipped; `--labels` prepends the visible 84000 number in bold if wanted;
+tested on 47 print EPUBs (Toh 21–1095). Unrecognised markup makes the script warn
+`unhandled <tag>` on stderr rather than drop content silently, and the word check catches any loss.
+Lists and tables inside a passage are flattened to one line per paragraph/cell. Abbreviation-list
+entries have no passage number, so they get no block ID (`passages_without_id` in the stats line).
+Un-numbered headings (bibliography groups, essay headings inside long introductions) become `###`+
+with IDs like `^b-1-0`. A few notes have emphasis that starts mid-word in the EPUB itself; the
+markdown reproduces that faithfully and may render oddly.
+
+**Tibetan source — Scholar's Edition.** The normal EPUB has no Tibetan text. `tohNN-scholar.epub`
+(same URL pattern, linked from the imprint and kept in the `scholar_edition_url` field) puts the Degé
+source in a `div.tibetan-block` after each passage, with folio references. Passing it to the same script
+(auto-detected from the `-scholar.epub` name, or `--tibetan`) writes the Tibetan alone, one block per
+passage, with **the same block IDs as the English file** (`^1-5` in both), plus `[F.226.b]` folio marks:
+
+```bash
+python3 $SKILL/converters/84000.py $INBOX/raw-data/toh76-scholar.epub $INBOX/raw-data/roots/toh76-bo.md
+```
+
+Only change to the Tibetan: 84000's display line-wraps are undone (newline after a tsheg removed,
+any other newline becomes one space). A character-count check confirms no Tibetan character is lost.
+
+**Bug found by the word check**: glossary entries carry `gloss-pali` / `gloss-chinese` fields in
+addition to Tibetan / Wylie / Sanskrit; an early version dropped them. All `gloss-*` fields are now kept.
 
 ---
 

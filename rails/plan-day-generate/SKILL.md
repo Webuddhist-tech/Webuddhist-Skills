@@ -169,8 +169,21 @@ silently.
 12. **Report out of band.** Absent sections, out-of-band word counts, missing
     rails, ambiguities resolved, files archived — all of it goes in the reply,
     never into the day file.
-13. **Do not write into `1-SOURCES/` or `2-RAILS/`.** This skill writes only
+13. **Do not write into `$SOURCES/` or `$RAILS/`.** This skill writes only
     under the stream's `days/` folder.
+14. **A content-pool item is decided once per day, for every stream.** Where
+    the plan declares a `content-pools` entry (see `plan-scaffold`):
+    - `sequential` — day N takes item N; never shuffle the mapping.
+    - `random-without-replacement` — first look for this day's file in *any*
+      stream and reuse its `<pool>_number:`. Only if no stream has the day yet,
+      collect every `<pool>_number:` already used across all streams' day
+      files **and** every number assigned earlier in this run, and draw from
+      what is left. Two days never share an item; a pool larger than the plan
+      leaves items unused, which is expected.
+    - Record the number in the day's frontmatter, and before writing confirm
+      the item's block ID exists in that stream's pool source.
+    - Completion check: no `<pool>_number` value appears twice across the whole
+      plan, and every stream's file for a day carries the same value.
 
 ---
 
@@ -214,6 +227,9 @@ pre-assigned teaching instead: open the teaching-assignment file, find this day'
 section, and read the blocks assigned to it. The rail check still applies to any
 *other* Generated section that is grounded in rails.
 
+**Step 4a — Resolve content-pool items** (only if the plan declares
+`content-pools`) per Rule 14, before composing anything.
+
 **Step 5 — Collect the grounding, layer by layer.** From each verse's rail, note
 which layer feeds which Generated section, per the declaration's `grounding`
 column: the commentary explanations, the attested stories and similes, the
@@ -241,7 +257,8 @@ Then compose within those constraints.
 
 - If a required **citation or ordinal phrase** is part of the formula, build it
   by hand from the reference tables in `<lang>/requirements.md` §6 **before**
-  composing, and double-check it. Number words are irregular and easy to get
+  composing, and double-check it. (A Tibetan stream's tables are seeded from
+  `$SKILLS/plan-scaffold/references/bo-section6-grammar.md`.) Number words are irregular and easy to get
   wrong by guessing.
 - A Generated section declared **may be absent** is left out entirely when the
   source has nothing standout to say. Do not manufacture something to fill it.
@@ -424,7 +441,7 @@ was used instead, and any ambiguity where a reading had to be chosen.
   into it. The register rule must be restated in every generation prompt, not
   assumed.
 - Reaching into a commentary file directly because the rail feels thin. Rails
-  are the declared source; `1-SOURCES/` is reachable only when the plan declares
+  are the declared source; `$SOURCES/` is reachable only when the plan declares
   `source_mode: direct-source`.
 - Mixing numeral systems inside plan prose, when the stream's language has its
   own (Arabic digits are fine only in block IDs and file paths).

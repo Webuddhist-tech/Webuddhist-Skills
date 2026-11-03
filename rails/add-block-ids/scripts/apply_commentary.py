@@ -58,7 +58,7 @@ is overwritten in place.
 import re
 import sys
 
-HEADING_RE = re.compile(r'^(#{1,6})\s+\S')
+HEADING_RE = re.compile(r'^(#{1,})\s+\S')
 TRANSCLUSION_RE = re.compile(r'^!\[\[.*\]\]\s*$')
 # Idempotency check for lines this script itself tags (#, ###, ####, body):
 # a label (letters/digits) followed by zero to three purely-numeric segments.
@@ -67,6 +67,12 @@ EXISTING_ID_RE = re.compile(r'\s\^[0-9A-Za-z]+(?:-[0-9]+){0,3}\s*$')
 # may contain letters and/or digits (Roman numerals, plain numbers, or
 # single/double letters all fit this) but not a hyphen.
 HEADING2_ID_RE = re.compile(r'\^([0-9A-Za-z]+)-0\s*$')
+# A heading that already carries an id of any depth (e.g. a full-path
+# structural id such as ^2-4-1-2-1-0 ingested from an outline) is left alone.
+EXISTING_HEADING_ID_RE = re.compile(r'\s\^[0-9A-Za-z]+(?:-[0-9A-Za-z]+)*\s*$')
+# Footnote definition lines ("[^1]: ...") are not commentary blocks: never
+# tagged and never counted, like transclusions.
+FOOTNOTE_DEF_RE = re.compile(r'^\[\^[^\]\s]+\]:')
 
 
 class AbortError(Exception):
@@ -101,7 +107,7 @@ def segment_blocks(lines, frontmatter_end):
                 blocks.append((current_start, i - 1, 'body'))
                 current_start = None
             level = len(stripped) - len(stripped.lstrip('#'))
-            if level >= 5:
+            if level >= 5 and not EXISTING_HEADING_ID_RE.search(lines[i]):
                 raise AbortError(
                     f"Line {i+1}: heading level {level} (#####+) is not "
                     f"supported by this skill — stop and flag for human "
@@ -113,6 +119,10 @@ def segment_blocks(lines, frontmatter_end):
             continue
         if TRANSCLUSION_RE.match(stripped) and current_start is None:
             blocks.append((i, i, 'transclusion'))
+            i += 1
+            continue
+        if FOOTNOTE_DEF_RE.match(stripped) and current_start is None:
+            blocks.append((i, i, 'footnote'))
             i += 1
             continue
         if current_start is None:
@@ -235,9 +245,12 @@ def tag_blocks(lines, blocks):
                 lines[e] = lines[e] + " " + bid
                 continue
 
+            if level >= 5 and EXISTING_HEADING_ID_RE.search(lines[e]):
+                continue  # pre-existing full-path id; nothing to number
+
             raise AbortError(f"Unreachable heading level {level} at line {s+1}")
 
-        if kind == 'transclusion':
+        if kind in ('transclusion', 'footnote'):
             continue  # never tagged, never consumes a counter
 
         # body block

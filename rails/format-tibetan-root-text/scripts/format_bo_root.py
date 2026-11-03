@@ -10,7 +10,7 @@ when the source has plain sequential verse numbers with no colophon marker
 reliable enough to auto-detect.
 
 Writes `^N-0` chapter-heading anchors (the repo's canonical convention —
-see 4-SYSTEM/CLAUDE.md §5a). Does NOT write the deprecated `^TOC-N`
+see rails/CONVENTIONS.md §2). Does NOT write the deprecated `^TOC-N`
 style.
 
 Usage:
@@ -124,7 +124,7 @@ def main():
     formatted_lines.append("language: Tibetan")
     formatted_lines.append("file_type: root-text")
     formatted_lines.append("lang_tag: bo")
-    formatted_lines.append("source_description: \"<fill in — see 1-SOURCES/About Sources.md §4>\"")
+    formatted_lines.append("source_description: \"<fill in — see the frontmatter skill, Variant 1>\"")
     formatted_lines.append("verse_id_format: chapter-verse")
     formatted_lines.append("---")
     formatted_lines.append("")

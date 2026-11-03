@@ -78,6 +78,9 @@ numeral systems, clause-connection ladder, contamination patterns from a
 neighbouring language, transliteration scheme. Give tables, with a right and a
 wrong column, so the rule is mechanically checkable.>
 
+<For a Tibetan stream, start from `$SKILLS/plan-scaffold/references/bo-section6-grammar.md`
+(ending-particle table, number and ordinal formation) and keep only what the plan adopts.>
+
 ## 7. Communications style
 
 - Push notification: <max length, tone, what it may not be>

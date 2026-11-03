@@ -44,10 +44,10 @@ When this file and a skill disagree, the skill wins; when a skill and
    `4-SYSTEM/Skills/`, often under **legacy names** (table at the end). Prefer the
    canonical copy; if the vault copy differs, note it for `vault-audit`.
 
-**Permission floor (never break):** `1-SOURCES/` may only receive structural edits
+**Permission floor (never break):** `$SOURCES/` may only receive structural edits
 (block boundaries, block IDs, navigation links, factual `[Ed: ...]` notes).
-Rewording or glossing source text is forbidden — that belongs in `2-RAILS/` or
-`3-TRANSFORMATIONS/`. Material flows left to right: a later stage never writes
+Rewording or glossing source text is forbidden — that belongs in `$RAILS/` or
+`$TRANSFORMATIONS/`. Material flows left to right: a later stage never writes
 back into an earlier one.
 
 ---

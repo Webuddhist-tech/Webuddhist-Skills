@@ -27,7 +27,7 @@ from pathlib import Path
 # paragraph for a ``^<id>`` marker.
 BLOCK_ID_RE = re.compile(r"\^([0-9A-Za-z][0-9A-Za-z\-]*)\s*$")
 # Strip Obsidian heading hashes when capturing block text.
-HEADING_RE = re.compile(r"^#{1,6}\s")
+HEADING_RE = re.compile(r"^#{1,}\s")
 
 
 def parse_blocks(path: Path) -> dict[str, str]:

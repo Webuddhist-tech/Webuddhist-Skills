@@ -144,10 +144,12 @@ kinds of markup and nothing else:
 | 3 | `####` | `#### <title> ^N-N-N-0` |
 | 4 | `#####` | `##### <title> ^N-N-N-N-0` |
 | 5 | `######` | `###### <title> ^N-N-N-N-N-0` |
-| 6+ | `######` | `###### <title> ^N-…-N-0` (block ID extends as needed) |
+| 6 | `#######` | `####### **<title>** ^N-N-N-N-N-N-0` |
+| 7+ | one more `#` per level | `######## **<title>** ^N-…-N-0` |
 
-Markdown has only 6 heading levels. For depth 6+, keep `######` and let the
-block ID carry the nesting. `<title>` is the short section name (the
+The number of `#` is always the block-ID path length plus one, with no cap.
+Headings deeper than `######` also wrap the title in `**bold**`, since
+Obsidian renders only six heading levels. `<title>` is the short section name (the
 announced term), not the full ordinal phrase — e.g. `བཤད་པ།`, not
 `གཉིས་པ་བཤད་པ།`.
 
@@ -426,8 +428,8 @@ canonical file. Human review is required before it replaces the file under
 
 ## Provenance
 
-The hard-coded vault paths it used for its working files (`0-INBOX/segmentation/`
-and `0-INBOX/temp/`) are now the logical name `$WORK/`, resolved per repo from
+The hard-coded vault paths it used for its working files (`$INBOX/segmentation/`
+and `$WORK/`) are now the logical name `$WORK/`, resolved per repo from
 `rails/PROFILES.md`; `tag_inline_toc.py`'s default output-path helper
 (`derive_output_path`) changed from that hard-coded temp constant to "same
 directory as `--input`". The conventions document it cites is now

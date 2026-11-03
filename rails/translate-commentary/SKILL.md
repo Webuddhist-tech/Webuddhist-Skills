@@ -10,7 +10,7 @@ supersedes:
 
 This skill translates a classical commentary from its source language into a target language using a rigorous translation framework. It ensures high fidelity, consistency, and alignment with the track's established terminology and style by actively consulting the track's translation requirements, its termbase, and the section rails that cover the commentary — and it keeps the translation **block-aligned** with the source commentary, so every citation that points into the original still resolves in the translation.
 
-**Where the output goes.** A commentary translation is an AI-generated transformation. It goes to `$TRANSFORMATIONS/Translations/<track>/`. It is **never** written into `$SOURCES/` — `1-SOURCES/` is human-produced ground truth and an LLM may not add a file to it. An AI translation placed there would be cited as a source by every downstream skill, which is exactly the corruption the citation chain exists to prevent.
+**Where the output goes.** A commentary translation is an AI-generated transformation. It goes to `$TRANSFORMATIONS/Translations/<track>/`. It is **never** written into `$SOURCES/` — `$SOURCES/` is human-produced ground truth and an LLM may not add a file to it. An AI translation placed there would be cited as a source by every downstream skill, which is exactly the corruption the citation chain exists to prevent.
 
 ---
 
@@ -43,16 +43,16 @@ This skill translates a classical commentary from its source language into a tar
 title: "<Commentary name> — <target language> translation"
 transformation_type: translation
 track: <track>
-source_commentary: 1-SOURCES/Commentaries/<file>.md
+source_commentary: $COMMENTARIES/<file>.md
 source_language: <src-lang-tag>
 target_language: <tgt-lang-tag>
 covers_verses: <first>–<last>
 context_packages:
-  - 3-TRANSFORMATIONS/Translations/<track>/requirements.md
-  - 3-TRANSFORMATIONS/Translations/<track>/termbase.md
-  - 3-TRANSFORMATIONS/Translations/<track>/audience.md
-  - 2-RAILS/Sections/<node-id>.md          # one line per node loaded
-  - 2-RAILS/Verses/<verse-id>.md           # one line per verse rail loaded
+  - $TRANSFORMATIONS/Translations/<track>/requirements.md
+  - $TRANSFORMATIONS/Translations/<track>/termbase.md
+  - $TRANSFORMATIONS/Translations/<track>/audience.md
+  - $SECTIONS/<node-id>.md          # one line per node loaded
+  - $VERSES/<verse-id>.md           # one line per verse rail loaded
 generation_date: <YYYY-MM-DD>
 status: draft
 ---

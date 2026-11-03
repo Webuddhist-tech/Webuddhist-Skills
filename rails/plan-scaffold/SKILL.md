@@ -69,10 +69,11 @@ another plan in this vault or another vault.
 | `verse-source` per stream | The file each stream's verse text is inlined from, by block ID. | authoring: `$SOURCE_TEXTS/<root>.md`; `en`: `$TRANSFORMATIONS/Translations/<track>/<file>.md` |
 | `commentary-mode` | `rails` (synthesise from `$VERSES/<id>.md`) or `teaching-file` (copy verbatim from a pre-assigned teaching file). | `rails` |
 | `teaching-file` | Required only when `commentary-mode: teaching-file`: the path of the day→teaching assignment file. | `$TRANSFORMATIONS/Plans/<plan>/assets/teaching-assignment.md` |
-| `source-mode` | `rails` (default) or `direct-source`. `direct-source` is the declared, recorded exception that lets a stream transclude or quote `1-SOURCES/` directly. | `rails` |
+| `source-mode` | `rails` (default) or `direct-source`. `direct-source` is the declared, recorded exception that lets a stream transclude or quote `$SOURCES/` directly. | `rails` |
 | `verse-distribution` | Verses per day, start date, and any dates to skip. | 2 verses/day, start 2026-07-06, skip Sundays |
 | `naming` | The day-file name pattern and whether `days/` is flat or grouped. | `day-{day}-ch{chapter}-v{start}-{end}.md`, flat |
 | `consumer` | Who reads the day files: `app` / `notification` / `obsidian`. Decides inline-vs-transclude. | `app` |
+| `content-pools` | Optional. A supplementary collection each day takes one item from (stories, images, introductions), with: the source file per stream and its per-item block-ID pattern, the pool size, and the draw rule — `sequential` (day N = item N) or `random-without-replacement`. Each day records its item in frontmatter as `<pool>_number:`. | `story`: 28 items, `^1-<M>-0`/`^1-<M>`, random-without-replacement |
 
 If a needed input is missing, stop and ask. A plan scaffolded with guessed
 parameters is worse than no plan, because the day generator will honour the
@@ -146,6 +147,12 @@ The four types:
   within the declared ceiling, voice and formula.
 - **Translated** — rendered from the corresponding section of the authoring
   stream's day file. Only translation streams have these.
+
+A section whose content is one item of a declared **content pool** is `Extracted`
+with `grounding: pool:<name>` — copied (or, for `consumer: obsidian`, transcluded)
+by the item's block ID. Every stream's pool source must carry the **same**
+block-ID numbering before the first day is generated; adding missing anchors is
+a permitted structural edit (`add-block-ids`), never a wording change.
 
 Example row set (the ids are generic; the headings, ceilings and formulas are
 whatever the human declares):
@@ -229,8 +236,8 @@ status: draft
    verses" is the single most expensive mistake observed in a plan — name the
    one that is authorised and say plainly that the other must never be used.
 6. **`source-mode: direct-source` is a declaration, not a default.** The
-   citation chain is `1-SOURCES/ → 2-RAILS/ → 3-TRANSFORMATIONS/`. A stream may
-   quote or transclude `1-SOURCES/` directly only when `About <plan>.md`
+   citation chain is `$SOURCES/ → $RAILS/ → $TRANSFORMATIONS/`. A stream may
+   quote or transclude `$SOURCES/` directly only when `About <plan>.md`
    declares `source_mode: direct-source`, and each day file that does so
    records it in `generation_note`. Without the declaration, it is a defect.
 7. **Inline by default; transclude only for Obsidian.** Day files consumed by
@@ -240,7 +247,7 @@ status: draft
    `forked_from:` pointing at the stream's `termbase.md`, a "Pending terms"
    table, and only the rules that differ for translation. Two unlinked
    termbases in one stream drift within a chapter.
-9. **Never write into `1-SOURCES/`.** This skill writes only under
+9. **Never write into `$SOURCES/`.** This skill writes only under
    `$TRANSFORMATIONS/Plans/<plan-name>/`.
 10. **Never overwrite an existing plan file.** If `About <plan-name>.md` or any
     stream contract already exists, stop, report the conflict, and ask. Adding
@@ -292,7 +299,7 @@ Authoring stream first, then translation streams. For each:
    *list* stays in `About <plan>.md`; `requirements.md` says how this language
    renders it.
 2. `termbase.md` from the template. Where the vault has a consolidated
-   `$GLOSSARIES/<src>-<tgt>.md`, seed it with `glossary-select`; otherwise leave
+   `$GLOSSARIES/<src>-<tgt>.md`, seed it with `bilingual-glossary` (Phase 4); otherwise leave
    the table empty with its columns in place.
 3. For translation streams: `termbase-translation.md` from the template, with
    `forked_from:` set and an empty "Pending terms" table.

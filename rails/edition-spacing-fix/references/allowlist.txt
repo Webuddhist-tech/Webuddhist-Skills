@@ -1,0 +1,115 @@
+# Words the word_join detector must never split.
+#
+# The detector flags a token that is not in the system word list but splits into
+# two words that are. The system list (/usr/share/dict/words) is old and thin on
+# compounds, British spellings and Dharma vocabulary, so correct words land here.
+#
+# Keep this list generic — words any English Dharma text might use. A name or a
+# mantra syllable specific to one text belongs in that text's mapping as a
+# rejected issue (rejections carry over between scans), not here.
+# One word per line, case-insensitive; '#' starts a comment.
+
+# modern / compound English
+lifespan
+lifetime
+lifetimes
+meantime
+mindstream
+mindstreams
+netherworld
+netherworlds
+undertaken
+overcome
+wellbeing
+worldwide
+nonetheless
+nevertheless
+henceforth
+thereafter
+whatsoever
+wherever
+whenever
+whoever
+forevermore
+oneself
+themselves
+ourselves
+yourselves
+selfless
+selflessness
+nondual
+nonduality
+nonconceptual
+heartfelt
+heartdrop
+downfall
+downfalls
+
+# British spellings
+harbour
+harbours
+marvellous
+colour
+colours
+honour
+honours
+honoured
+favour
+favourable
+splendour
+fulfil
+fulfils
+fulfilment
+jewelled
+travelling
+offerred
+
+# Dharma vocabulary
+buddhadharma
+bodhicitta
+bodhisattva
+bodhisattvas
+dharmakaya
+dharmakāya
+sambhogakaya
+nirmanakaya
+dharmadhatu
+dharmata
+vajradhara
+vajrasattva
+vajrayana
+mahayana
+hinayana
+tathagata
+tathagatas
+arhat
+arhats
+asura
+asuras
+yidam
+yidams
+samaya
+samayas
+vinaya
+abhidharma
+mandala
+mandalas
+utpala
+utpalas
+yaksha
+yakshas
+vetala
+vetalas
+bhuta
+bhutas
+graha
+grahas
+naga
+nagas
+maruts
+yantra
+yantras
+tuttare
+tuttara
+ture
+namo

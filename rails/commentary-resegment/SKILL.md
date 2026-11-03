@@ -208,6 +208,16 @@ A sentence end alone is not a reason to keep a cut.
 **S2** — the treatment of a new verse/topic starting mid-block (e.g. `ཡང་ཕྱག་གང་ལ་འཚལ་ན`).
 **S3** — an opener `… ནི།` fused to the explanation of the previous quote.
 
+### TOPIC SHIFT vs CONTINUATION
+
+Learned from a human correction of Dh_3CEz_ (2026-10-11: the editor's blocks had a median
+of 56 syllables against the pipeline's 27; 437 pipeline cuts at sentence ends were merged,
+170 merges across a topic shift were cut again). A sentence end is not a boundary. Start a
+new block at `ཡང་ན་` (alternative explanation), `ཁ་ཅིག་` / `གཞན་དག་` (another party's view),
+`འོ་ན་` (reply), `དེ་སྐད་དུ་` / `ཇི་སྐད་དུ་` (supporting quotation), `དེ་ནས་` (next step of a
+procedure), `དཔེ་` / `དཔེར་ན་` (example). Keep with the block before: a transitional `ད་ནི་ …`,
+a chapter-closing `ལེའུ་ … པའོ། །`, and `ཞེས་ / ཅེས་` quotatives.
+
 Blocks tagged `[HEADING]` or `[VERSE]` in the window are never part of an operation; the
 script enforces this whatever the model returns.
 

@@ -32,7 +32,7 @@ language streams saying the same thing on the same day.
 
 ## Translation discipline — the core rule
 
-Do not consult `2-RAILS/`. Do not add explanation, context, or a "point" the
+Do not consult `$RAILS/`. Do not add explanation, context, or a "point" the
 source day does not make. Do not drop anything it does make.
 
 If a sentence in your output has no parent clause in the source, delete it —
@@ -122,6 +122,9 @@ Never set `status: complete`. That is a domain specialist's call.
 8. **Never overwrite a day file.** Archive the existing version first.
 9. **Report in the reply, never in the file.**
 10. **`status: draft`, always.**
+11. **Content-pool numbers are copied, never redrawn.** Every `<pool>_number:`
+    in the source day file's frontmatter is carried over unchanged, and the
+    section is taken from this stream's pool source by the same block ID.
 
 ---
 
@@ -390,7 +393,7 @@ Report the following **in the reply, not in the file**:
   — the characteristic failure of meaning-based translation.
 - Dropping a vague attribution as filler, or resolving it to a named commentator
   the source does not name.
-- Reaching into `2-RAILS/` because a section feels thin. It is not this skill's
+- Reaching into `$RAILS/` because a section feels thin. It is not this skill's
   source.
 - Failing to recognise an aliased heading and stopping on a day that is
   perfectly translatable.

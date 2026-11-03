@@ -63,7 +63,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from count_syllables import count  # noqa: E402
 
-HEADING = re.compile(r"^(#{1,6})\s+(.*?)\s*$")
+HEADING = re.compile(r"^(#{1,})\s+(.*?)\s*$")
 VERSE_ID = re.compile(r"\^(\d+)-(\d+)\b")
 
 
@@ -78,7 +78,7 @@ def normalise_heading(line):
     """Strip heading marks, emoji, numerals and trailing punctuation so two
     spellings of the same heading compare equal."""
     s = line.strip()
-    s = re.sub(r"^#{1,6}\s*", "", s)
+    s = re.sub(r"^#{1,}\s*", "", s)
     s = re.sub(r"[\U0001F000-\U0001FAFF☀-➿️]", "", s)
     s = re.sub(r"^[\s\d༠-༳०-९.)།]+", "", s)
     s = s.rstrip(" :།༎")
@@ -120,7 +120,7 @@ def content_after_label(content, label):
     if i < 0:
         return None
     rest = text[i + len(label):]
-    stop = re.search(r"\n\s*(?:\*\*[^*]+:\*\*|#{1,6}\s)", rest)
+    stop = re.search(r"\n\s*(?:\*\*[^*]+:\*\*|#{1,}\s)", rest)
     return rest[:stop.start()] if stop else rest
 
 

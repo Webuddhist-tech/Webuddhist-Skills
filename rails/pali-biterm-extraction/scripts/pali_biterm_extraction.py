@@ -120,7 +120,7 @@ EN_FORMULA_STOP = {
 # ---------------------------------------------------------------------------
 BLOCK_ID_RE      = re.compile(r"\^[\w\-]+")
 FRONTMATTER_RE   = re.compile(r"^---\s*$")
-HEADING_RE       = re.compile(r"^#{1,6}\s+")
+HEADING_RE       = re.compile(r"^#{1,}\s+")
 BRACKET_RE       = re.compile(r"\[.*?\]")
 SUB_SPLIT_RE     = re.compile(r"(?=\([KkGgAaBb][a-z]*\))")
 SECTION_STRIP_RE = re.compile(r"^\([KkGgAaBb][a-z]*\)\s*")

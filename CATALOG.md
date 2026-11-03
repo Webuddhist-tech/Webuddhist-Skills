@@ -3,12 +3,12 @@
 Every skill in this repo. Generated from each skill's own frontmatter —
 run `python3 tools/build-catalog.py` after adding or changing one.
 
-- **72** text-processing skills in [`rails/`](rails/README.md)
+- **83** text-processing skills in [`rails/`](rails/README.md)
 - **4** library ingestion skills in [`library/`](library/README.md)
-- **17** org & engineering skills at the repo root
+- **18** org & engineering skills at the repo root
 
-The rails and library skills consolidate **196**
-skill files from 8 repos. See [`PROVENANCE.md`](PROVENANCE.md)
+The rails and library skills consolidate **219**
+skill files from 12 repos. See [`PROVENANCE.md`](PROVENANCE.md)
 for the full mapping. Retired skills are kept in [`deprecated/`](deprecated/README.md) for
 reference and are never installed.
 
@@ -179,6 +179,22 @@ reference and are never installed.
 |---|---|---|
 | [`create-skill`](rails/create-skill/SKILL.md) | Scaffold a new skill completely and correctly — creates the SKILL.md with the required structure, registers it in SKILLS-CATALOG.md, creates the slash… | 3 |
 
+### Ungrouped
+
+| Skill | Does | Absorbs |
+|---|---|---|
+| [`aligned-corpus-intake`](rails/aligned-corpus-intake/SKILL.md) | Turn a human-made, human-segmented and human-aligned corpus — OpenPecha API downloads and Dzongsar-style Google-Docs exports (.docx Tsadel/Tsadrel… | 3 |
+| [`bilingual-to-transclusion`](rails/bilingual-to-transclusion/SKILL.md) | Convert a translation that carries the root text inline — root lines, a separator such as <br>, then the translation, block by block — into the vault's… | 1 |
+| [`commentary-realign`](rails/commentary-realign/SKILL.md) | Make a copy of a commentary that is aligned to one root text, re-aligned to a second root text that contains the same root passages (possibly several… | 1 |
+| [`commentary-upload`](rails/commentary-upload/SKILL.md) | Lint, parse and upload one commentary to the library backend as its own text (commentary_of the root), an edition whose segmentation references are its… | 4 |
+| [`edition-spacing-fix`](rails/edition-spacing-fix/SKILL.md) | Scan a published edition on the library backend for spacing errors — words run together ("whomI", "forthlike", "ofthe"), no space after punctuation… | 1 |
+| [`root-text-upload`](rails/root-text-upload/SKILL.md) | Lint, parse and upload one root text to the library backend as a text, an edition whose segmentation references are its block IDs, and a table of contents | 4 |
+| [`translation-segment-check`](rails/translation-segment-check/SKILL.md) | Report-only, segment-by-segment check that every block of a translation is (a) aligned to the right root segment and (b) a correct translation of it, line… | 1 |
+| [`wiki-toc-import`](rails/wiki-toc-import/SKILL.md) | Take a text's table of contents from its proofread Wikisource Index page (or, failing that, its Wikipedia article) and apply it to the source files as… | 3 |
+| [`yigchung-transfer`](rails/yigchung-transfer/SKILL.md) | Carry the <small>…</small> yigchung (small-script rubric) marks of a root text over to a block-aligned translation, so the translation marks the same… | 1 |
+| [`yigchung-upload`](rails/yigchung-upload/SKILL.md) | Parse the <small>…</small> yigchung (small-script rubric) marks out of an already-uploaded root text or translation, turn each one into a span over the… | 1 |
+| [`zh-track-prompt`](rails/zh-track-prompt/SKILL.md) | Build or revise the Chinese (Traditional) prompt of a Chinese translation track (zh-academic, zh-children, any zh-<descriptor>): a Chinese-only system… | 3 |
+
 ### Deprecated — kept for reference, not installed
 
 | Skill | Replaced by |
@@ -212,6 +228,7 @@ Pre-existing skills at the repo root — GitHub workflow, API and docs work. Not
 | [`conversion-validation`](conversion-validation/SKILL.md) | Validate XML etext files using bdrc-etext-sync, then zip and upload to Google Drive on success |
 | [`create-sub-issues`](create-sub-issues/SKILL.md) | General-purpose agent to ANY GitHub Project, pick a project board, break down tasks |
 | [`design-engineer`](design-engineer/SKILL.md) | This skill encodes philosophy on UI polish, component design, animation decisions, and the invisible details that make software feel great inspire and… |
+| [`discord-feedback-digest`](discord-feedback-digest/SKILL.md) | Pull messages and screenshots from the WeBuddhist Discord UX-feedback channel and write a prioritized, deduped digest (lanes Dev / Design / Localization,… |
 | [`documentation_generator`](documentation_generator/SKILL.md) | OpenPecha Organization Mode **⚠ no frontmatter — not discoverable by Claude; needs `name:` + `description:`** |
 | [`frontend-backend`](frontend-backend/SKILL.md) | Full stack developer for TypeScript/Next.js and backend APIs; follows folder structure, endpoint standards, and Be Sure change discipline |
 | [`frontend_design`](frontend_design/SKILL.md) | Create distinctive, production-grade frontend interfaces with high design quality |

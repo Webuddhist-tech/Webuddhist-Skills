@@ -112,9 +112,9 @@ def parse_frontmatter(text: str) -> tuple[dict[str, str], str]:
 # ------------------------------------------------------------------------------
 
 #: A node heading: `0`/`Z`/`z` or a pure decimal, never starting with `c-`.
-_NODE_HEADING_RE = re.compile(r"^#{2,6}[ \t]+(0|[Zz]|\d+(?:\.\d+)*)\.?[ \t]")
+_NODE_HEADING_RE = re.compile(r"^#{2,}[ \t]+(0|[Zz]|\d+(?:\.\d+)*)\.?[ \t]")
 #: A claim heading: `### c-1-2-1 <label>`.
-_CLAIM_HEADING_RE = re.compile(r"^(#{2,6})[ \t]+(c-[\w-]+)[ \t]+(.*)$")
+_CLAIM_HEADING_RE = re.compile(r"^(#{2,})[ \t]+(c-[\w-]+)[ \t]+(.*)$")
 #: A tension entry: `⚑ **c-1-1-2 <label>**`.
 _TENSION_HEADING_RE = re.compile(r"^⚑[ \t]+\*\*(c-[\w-]+)[ \t]+(.*?)\*\*[ \t]*$")
 

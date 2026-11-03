@@ -42,7 +42,7 @@ canonical, corpus-measured, mechanically-gated term list.
 `<text-slug>-2026-09-22` when a vault holds more than one text). Finished artefacts —
 the three files in bold above — are promoted to `$KEYWORDS/`. Nothing in `$KEYWORDS/` is
 a citation-chain rail: these are descriptive inventories over the corpus, not claims, and
-they carry no per-item `1-SOURCES/` citation. Never write them into `$CLAIMS/` or
+they carry no per-item `$SOURCES/` citation. Never write them into `$CLAIMS/` or
 `$LOCAL_WIKI/`.
 
 **Why the source-side detour.** Phase 1 ranks against a **general-language** corpus, which

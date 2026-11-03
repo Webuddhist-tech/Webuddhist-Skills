@@ -40,6 +40,12 @@ Every model step runs on **Gemini API calls by default — Gemini 3.8 Flash, thi
 retried, never used). The key is read by the scripts from the vault-root `.env` (or the
 environment) and never printed; nobody opens that file.
 
+**What the benchmarks found efficient** (the benchmark data is no longer kept): for root
+texts, Gemini 3.8 Flash thinking `low` for small and medium texts (< 200,000 characters)
+and thinking `medium` for large ones (≥ 200,000); for commentaries, which are large,
+thinking `high`. Claude agents (Opus 5.5, high effort) do well across the board. The
+scripts' default stays thinking `high`; pick the lower setting per run when it fits.
+
 **Another model runs only when the prompt explicitly asks for it** ("run it with Claude /
 Opus", "use agents"). The same prompts then go to isolated subagents (`model: opus`, high
 effort) — one subagent per call, reading only its prompt file and input, as separate API

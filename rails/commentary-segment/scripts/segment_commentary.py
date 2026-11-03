@@ -81,7 +81,7 @@ RULES = [
 ]
 
 SEP = "\n\n"
-HEADING_RE = re.compile(r"^#{1,6}\s")
+HEADING_RE = re.compile(r"^#{1,}\s")
 FRONTMATTER_RE = re.compile(r"^---\n.*?\n---\n", re.DOTALL)
 
 # --- verse-stanza (ཚིགས་བཅད) detection parameters ---

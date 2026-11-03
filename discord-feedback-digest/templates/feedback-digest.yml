@@ -1,0 +1,133 @@
+name: Discord Feedback Digest
+
+# Manual-only. Run it from the Actions tab → "Discord Feedback Digest" → Run workflow
+# (or: gh workflow run feedback-digest.yml -f hours=168). There is no schedule by design.
+# One-time full backfill of one channel: gh workflow run feedback-digest.yml -f full_history_channel=<ID>
+# Use "Run workflow", not "Re-run" on an old run: a re-run checks out that run's old commit.
+# (The checkout below pins the branch tip anyway, so a re-run is safe, just not needed.)
+#
+# What it does — two Python scripts, no agent:
+#   1. fetch   — scripts/discord-feedback-fetch.py pulls new messages + screenshots (no LLM)
+#   2. digest  — scripts/discord-feedback-digest.py makes ONE Kimi API call to triage them,
+#                then writes Digest.md (screenshots embedded under each item), Thread.md and
+#                screenshots/ into the Feedback folder. Only vague messages' screenshots are
+#                sent to the model, which keeps the run cheap.
+#   3. commit  — results + the advanced watermark are committed back (rebased onto latest main)
+#
+# Triage rules (lanes, features, priorities) live in
+# digest-prompt.md in the installed skill folder — edit that to change behaviour.
+#
+# REQUIRED REPO SECRETS (Settings → Secrets and variables → Actions → Secrets):
+#   DISCORD_BOT_TOKEN            — the WeBuddhist Discord bot token
+#   WEBUDDHIST_FEEDBACK_DIGEST   — Kimi / Moonshot API key (from platform.kimi.ai)
+#
+# OPTIONAL REPO VARIABLES (Settings → Secrets and variables → Actions → Variables):
+#   KIMI_MODEL          — default: kimi-k3.1-pro
+#   KIMI_BASE_URL       — default: https://api.moonshot.ai/v1
+#                         (use https://api.moonshot.cn/v1 for a China-region key)
+#   KIMI_REASONING_EFFORT — default: low  (low | high | max; max is Kimi's default and very slow)
+#   KIMI_MAX_TOKENS     — default: 64000 (reasoning tokens count toward it)
+
+on:
+  workflow_dispatch:
+    inputs:
+      hours:
+        description: "Backfill window in hours (blank = since last run)"
+        required: false
+        default: ""
+      full_history_channel:
+        description: "One-time backfill: fetch the FULL history of this channel ID only (blank = normal run)"
+        required: false
+        default: ""
+
+permissions:
+  contents: write            # needed to commit the digest + watermark back
+
+concurrency:
+  group: feedback-digest     # never let two runs race the watermark
+  cancel-in-progress: false
+
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}   # latest tip, so the watermark is current even on a re-run
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install deps
+        run: pip install requests pillow   # pillow downscales screenshots
+
+      - name: Fetch Discord feedback
+        env:
+          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          HOURS: ${{ github.event.inputs.hours }}
+          FULL_HISTORY_CHANNEL: ${{ github.event.inputs.full_history_channel }}
+        run: |
+          set -euo pipefail
+          DIGEST_DATE="$(date -u +%F)"
+          STAGE_DIR=".wb-feedback/${DIGEST_DATE}"   # not committed — commit step only adds the Feedback folder + watermark
+          OUT_DIR="20_PRODUCTS/26_Webuddhist/Feedback/UX Feedback Digest ${DIGEST_DATE}"
+          if [ -n "${FULL_HISTORY_CHANNEL}" ]; then
+            OUT_DIR="${OUT_DIR} (backfill)"   # don't collide with a regular run on the same day
+          fi
+          echo "DIGEST_DATE=${DIGEST_DATE}" >> "$GITHUB_ENV"
+          echo "STAGE_DIR=${STAGE_DIR}" >> "$GITHUB_ENV"
+          echo "OUT_DIR=${OUT_DIR}" >> "$GITHUB_ENV"
+
+          if [ -n "${FULL_HISTORY_CHANNEL}" ]; then
+            python3 scripts/discord-feedback-fetch.py \
+              --channel "${FULL_HISTORY_CHANNEL}" --full-history \
+              --out "${STAGE_DIR}"
+            exit 0
+          fi
+
+          WINDOW="--since-last"
+          if [ -n "${HOURS}" ]; then
+            WINDOW="--hours ${HOURS}"
+          fi
+          python3 scripts/discord-feedback-fetch.py \
+            --channel 1488485129058783272 \
+            --channel 1554423633282338836 \
+            $WINDOW \
+            --out "${STAGE_DIR}"
+
+      - name: Write digest (Kimi)
+        env:
+          KIMI_API_KEY: ${{ secrets.WEBUDDHIST_FEEDBACK_DIGEST }}
+          KIMI_MODEL: ${{ vars.KIMI_MODEL || 'kimi-k3.1-pro' }}
+          KIMI_BASE_URL: ${{ vars.KIMI_BASE_URL || 'https://api.moonshot.ai/v1' }}
+          KIMI_REASONING_EFFORT: ${{ vars.KIMI_REASONING_EFFORT || 'low' }}
+          KIMI_MAX_TOKENS: ${{ vars.KIMI_MAX_TOKENS || '64000' }}
+        run: |
+          python3 scripts/discord-feedback-digest.py \
+            --stage "${STAGE_DIR}" --out "${OUT_DIR}" --date "${DIGEST_DATE}"
+
+      - name: Commit digest + advanced watermark
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          git config user.name  "wb-feedback-bot"
+          git config user.email "feedback-bot@webuddhist.org"
+          git add "20_PRODUCTS/26_Webuddhist/Feedback/" scripts/.discord-feedback-state.json
+          if git diff --cached --quiet; then
+            echo "No new feedback — nothing to commit."
+            exit 0
+          fi
+          git commit -m "Feedback digest ${DIGEST_DATE}"
+          # Others (e.g. the Obsidian vault backup) push to main while this runs; rebase and retry.
+          for attempt in 1 2 3 4 5; do
+            git pull --rebase origin "${GITHUB_REF_NAME}"
+            if git push "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "HEAD:${GITHUB_REF_NAME}"; then
+              exit 0
+            fi
+            echo "Push rejected (attempt ${attempt}) — retrying"
+            sleep $((attempt * 5))
+          done
+          echo "::error::Could not push the digest after 5 attempts."
+          exit 1

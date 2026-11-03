@@ -159,7 +159,7 @@ Key invariants:
    run `reorder_commentators.py --first <id>` to guarantee the order even if the
    draft placed the block elsewhere. Verses with no such block are left as they
    are.
-6. **Do not edit `1-SOURCES/` or `2-RAILS/`.** Rails and plan files are
+6. **Do not edit `$SOURCES/` or `$RAILS/`.** Rails and plan files are
    read-only inputs. This skill writes only to the package folders (and
    re-baselines the guard).
 7. **A day is not done until `validate` passes with zero errors** and the drift

@@ -29,7 +29,7 @@ NUMERALS = {
     "tibetan": "༠༡༢༣༤༥༦༧༨༩",
 }
 # chapter headings: any heading level, containing a numeral in the chosen system
-CHAPTER_RE = r"^(#{1,6}\s+.*?[{d}]+.*?)\s*(?:\^(\d+)-0)?\s*$"
+CHAPTER_RE = r"^(#{1,}\s+.*?[{d}]+.*?)\s*(?:\^(\d+)-0)?\s*$"
 
 
 def main():
@@ -65,7 +65,7 @@ def main():
     chapter_word = args.chapter_word
     if not chapter_word:
         for line in text.split("\n"):
-            if re.match(r"^#{1,6}\s", line) and re.search(r"[" + D + r"]", line):
+            if re.match(r"^#{1,}\s", line) and re.search(r"[" + D + r"]", line):
                 toks = re.findall(r"[^\s#*:.,()\[\]]+", line)
                 cand = [t for t in toks if not re.search(r"[" + D + r"]", t)]
                 if cand:
@@ -87,7 +87,7 @@ def main():
 
     for line in text.split("\n"):
         mh = None
-        if chapter_word and re.match(r"^#{1,6}\s", line) and chapter_word in line:
+        if chapter_word and re.match(r"^#{1,}\s", line) and chapter_word in line:
             mnum = re.search(r"[" + D + r"]+", line)
             if mnum:
                 mh = mnum.group(0)
@@ -112,7 +112,7 @@ def main():
     body = "\n".join(out)
     # exactly one blank line before every marker and heading
     body = re.sub(r"\n+(\*\*\([" + D + r"]+\)\*\*)", r"\n\n\1", body)
-    body = re.sub(r"\n+(#{1,6}\s)", r"\n\n\1", body)
+    body = re.sub(r"\n+(#{1,}\s)", r"\n\n\1", body)
     body = re.sub(r"\n{3,}", "\n\n", body)
     result = (fm + "\n\n" + body.strip() + "\n") if fm else (body.strip() + "\n")
 

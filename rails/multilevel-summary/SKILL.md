@@ -57,7 +57,7 @@ scope: verse | chapter
 scope_id: <e.g. 1-1 or 1>
 audience: kids | general | academic
 context_packages:
-  - 2-RAILS/Verses/<verse-id>.md          # or 2-RAILS/Sections/<node-id>.md
+  - $VERSES/<verse-id>.md          # or $SECTIONS/<node-id>.md
 commentaries_used:
   - <registered_id>
   - <registered_id>
@@ -71,7 +71,7 @@ status: draft
 
 ## Root Text
 
-![[1-SOURCES/Text/<lang>-root-text.md#^<verse-id>]]
+![[$SOURCE_TEXTS/<lang>-root-text.md#^<verse-id>]]
 
 *(For chapter scope: transclude the chapter heading block and the first verse only, then note the full verse range covered.)*
 
@@ -85,7 +85,7 @@ status: draft
 
 <List of Obsidian block-links to every commentary passage the rail cites, one per line, in the format:>
 
-- [[1-SOURCES/Commentaries/<commentary-file>.md#^<block-id>]] (<registered_id>)
+- [[$COMMENTARIES/<commentary-file>.md#^<block-id>]] (<registered_id>)
 ```
 
 ---
@@ -126,7 +126,7 @@ Write the summary according to the priority weights for the specified audience. 
 2. **Root text per the vault annex.** The Root Text section transcludes the root text that `$SYSTEM/Guidelines/vault-annex.md` names for this vault. Where the annex names more than one source language, use the one it marks primary. Transclude — never copy the verse text in.
 3. **Fallback when no rail exists.** If there is no rail file for the scope, and only then, scan `$COMMENTARIES/` directly: for each commentary, find the verse's transclusion anchor `![[…#^<verse-id>]]` and collect the blocks that follow it up to the next transclusion anchor or the next heading. Some commentaries group several consecutive transclusions and comment after the last one — scan forward through *all* consecutive transclusion lines to the first line of prose, and treat that prose as belonging to every verse in the run. When this fallback is used, the output **must** carry `status: draft` and a frontmatter `note:` saying which scope had no rail and that the summary was taken from the commentaries directly. Say so in the body too. The proper fix is to build the rail with `verse-context` / `section-summary` and regenerate.
 4. **Summary content comes only from the rail (or, under Rule 3, the cited commentary blocks)** — no parametric Buddhist knowledge. If nothing discusses the verse, state that explicitly in the summary and leave the Sources list empty for that verse.
-5. **All source links go in the Sources section** — use Obsidian block-links with full literal paths (`[[1-SOURCES/Commentaries/<file>.md#^<block-id>]]`). Do not inline citations in the summary text itself (keep it readable for the audience).
+5. **All source links go in the Sources section** — use Obsidian block-links with full literal paths (`[[$COMMENTARIES/<file>.md#^<block-id>]]`). Do not inline citations in the summary text itself (keep it readable for the audience).
 6. **For chapter scope, cover the chapter in aggregate** — do not produce a verse-by-verse list. Synthesise the overarching theme and key teachings the rails draw out across the chapter. You may group verses thematically where the section rail suggests that structure.
 7. **Divergences are noted at academic level; simplified or omitted at general level; omitted at kids level** — at academic level mark divergences with ⚑ and name the commentators on each side, exactly as the rail attributes them.
 8. **Do not mark `status: complete`** — only a human contributor sets that field. Always write `status: draft`.
@@ -141,7 +141,7 @@ Write the summary according to the priority weights for the specified audience. 
 
 1. Read `$SYSTEM/Guidelines/vault-annex.md` and note the root text and the registered commentary IDs.
 2. Open `$VERSES/<verse-id>.md`.
-   a. If it exists: read the Traditional Interpretation (per-commentary paraphrases, Synthesis, Divergences), the AI Overview, and the Disambiguated Restatement. Collect every `(1-SOURCES/Commentaries/<file>.md#^<block>)` citation it carries, together with each commentary's `registered_id`. Note the rail's `status:`.
+   a. If it exists: read the Traditional Interpretation (per-commentary paraphrases, Synthesis, Divergences), the AI Overview, and the Disambiguated Restatement. Collect every `($COMMENTARIES/<file>.md#^<block>)` citation it carries, together with each commentary's `registered_id`. Note the rail's `status:`.
    b. If it does not exist: apply the Rule 3 fallback and record that you did.
 3. Locate the block `^<verse-id>` in the root text and record the verse text (for the transclusion line and for your own reading — not to be copied into the output).
 4. If nothing addresses the verse, write a summary noting this and stop. Set `status: draft`.

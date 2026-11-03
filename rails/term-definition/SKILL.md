@@ -33,14 +33,14 @@ This skill populates the **Meaning** column of `$TERMBASES/term-localization.md`
 Every definitional hit — whether from one commentary or many — is written into the same Meaning cell using this format:
 
 ```
-[short-name] "[verbatim explanation text]" [closing frame] ([1-SOURCES/Commentaries/<filename> > ^<block-id>](1-SOURCES/Commentaries/<filename>#^<block-id>))
+[short-name] "[verbatim explanation text]" [closing frame] ([$COMMENTARIES/<filename> > ^<block-id>]($COMMENTARIES/<filename>#^<block-id>))
 ```
 
 When multiple hits exist (from the same or different commentaries), list each one on its own line inside the cell, one after the other:
 
 ```
-[commentary-A-short-name] "[verbatim explanation text A]" [closing frame] ([1-SOURCES/Commentaries/<filename-A> > ^<block-id-A>](1-SOURCES/Commentaries/<filename-A>#^<block-id-A>))
-[commentary-B-short-name] "[verbatim explanation text B]" [closing frame] ([1-SOURCES/Commentaries/<filename-B> > ^<block-id-B>](1-SOURCES/Commentaries/<filename-B>#^<block-id-B>))
+[commentary-A-short-name] "[verbatim explanation text A]" [closing frame] ([$COMMENTARIES/<filename-A> > ^<block-id-A>]($COMMENTARIES/<filename-A>#^<block-id-A>))
+[commentary-B-short-name] "[verbatim explanation text B]" [closing frame] ([$COMMENTARIES/<filename-B> > ^<block-id-B>]($COMMENTARIES/<filename-B>#^<block-id-B>))
 ```
 
 There is no special treatment for single vs. multiple hits — the format is identical; additional entries are simply appended as additional lines.
@@ -53,7 +53,7 @@ There is no special treatment for single vs. multiple hits — the format is ide
 
 **`[closing frame]`** is the source tradition's fixed "thus it is said" formula — for Tibetan, `ཞེས་གསུངས་སོ།།`. It is a fixed frame, not original writing. A vault working in another source language declares its own closing frame in `$SYSTEM/Guidelines/vault-annex.md`; if none is declared, omit the frame rather than inventing one.
 
-**The citation** is a markdown hyperlink: display text is `1-SOURCES/Commentaries/<filename> > ^<block-id>` and the href is `1-SOURCES/Commentaries/<filename>#^<block-id>`, wrapped in parentheses after the closing frame.
+**The citation** is a markdown hyperlink: display text is `$COMMENTARIES/<filename> > ^<block-id>` and the href is `$COMMENTARIES/<filename>#^<block-id>`, wrapped in parentheses after the closing frame.
 
 ---
 
@@ -91,7 +91,7 @@ Accept the pattern anywhere in a paragraph — not only at the start of a senten
 3. **No interpretation.** Do not choose between two passages on the basis of which is "better" or "clearer". Include all valid hits, each as its own quotation line.
 4. **Do not touch any column other than Meaning.** No other column — the source-term column or any target-language column — is modified by this skill.
 5. **Do not overwrite non-empty Meaning cells without explicit instruction.** If a Meaning cell already contains text, skip that row unless the user explicitly asks to overwrite or append.
-6. **Cite every quotation to its block ID.** After the closing frame append a markdown hyperlink in parentheses, with the path written out in full: `([1-SOURCES/Commentaries/<filename> > ^<block-id>](1-SOURCES/Commentaries/<filename>#^<block-id>))`. Use the inline citation form — no footnotes.
+6. **Cite every quotation to its block ID.** After the closing frame append a markdown hyperlink in parentheses, with the path written out in full: `([$COMMENTARIES/<filename> > ^<block-id>]($COMMENTARIES/<filename>#^<block-id>))`. Use the inline citation form — no footnotes.
 7. **Use the commentary short ID, not the full filename.** Check the frontmatter of each commentary file for a registered `id:` or `short_id:` before constructing the quotation frame.
 8. **Do not modify `$SOURCES/` files.** This skill reads commentaries but never writes to them.
 
@@ -129,7 +129,7 @@ For each hit recorded in Step 3:
 1. Look up the commentary short name from the table built in Step 2.
 2. Construct the quotation entry, with the citation path written out in full:
    ```
-   [short-name] "[verbatim text]" [closing frame] ([1-SOURCES/Commentaries/<filename> > ^<block-id>](1-SOURCES/Commentaries/<filename>#^<block-id>))
+   [short-name] "[verbatim text]" [closing frame] ([$COMMENTARIES/<filename> > ^<block-id>]($COMMENTARIES/<filename>#^<block-id>))
    ```
 3. If multiple hits exist for the same term, order them by commentary (alphabetical by short name) unless the user specifies an order.
 
@@ -155,7 +155,7 @@ After processing, report:
 
 - [ ] Only the Meaning column was modified; all other columns are unchanged
 - [ ] Every filled Meaning cell contains only verbatim text from a commentary, framed with `[short-name] "…" [closing frame]`
-- [ ] Every quotation entry includes the block-ID as a markdown hyperlink in parentheses, with the path written out in full: `([1-SOURCES/Commentaries/<file>.md > ^<id>](1-SOURCES/Commentaries/<file>.md#^<id>))` — a real, literal path inside the href, never a placeholder
+- [ ] Every quotation entry includes the block-ID as a markdown hyperlink in parentheses, with the path written out in full: `([$COMMENTARIES/<file>.md > ^<id>]($COMMENTARIES/<file>.md#^<id>))` — a real, literal path inside the href, never a placeholder
 - [ ] No Meaning cell was overwritten unless the user explicitly authorised it
 - [ ] Terms with no definitional hit are left blank (not filled with a note or placeholder)
 - [ ] No file in `$SOURCES/` was modified

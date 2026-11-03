@@ -9,7 +9,7 @@ pattern; adjust COLOPHON_MARKER / FULL_COLOPHON_PREFIX and the two regexes
 in extract_chapter_info() for a different text).
 
 Writes `^N-0` chapter-heading anchors (the repo's canonical convention —
-see 4-SYSTEM/CLAUDE.md §5a). Does NOT write the deprecated `^TOC-N`
+see rails/CONVENTIONS.md §2). Does NOT write the deprecated `^TOC-N`
 style.
 
 Usage:

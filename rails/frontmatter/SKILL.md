@@ -131,9 +131,9 @@ verse_id_format: chapter-verse
 source_description: "Transcribed from [editor year] critical edition"
 source_url: [url — omit if none]
 related_commentaries:
-  - 1-SOURCES/Commentaries/[commentary]-[tag].md
+  - $COMMENTARIES/[commentary]-[tag].md
 related_translations:
-  - 1-SOURCES/Translations/[translation]-[tag].md
+  - $TRANSLATIONS/[translation]-[tag].md
 ---
 ```
 

@@ -119,7 +119,7 @@ the next block) is found on the joined text and placed at the block where it sta
 |---|---|---|
 | 1 (and frame I, a, b) | `##` | `## གཉིས་པ་རྒྱས་པར་བཤད་པ། ^2-0` |
 | 2 … 5 | `###` … `######` | `###### དང་པོ་ཞལ་མདངས་…བསྟོད་པ། ^2-2-1-1-1-0` |
-| 6+ | `######` + bold | `###### **…** ^2-2-2-1-1-1-0` |
+| 6+ | one `#` per level (`#######` …) + bold | `####### **…** ^2-2-2-1-1-1-0` |
 
 Block ID = full decimal path + `-0`, no cap (`b.1` → `^b-1-0`, `I` → `^I-0`).
 

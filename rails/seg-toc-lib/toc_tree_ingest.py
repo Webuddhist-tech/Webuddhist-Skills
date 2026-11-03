@@ -43,7 +43,7 @@ Placement (the convention of the human-edited vault files)
           this by default before placing; --keep-tree-order turns it off.
 
 Headings
-  depth 1 → ##, each level adds one #; deeper than ###### keeps ###### and wraps
+  depth 1 → ##, each level adds one #, no cap; deeper than ###### also wraps
   the title in **bold** (annotation-conventions §2). --title-style shad (default)
   ends a title with "།" the way the vault writes headings ("…བསྟན་པ།").
 
@@ -138,7 +138,7 @@ def heading_line(node: dict, style: str) -> str:
     level = node["depth"] + 1
     title = format_title(node["label"], style)
     if level > 6:
-        return f"###### **{title}** {node['block_id']}"
+        return f"{'#' * level} **{title}** {node['block_id']}"
     return f"{'#' * level} {title} {node['block_id']}"
 
 

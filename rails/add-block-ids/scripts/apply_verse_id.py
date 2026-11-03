@@ -49,7 +49,7 @@ import sys
 
 TRANSCLUSION_RE = re.compile(r'^!\[\[.*#\^(\d+)-(\d+)\]\]\s*$')
 EXISTING_ID_RE = re.compile(r'\s\^\d+-\d+\s*$')
-HEADING_RE = re.compile(r'^#{1,6}\s')
+HEADING_RE = re.compile(r'^#{1,}\s')
 
 
 def process(lines):

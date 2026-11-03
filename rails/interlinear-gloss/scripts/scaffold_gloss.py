@@ -26,7 +26,7 @@ from pathlib import Path
 
 FRONTMATTER_RE = re.compile(r"\A---\n(.*?)\n---\n", re.DOTALL)
 BLOCK_ID_RE = re.compile(r"\^([0-9A-Za-z][0-9A-Za-z\-]*)\s*$")
-HEADING_RE = re.compile(r"^#{1,6}\s")
+HEADING_RE = re.compile(r"^#{1,}\s")
 FM_FIELD_RE = lambda name: re.compile(rf"^{name}:\s*(.+?)\s*$", re.MULTILINE)
 
 # Tokens we strip from the end of a source token before placing it on gla.

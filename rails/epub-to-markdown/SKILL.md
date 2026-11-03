@@ -229,6 +229,7 @@ Spot-check that coloured blocks were correctly identified:
 | `epub_to_markdown.py` | Generic fallback converter (also serves as the template) |
 | `converters/<publisher_slug>.py` | Publisher-specific converters (generated and cached) |
 | `root_marker_to_bold.py` | Standalone post-processor: converts `༷` root-text markers to Markdown bold |
+| `converters/84000.py` | 84000 print EPUBs (`tohNN.epub`): `python3 $SKILL/converters/84000.py in.epub out.md` — stdlib only, skips Steps 1–3 |
 
 ---
 

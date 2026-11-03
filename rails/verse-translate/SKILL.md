@@ -173,11 +173,11 @@ python3 $SKILL/scripts/extract_rails_context.py \
     --root <primary root text, per the vault annex> \
     [--aux-root <second-language root, if the annex declares one>] \
     [--witness <id>=<path> ...] \
-    [--rail-pattern '2-RAILS/Verses/{vid}.md'] \
+    [--rail-pattern '$VERSES/{vid}.md'] \
     [--section-regex <name>=<regex> ...]
 ```
 
-Nothing about a particular text is baked into the script. Pass `--witness id=path` once per witness (or `id=Display Name=path` to give it a label for the bundle). `--rail-pattern` defaults to `2-RAILS/Verses/{vid}.md`.
+Nothing about a particular text is baked into the script. Pass `--witness id=path` once per witness (or `id=Display Name=path` to give it a label for the bundle). `--rail-pattern` defaults to `$VERSES/{vid}.md`.
 
 The script finds the rail sections by their **English heading names** — `AI Overview`, `Key Concepts`, `Divergences` — allowing an optional original-language label in parentheses after the name (`## AI Overview (བསྡུས་དོན།)`). If a vault's packages label those sections differently, override the pattern with `--section-regex overview=…`, `--section-regex key_terms=…`, `--section-regex divergences=…` rather than editing the script. Where a package carries no Key Concepts layer, the script falls back to its Disambiguated Restatement.
 

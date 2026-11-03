@@ -25,7 +25,7 @@ import sys
 from pathlib import Path
 
 FRONT = re.compile(r"\A---\n.*?\n---\n", re.S)
-HEAD = re.compile(r"^#{1,6}\s")
+HEAD = re.compile(r"^#{1,}\s")
 ID = re.compile(r"([ \t]+\^[\w-]+)[ \t]*$")
 
 

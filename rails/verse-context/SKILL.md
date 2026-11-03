@@ -127,7 +127,7 @@ the human reader. Never invert that order and never drop the English name.
 
 **Grouped transclusions.** Some commentaries place several consecutive verse transclusions together and comment on the whole group after the last one. **Scan forward through *all* consecutive transclusion lines to the first line of prose**; that prose belongs to every verse in the run. Reading only "up to the next transclusion" finds nothing for the earlier verses of the group and silently drops the commentary. Record the run in the frontmatter `coarser_groupings:` of every verse in it.
 
-**A commentary with no block IDs of its own.** Some segmented commentaries carry IDs only on their transclusion anchors, so the prose you want to cite has no ID to cite to. The vault rule is to fix the source first — but a raw or segmented commentary is not always yours to stamp. In that case, **cite the material to the verse-transclusion anchor** (`[[1-SOURCES/Commentaries/<file>.md#^<verse-id>]]`) and **record the fallback in the package's frontmatter `note:` field**, so a later reader knows the citation is anchor-level rather than block-level. Never invent a block ID that does not exist in the file.
+**A commentary with no block IDs of its own.** Some segmented commentaries carry IDs only on their transclusion anchors, so the prose you want to cite has no ID to cite to. The vault rule is to fix the source first — but a raw or segmented commentary is not always yours to stamp. In that case, **cite the material to the verse-transclusion anchor** (`[[$COMMENTARIES/<file>.md#^<verse-id>]]`) and **record the fallback in the package's frontmatter `note:` field**, so a later reader knows the citation is anchor-level rather than block-level. Never invent a block ID that does not exist in the file.
 
 ### After an LLM writes a synthesis, verify its citations
 
@@ -196,10 +196,10 @@ status: draft
 ## Source Text
 
 ### <Source language>
-![[1-SOURCES/Text/<lang>-root-text.md#^<verse-id>]]
+![[$SOURCE_TEXTS/<lang>-root-text.md#^<verse-id>]]
 
 ### <Second source language, if the vault has one>
-![[1-SOURCES/Text/<lang2>-root-text.md#^<verse-id>]]
+![[$SOURCE_TEXTS/<lang2>-root-text.md#^<verse-id>]]
 
 **Variants**
 [Ed: <cross-edition or cross-language variant, with citation>]
@@ -208,7 +208,7 @@ status: draft
 
 ### <commentary-id> — <Commentary full name> (<language>)
 <English paraphrase of this commentary's reading; every claim cited.>
-(1-SOURCES/Commentaries/<file>.md#^<block>)
+($COMMENTARIES/<file>.md#^<block>)
 
 <!-- one ### per commentary, in the annex's tier order -->
 
@@ -221,67 +221,67 @@ status: draft
 ## AI Overview (<original-language label>)
 
 **<Headline reading: one or two sentences answering what the verse says.>**
-(1-SOURCES/Commentaries/<file>.md#^<block>)
+($COMMENTARIES/<file>.md#^<block>)
 
 **Key points**
-- <key point> (1-SOURCES/Commentaries/<file>.md#^<block>)
-- <key point> (1-SOURCES/Commentaries/<file>.md#^<block>)
+- <key point> ($COMMENTARIES/<file>.md#^<block>)
+- <key point> ($COMMENTARIES/<file>.md#^<block>)
 
 ## Disambiguated Restatement
 
 <Short rewrite of the verse in the original language with every ambiguity the
 synthesis resolved made explicit: referents fixed, senses chosen, compounds
 parsed. Cite the blocks that authorise each choice.>
-(1-SOURCES/Commentaries/<file>.md#^<block>)
+($COMMENTARIES/<file>.md#^<block>)
 
 <!-- ===== OPTIONAL LAYERS, in `layer_order:` — delete any with no cited material ===== -->
 
 ## Word Commentary
 <Running word-commentary in the original language: each phrase of the root verse
 with its gloss woven inline, annotation style.>
-(1-SOURCES/Commentaries/<file>.md#^<block>)
+($COMMENTARIES/<file>.md#^<block>)
 
 ## Word-by-word Disambiguation
 - **<root word/phrase>** — <disambiguating gloss in the original language.>
-  (1-SOURCES/Commentaries/<file>.md#^<block>)
+  ($COMMENTARIES/<file>.md#^<block>)
 
 ## Key Concepts
 
 ### Concepts the verse introduces
 - **<term>** (<disambiguating phrase>) — <one-line note.>
-  (1-SOURCES/Commentaries/<file>.md#^<block>) · [[2-RAILS/Local-Wiki/<term>_(<disambiguator>).md]]
+  ($COMMENTARIES/<file>.md#^<block>) · [[$LOCAL_WIKI/<term>_(<disambiguator>).md]]
 
 ### Further concepts the commentaries raise
 - **<term>** (<disambiguating phrase>) — <one-line note.>
-  (1-SOURCES/Commentaries/<file>.md#^<block>) · [[2-RAILS/Local-Wiki/<term>_(<disambiguator>).md]]
+  ($COMMENTARIES/<file>.md#^<block>) · [[$LOCAL_WIKI/<term>_(<disambiguator>).md]]
 
 ## Stories
 - **<story name>** — <précis; which phrase of the verse it illustrates.>
-  (1-SOURCES/Commentaries/<file>.md#^<block>)
+  ($COMMENTARIES/<file>.md#^<block>)
 
 ## Metaphors
 - **<image>** → <what it stands for.> <how the commentaries unpack it.>
-  (1-SOURCES/Commentaries/<file>.md#^<block>)
+  ($COMMENTARIES/<file>.md#^<block>)
 
 ## Quotations
 > <verbatim quotation in the original language>
 > — <scripture as the commentary names it>
-> (1-SOURCES/Commentaries/<file>.md#^<block>)
+> ($COMMENTARIES/<file>.md#^<block>)
 
 ## Translation Notes
 - **<figure or idiom>** — <the difficulty>; <rendering strategy A, for audience X>;
-  <rendering strategy B, for audience Y>. (1-SOURCES/Commentaries/<file>.md#^<block>)
+  <rendering strategy B, for audience Y>. ($COMMENTARIES/<file>.md#^<block>)
 
 ## Practical Application
 <What the commentaries say the verse asks of a practitioner.>
-(1-SOURCES/Commentaries/<file>.md#^<block>)
+($COMMENTARIES/<file>.md#^<block>)
 
 ## Structural Position
 <Where the verse sits in the commentary's own outline, in prose, tracing the
-full path. Produced by Mode 3.> (1-SOURCES/Commentaries/<file>.md#^<block>)
+full path. Produced by Mode 3.> ($COMMENTARIES/<file>.md#^<block>)
 
 ## Concept Links
-- [[2-RAILS/Local-Wiki/<term>_(<disambiguator>).md]]
+- [[$LOCAL_WIKI/<term>_(<disambiguator>).md]]
 ```
 
 ### Optional — scaffold the file first
@@ -291,9 +291,9 @@ full path. Produced by Mode 3.> (1-SOURCES/Commentaries/<file>.md#^<block>)
 ```bash
 python3 $SKILL/scripts/scaffold_verse_context.py <verse-id> \
     --vault-root <vault root> \
-    --root-text "<Language label>=1-SOURCES/Text/<lang>-root-text.md" \
-    [--root-text "<Second language>=1-SOURCES/Text/<lang2>-root-text.md"] \
-    --commentary "<registered-id>=1-SOURCES/Commentaries/<file>.md" \
+    --root-text "<Language label>=$SOURCE_TEXTS/<lang>-root-text.md" \
+    [--root-text "<Second language>=$SOURCE_TEXTS/<lang2>-root-text.md"] \
+    --commentary "<registered-id>=$COMMENTARIES/<file>.md" \
     [--commentary ... ] \
     [--language "<original language label>"] \
     [--layer concepts --layer stories ...] \
@@ -374,7 +374,7 @@ A Python generation script is saved to `$WORK/verse-context-batch-ch<N>.py` for 
 6. **Do not overwrite existing files.** If `$VERSES/<verse-id>.md` already exists, skip it silently.
 7. **Status is always `draft` on generation.** Never set `status: complete` — that is a human domain-specialist decision.
 8. **Prose sections are in the original language** (except Traditional Interpretation and Translation Notes, which are English) — per the Mode 1 language rule.
-9. **Every synthesis claim must cite a source block.** Format: `(1-SOURCES/Commentaries/<file>.md#^<block-id>)` inline at the end of the claim.
+9. **Every synthesis claim must cite a source block.** Format: `($COMMENTARIES/<file>.md#^<block-id>)` inline at the end of the claim.
 10. **Save the generation script to `$WORK/`.** This preserves the mapping table for audit and re-runs.
 
 ### Procedure
@@ -628,20 +628,20 @@ Four parts, in this order, each in the original language, each section omitted o
 
 **<Core synthesis — two or three sentences: the verse's primary message and the
 general consensus among the commentators, in one neutral synthetic voice.>**
-(1-SOURCES/Commentaries/<file>.md#^<block>)
+($COMMENTARIES/<file>.md#^<block>)
 
 ### Key themes
 - **<theme name>** — <one or two sentences unpacking how the commentaries
-  develop this theme.> (1-SOURCES/Commentaries/<file>.md#^<block>)
-- **<theme name>** — <…> (1-SOURCES/Commentaries/<file-a>.md#^<block>, 1-SOURCES/Commentaries/<file-b>.md#^<block>)
+  develop this theme.> ($COMMENTARIES/<file>.md#^<block>)
+- **<theme name>** — <…> ($COMMENTARIES/<file-a>.md#^<block>, $COMMENTARIES/<file-b>.md#^<block>)
 
 ### Divergences ⚑
 - **<term or concept>** — <contrast the readings explicitly: where one commentary
-  glosses X, another reads Y.> (1-SOURCES/Commentaries/<file-a>.md#^<block>; 1-SOURCES/Commentaries/<file-b>.md#^<block>)
+  glosses X, another reads Y.> ($COMMENTARIES/<file-a>.md#^<block>; $COMMENTARIES/<file-b>.md#^<block>)
 
 ### Practical application
 - <how the commentaries suggest applying the verse to mind-training, conduct, or
-  meditative practice.> (1-SOURCES/Commentaries/<file>.md#^<block>)
+  meditative practice.> ($COMMENTARIES/<file>.md#^<block>)
 ```
 
 The heading keeps the schema's form: English name first, original-language label in parentheses.

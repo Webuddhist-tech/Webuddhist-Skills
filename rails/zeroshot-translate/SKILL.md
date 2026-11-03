@@ -126,7 +126,7 @@ ref: <N>
 title: "Chapter <N> — <chapter title in the target language>"
 transformation_type: translation
 track: <lang>-<audience>
-root_text: 1-SOURCES/Text/<lang>-root-text.md
+root_text: $SOURCE_TEXTS/<lang>-root-text.md
 context_packages:
   - <primary source path> (^<N>-0–^<N>-<last>)
   - <second-language source path, if any> (^<N>-0–^<N>-<last>)

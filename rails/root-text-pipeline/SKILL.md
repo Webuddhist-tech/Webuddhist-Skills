@@ -128,6 +128,10 @@ One version per text. The `$SOURCES/` file is replaced by it only after a human 
    (`$SKILLS/seg-toc-lib/SKILL.md`). **Exception for now:** the two root-text
    model steps (3 and 5) have no Gemini runner yet, so they run as isolated Claude subagents
    (`model: opus`, high effort) — say so in the report.
+   **What the benchmarks found efficient for root texts:** Gemini 3.8 Flash with thinking
+   `low` for small and medium texts (under 200,000 characters), thinking `medium` for large
+   ones (200,000 and over); Claude agents (Opus 5.5, high effort) do well across the board.
+   (Size classes: small < 30,000 · medium < 200,000 · large ≥ 200,000 characters.)
 9. **Strict text gate.** Step 6 ends with `verify_text.py` against the source: letters and
    spacing identical, only breaks, headings and IDs added (one space between the shads of
    `། །`, none after it; no space at a line start or end).

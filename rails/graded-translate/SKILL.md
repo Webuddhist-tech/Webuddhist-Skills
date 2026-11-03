@@ -31,7 +31,7 @@ supersedes:
 > paths resolve per repo — see `rails/PROFILES.md`. Block ID and heading rules
 > are in `rails/CONVENTIONS.md`; this skill implements them.
 >
-> One extra location this skill leans on: **`$KEYWORDS`** (`2-RAILS/Keywords/`,
+> One extra location this skill leans on: **`$KEYWORDS`** (`$RAILS/Keywords/`,
 > laid out per `rails/CONVENTIONS.md` §9) — `keyword-extract` writes its output to
 > `$KEYWORDS/shared/`, and this skill keeps each target language's termbase and
 > grade files in `$KEYWORDS/<tgt>/`. The track's `termbase.md` is exported from
@@ -378,15 +378,15 @@ title: "<work title> — <tgt> (<grade>)"
 transformation_type: translation
 track: <tgt>-<grade>
 lang_tag: <tgt>
-root_text: 1-SOURCES/Text/<lang>-root-text.md
+root_text: $SOURCE_TEXTS/<lang>-root-text.md
 pivot_translation: <path to the pivot used>
 translated_from: <src>_text | text        # say which field was the base
-grade_file: 2-RAILS/Keywords/<tgt>/<src>_<tgt>_keyword_<grade>.json
+grade_file: $RAILS/Keywords/<tgt>/<src>_<tgt>_keyword_<grade>.json
 context_packages:
-  - 3-TRANSFORMATIONS/Translations/<tgt>-<grade>/requirements.md
-  - 3-TRANSFORMATIONS/Translations/<tgt>-<grade>/termbase.md
-  - 3-TRANSFORMATIONS/Translations/<tgt>-<grade>/audience.md
-  - 2-RAILS/Verses/<verse-id>.md            # every rail consulted
+  - $TRANSFORMATIONS/Translations/<tgt>-<grade>/requirements.md
+  - $TRANSFORMATIONS/Translations/<tgt>-<grade>/termbase.md
+  - $TRANSFORMATIONS/Translations/<tgt>-<grade>/audience.md
+  - $VERSES/<verse-id>.md            # every rail consulted
 covers_verses: "<A>–<B>"
 generation_date: <YYYY-MM-DD>
 status: draft

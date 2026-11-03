@@ -43,7 +43,7 @@ underlying procedure is generic.
 ## CRITICAL — heading anchor convention
 
 Chapter headings use **`^N-0`**, not `^TOC-N`. This is the canonical
-convention (`rails/CONVENTIONS.md` §2, and the vault's `1-SOURCES/About
+convention (`rails/CONVENTIONS.md` §2, and the vault's `$SOURCES/About
 Sources.md` §5), and it is what a parser expects when it builds the
 table-of-contents payload. A file annotated with `^TOC-N` anchors will parse
 without a usable TOC. Every example and instruction below uses `^N-0`.

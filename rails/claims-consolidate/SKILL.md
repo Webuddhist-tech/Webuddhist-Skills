@@ -394,7 +394,7 @@ prevent). A source-language topic page keeps the whole chain in one language and
 reviewable by the tradition's own readers. The English/source-language pairs also serve as a
 methodological comparison of consolidation quality by working language.
 
-**Vault-rule note:** CLAUDE.md §10 sets English as the analysis language of `2-RAILS/`.
+**Vault-rule note:** CLAUDE.md §10 sets English as the analysis language of `$RAILS/`.
 Source-language claims pages are a **human-contributor-authorized exception**, scoped to
 `$CLAIMS/<topic>-<lang>.md` files only. Record that authorization in the vault annex before
 producing them.

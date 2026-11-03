@@ -66,7 +66,7 @@ import os
 import re
 import sys
 
-HEADING_RE = re.compile(r"^(#{1,6})[ \t]+(.*)$")
+HEADING_RE = re.compile(r"^(#{1,})[ \t]+(.*)$")
 ID_RE = re.compile(r" \^\d+(?:-\d+)*$")
 FM_OPEN = "---\n"
 FM_CLOSE = "\n---\n"

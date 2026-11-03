@@ -52,6 +52,10 @@ The translation-side counterpart of the root-text upload chain. One script, `$SK
 
 The machine-baseline translation skills render exactly this shape, so their output is uploadable without reshaping.
 
+- **Left out of the payload, never removed from the file**: `<small>…</small>` yigchung tags (the text between them stays in `content` and TOC titles; the yigchungs are uploaded separately by `yigchung-upload`), and footnotes — `[^n]` markers and `[^n]: …` definition lines — which the backend does not accept yet.
+- **A translation of a commentary** (paragraph default) types a segment of two or more lines with no blank line between them as a verse, the way the commentary parser types the source. Root-text translations are unchanged.
+- **A translation cut differently from its root.** The default alignment is identity (block `^N` aligns to root `^N`, one for one). Pass `--alignment transclusion` to send the pairs the parser derives from the note's transclusions as they are (many-to-many). Every pair must still resolve to a segment of this edition and of the live root; the dry run prints how many segments are aligned and lists the unaligned ones.
+
 ## Output
 
 - The lint report and the four parser payloads, under the bundled tools' output directories.
@@ -61,7 +65,7 @@ The machine-baseline translation skills render exactly this shape, so their outp
 
 ## Rules
 
-1. **Dry run is the default, and is always run first.** It lints, parses, and checks — read-only — that the edition's references equal the live root's segment references one for one, that the live translation text points at the root and has no edition yet, and that the alignment is identity. Any problem aborts before a plan is printed.
+1. **Dry run is the default, and is always run first.** It lints, parses, and checks — read-only — that the edition's references equal the live root's segment references one for one, that the live translation text points at the root and has no edition yet, and that the alignment is identity (or, with `--alignment transclusion`, that every pair resolves). Any problem aborts before a plan is printed.
 2. **Never pass `--execute` without explicit human confirmation in the conversation.** A dry-run summary is not consent. State what will be sent — host, text id, segment count, pair count, TOC sections — and wait for a clear yes.
 3. **Never re-create a text that exists.** A file carrying `text_id` reuses it. If the live text already has an edition, stop and report: the human decides whether to point the file at it or remove the stale one. Re-creating loses every alignment that referenced the old segmentation.
 4. **The root's live segmentation is the truth.** If the file's block IDs differ from the live root's references, fix the file or re-upload the root — never the payload.

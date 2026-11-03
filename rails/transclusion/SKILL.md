@@ -33,6 +33,12 @@ supersedes:
 | 2 — Commentary, sa-bcad introduced | Commentary that announces each verse with a sa-bcad statement | Before the sa-bcad statement that introduces the verse | no — by hand |
 | 3 — Commentary, by section category | Commentary whose sections fall into overview / verse-by-verse / other | Classify each section first, then place by category | no — by hand |
 | 4 — Second root-text version | Another version or edition of the root text | Structurally matching position | Type 1 yes — 3 scripts |
+| 5 — Commentary, heading-scoped (alignment) | Commentary that explains each verse inside a sa-bcad sub-tree of headings, and will be parsed by `$SKILLS/commentary-upload/scripts/parser-commentary/` (the `commentary-upload` skill) | Right **after** every heading of the verse's sub-tree that has text of its own, plus before the first block on a new verse inside a section | mapping by hand, insertion scripted |
+
+**If the commentary is going to the API through `parser-commentary`, use Mode 5.** The
+parser aligns a commentary block to the root segments of the transclusion group above
+it, and *any heading ends that scope*. A transclusion placed before a heading (Modes
+1–4) therefore aligns nothing; the verse must be repeated under each heading.
 
 **Modes 1 and 2 reach the same place by different means.** Mode 2 is the manual
 statement of the rule (the transclusion belongs before the sa-bcad that announces
@@ -63,7 +69,7 @@ All four modes write the same thing; only the *placement decision* differs.
 **Link form — full vault-relative path, always.**
 
 ```
-![[1-SOURCES/Text/<root-text>.md#^1-1]]
+![[$SOURCE_TEXTS/<root-text>.md#^1-1]]
 ```
 
 The full path from the vault root, including the `.md` extension. Never a bare
@@ -76,7 +82,7 @@ it fails loudly instead of silently pointing at the wrong file.
 ```
 <preceding line>
 
-![[1-SOURCES/Text/<root-text>.md#^1-1]]
+![[$SOURCE_TEXTS/<root-text>.md#^1-1]]
 
 <the commentary text this introduces>
 ```
@@ -143,7 +149,7 @@ Stages 2 and 3 assume the transclusions already exist (Stage 1 has run, or they 
 |---|---|---|
 | `root` | Full vault-relative path to the root text / translation to transclude from. Must use `verse_id_format: chapter-verse` block IDs (`^N-V`). | `$SOURCE_TEXTS/<root-text>.md` |
 | `commentary` | Full vault-relative path to the Tibetan commentary to modify in place. | `$COMMENTARIES/<commentary-id>_segmented.md` |
-| `link-base` | The base of the transclusion link, exactly as it should appear inside `![[ … #^N-V]]`. The skill uses the short Obsidian link form. | `1-SOURCES/Text/<root-text>.md` |
+| `link-base` | The base of the transclusion link, exactly as it should appear inside `![[ … #^N-V]]`. The skill uses the short Obsidian link form. | `$SOURCE_TEXTS/<root-text>.md` |
 | `chapter` | Optional. A single chapter label to scope the run, or `all` (default). Accepts a plain chapter number or a Roman-numeral front-matter label (see below). | `1`, `I`, `all` |
 
 **Chapter labels aren't always numeric.** Some root files in this vault give the pre-chapter-1 front matter (Sanskrit title line, Tibetan title line, opening homage) Roman-numeral block IDs — `^I-1`, `^I-2`, `^I-3` — instead of the generic `^0-N` convention. All three scripts recognize `^[IVXLCDM]+-N` alongside `^N-V`, and `--chapter` accepts either form (`--chapter I` scopes to the Roman-numeral front matter). Roman-numeral chapters sort before chapter 1 in reports.
@@ -181,7 +187,7 @@ Verses the script cannot place are listed under `UNPLACED`. These are usually **
 python3 $SKILL/scripts/01_transclude_verses.py \
   --root "$SOURCE_TEXTS/<root-text>.md" \
   --commentary "$COMMENTARIES/<comm>.md" \
-  --link-base "1-SOURCES/Text/<root-text>.md" \
+  --link-base "$SOURCE_TEXTS/<root-text>.md" \
   --chapter 1            # dry run
 # review, then:
 python3 $SKILL/scripts/01_transclude_verses.py ... --chapter 1 --apply
@@ -267,14 +273,14 @@ After Stage 1 (transclusion right before the verse, blank lines not yet normaliz
 ལུས་རྟེན་…ཚུལ་དང་།
 སེམས་རྟེན་…ཚུལ་ལོ། །
 དང་པོ་ནི།                                  ← the immediate sa-bcad
-![[1-SOURCES/Text/<root-text>.md#^1-4]]
+![[$SOURCE_TEXTS/<root-text>.md#^1-4]]
 ```
 
 After Stage 2 — the transclusion **moves up** to right before the **first line of the sa-bcad block** (not just before the immediate `དང་པོ་ནི།`):
 
 ```
 … ཡོད་པར་འགྱུར་རོ་ཞེས་པའོ། །
-![[1-SOURCES/Text/<root-text>.md#^1-4]]
+![[$SOURCE_TEXTS/<root-text>.md#^1-4]]
 གཉིས་པ་བརྩམ་བྱ་…དངོས་བཤད་པ་ལ།
 … (enumeration unchanged) …
 དང་པོ་ནི།
@@ -286,7 +292,7 @@ After Stage 3 — one blank line is added on each side of the transclusion:
 ```
 … ཡོད་པར་འགྱུར་རོ་ཞེས་པའོ། །
 
-![[1-SOURCES/Text/<root-text>.md#^1-4]]
+![[$SOURCE_TEXTS/<root-text>.md#^1-4]]
 
 གཉིས་པ་བརྩམ་བྱ་…དངོས་བཤད་པ་ལ།
 … (enumeration unchanged) …
@@ -400,8 +406,8 @@ The transclusion moved ahead of the sa-bcad line ("དང་པོ་ནི།")
 Some outline points accumulate more than one ནི।-ending sentence before the quotation — e.g. a heading-level remark plus its own sub-point's announcement. Only the paragraphs that themselves end in ནི། (immediately before their block ID) count as "the sa-bcad" to jump; an ordinary explanatory paragraph that happens to sit between the heading and the sa-bcad, but ends some other way (དང་།, ཅིང་།, ལའོ།, etc.), is left exactly where it is:
 
 ```
-##### གསུམ་པ་... ^0-2-2-1-1-3-0
-###### དང་པོ་... ^0-2-2-1-1-3-1-0
+####### **གསུམ་པ་...** ^0-2-2-1-1-3-0
+######## **དང་པོ་...** ^0-2-2-1-1-3-1-0
 
 [general remark, ends ...ལའོ། ། — does NOT end in ནི།, stays in place]
 
@@ -666,15 +672,15 @@ the match is an ID join, not a judgment), and three stdlib-only scripts do it:
 ```bash
 # one verse per line — dry run, then apply
 python3 $SKILL/scripts/insert_transclusions.py \
-  --source "1-SOURCES/Text/<root-text>.md" "<target.md>" --dry-run
+  --source "$SOURCE_TEXTS/<root-text>.md" "<target.md>" --dry-run
 python3 $SKILL/scripts/insert_transclusions.py \
-  --source "1-SOURCES/Text/<root-text>.md" "<target.md>"
+  --source "$SOURCE_TEXTS/<root-text>.md" "<target.md>"
 
 # one verse per paragraph — dry run is the default; --apply writes
 python3 $SKILL/scripts/insert_root_transclusions.py \
-  --source "1-SOURCES/Text/<root-text>.md" --target "<target.md>"
+  --source "$SOURCE_TEXTS/<root-text>.md" --target "<target.md>"
 python3 $SKILL/scripts/insert_root_transclusions.py \
-  --source "1-SOURCES/Text/<root-text>.md" --target "<target.md>" --apply
+  --source "$SOURCE_TEXTS/<root-text>.md" --target "<target.md>" --apply
 
 # remove every standalone ![[...]] embed again
 python3 $SKILL/scripts/remove_transclusions.py "<target.md>" --dry-run
@@ -797,3 +803,102 @@ For non-Tibetan-master commentaries, insert the transclusion at the very beginni
 - [ ] Every inserted transclusion uses the full vault-relative path
 - [ ] No existing text deleted, reordered, or rephrased in any file
 - [ ] Post-write report produced listing every file modified, every verse inserted, and every insertion position
+
+---
+
+## Mode 5 — Commentary, heading-scoped placement for alignment
+
+For a commentary whose transclusions feed `$SKILLS/commentary-upload/scripts/parser-commentary/` (the `commentary-upload` skill)
+(`alignment.json`). Placement is dictated by how that parser reads scope, so read
+this mode as the parser's rule written down.
+
+### How the parser decides alignment (`$SKILLS/commentary-upload/scripts/parser-commentary/parser.py`, `build_alignment`)
+
+1. A transclusion line, or a run of transclusion lines, opens a **scope**. Lines
+   separated only by blank lines still form **one group**.
+2. Every body block that follows is aligned to **every** root segment in that group
+   (many-to-many when the group holds several verses).
+3. The scope ends at the **next transclusion group** (which *replaces* it, never adds
+   to it) or at **any heading**. A transclusion written on or right before a heading
+   is therefore lost as soon as the heading is read.
+4. Headings are never aligned; transclusions of root-text headings are skipped.
+
+### Placement rules
+
+1. **One sub-tree per verse (or verse group).** Using the commentary's sa-bcad
+   tree, find the node whose section explains the verse — its words (ཚིག་དོན), its
+   general meaning (སྤྱི་དོན), and its analysis or debate (མཐའ་དཔྱད, དགག་བཞག་སྤང་གསུམ).
+   Everything under that node belongs to the verse.
+2. **Repeat the transclusion right after every heading in that sub-tree that has
+   body text of its own** — the node's own heading and every descendant heading,
+   at any depth. One transclusion never covers a sub-tree.
+3. **Skip a heading with no body text of its own** (one followed directly by a
+   sub-heading, or an empty section). A transclusion there aligns nothing.
+4. **Verses explained together** (one section for several verses) are written as a
+   group on consecutive lines; the blocks after them align to all of them.
+5. **A new verse inside a section.** When one section moves on from verse A to verse
+   B with no heading between, put B's transclusion before the first block about B.
+   It replaces A's scope from that point. There must be at least one body block
+   between A's and B's transclusions, or the parser merges them into one group.
+6. **Group-level content follows the outline, whatever its size.** The commentary's own
+   outline decides what belongs to what: a node that explains a verse group (often
+   `ཚིག་དོན` / `གཞུང་དོན` with verse-level children, plus a `སྤྱི་དོན` or `མཐའ་དཔྱད`
+   sibling) gives that whole group to its general and analysis sections and to any
+   real explanatory text of its own — 2 verses or 45. Deeper verse-level entries
+   still win inside their own sub-trees.
+7. **What stays unaligned.** (a) A pure outline announcement (`X ལ་གཉིས། A དང་། B`)
+   on a node above a single verse — it explains nothing. (b) A section that explains
+   no root verse at all (e.g. a passage on a scripture the autocommentary cites).
+8. **Anchors go on the first block that glosses the verse's own words** — not on a
+   block that is only a quotation fragment, nor on an objection to the previous
+   verse. If the section's first block already glosses the verse, use the heading.
+9. **Front matter and colophons follow the same rule:** e.g. the root's title lines
+   under every heading of the commentary's "meaning of the title" sub-tree, the
+   translator's homage under the "translator's homage" sub-tree. A root chapter
+   colophon goes before the commentary's own matching chapter-closing line.
+
+```markdown
+## དང་པོ་མཚན་གྱི་དོན། ^1-0
+
+![[$SOURCE_TEXTS/<root-text>.md#^I-1]]
+![[$SOURCE_TEXTS/<root-text>.md#^I-2]]
+
+དང་པོ་ལ། ཚིག་དོན་དང་། མཐའ་དཔྱད་པ་གཉིས། ^1-1
+
+### དང་པོ་ཚིག་དོན། ^1-1-0
+
+![[$SOURCE_TEXTS/<root-text>.md#^I-1]]
+![[$SOURCE_TEXTS/<root-text>.md#^I-2]]
+
+དང་པོ་ནི། … ^1-2
+```
+
+Spacing and link form follow the **House conventions**: full vault-relative path,
+one blank line before and after, a group on consecutive lines.
+
+### Procedure
+
+1. **Map.** Build a mapping file in `$WORK/` — one row per verse (or group):
+   the sub-tree root heading ID(s), and for rule 5 the body block ID before which
+   the verse starts. Map by reading the section against the TOC tree
+   (`$SECTIONS_RAW/toc-tree/<registered-id>.md`), never by quotation matching
+   alone. Mark every row you are not sure of; the human decides those.
+2. **Insert on a scratch copy.** From the mapping, write each transclusion group
+   after every heading with body text in the sub-tree, and before each rule-5 anchor.
+   Remove the file's old transclusions first when re-placing from scratch.
+3. **Verify.** Non-transclusion lines byte-identical to the source; every root ID
+   used exists; simulate the parser's scope rule and report how many body blocks
+   align, which verses align to nothing, and which blocks align to more than one
+   group by accident.
+4. **Compare** with the previous transclusions when re-placing, and report per verse:
+   same / moved / new / unplaced.
+5. **Write** to `$SOURCES/` only after the human has reviewed the comparison and
+   every marked row.
+
+### Completion check
+
+- [ ] Every verse has a sub-tree root, or is listed as unplaced with a reason
+- [ ] A transclusion sits right after every heading with body text in each sub-tree
+- [ ] No two different verses' transclusions are separated only by blank lines (unless intended as a group)
+- [ ] Parser simulation run; aligned-block count and unaligned verses reported
+- [ ] Non-transclusion lines byte-identical; full link form; one blank line around each group

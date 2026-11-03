@@ -49,7 +49,9 @@ from pathlib import Path
 
 
 # ── Gemini API key ────────────────────────────────────────────────────────────
-_KEY_NAMES = ("GEMINI_API_KEY", "GOOGLE_API_KEY")
+# GEMINI_KEY_SLOT=2 in the environment selects a second key, GEMINI_API_KEY_2.
+_KEY_NAMES = (("GEMINI_API_KEY_2",) if os.environ.get("GEMINI_KEY_SLOT", "").strip() == "2"
+              else ("GEMINI_API_KEY", "GOOGLE_API_KEY"))
 
 
 def _gemini_api_key():

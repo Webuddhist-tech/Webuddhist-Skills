@@ -59,7 +59,7 @@ Recommended order when multiple sources exist for the same text:
 3. Any other available source, in order of how developed its own structural markers are.
 
 After running this skill on two or more sources for the same chapter, run the
-**combined-outline synthesis** step (`section-summary-combined`, or the
+**combined-outline synthesis** step (`section-summary` (Phase 2), or the
 equivalent compiler registered in your vault) to synthesise them into
 `$SECTIONS/<node-id>.md`. If only one source exists, its outline file **is** the
 outline for that chapter until a second one arrives.

@@ -76,7 +76,7 @@ An existing machine translation may be threaded into the prompt as **reference**
 
 | Input | Description | Required |
 |---|---|---|
-| **Source file** | A block-ID'd note under `$SOURCE_TEXTS/`. Blocks without ` ^<id>` are skipped; headings are handled by `--headings`. | yes |
+| **Source file** | A block-ID'd note under `$SOURCE_TEXTS/` (or elsewhere under `$SOURCES/`). A block-ID'd file outside `$SOURCES/` — e.g. passages cut from a transcluded commentary — is accepted only if its frontmatter says `derived_from: $SOURCES/...`. Blocks without ` ^<id>` are skipped; headings are handled by `--headings`. | yes |
 | **Target language** | A language **label** (`hindi`, `nepali`, `mongolian`, `vietnamese`), not an ISO code. The tag comes from the label table or `--lang-tag`. | yes |
 | **Model** | `--model`, default `gemini-3.1-pro-preview`. `--thinking low|medium|high` (default: the model's default). Temperature is left at the model default unless `--temperature` is given. | no |
 | **Style instruction** | `<track>/style.md`, seeded per language on first run and read back **verbatim** thereafter as the system prompt, followed by the fixed output contract. Edit the file, never the script. | no |
@@ -147,6 +147,8 @@ python3 $SKILL/scripts/gm_translate.py --source "$SOURCE_TEXTS/<text>.md" --lang
 
 Read the pilot back block by block against the Tibetan: line parity, script, mantras transliterated, names consistent, register recitable, imperatives/optatives (`ཤོག`, `གྱུར་ཅིག`) rendered as aspirations. A **systematic** defect means editing `style.md`; a **recurring term-level** error means a line in `glossary.tsv`; then re-run the affected blocks with `--force --only <ids>`.
 
+For a commentary whose sa bcad puts a heading above almost every block, add `--cross-headings`: a batch may then span section boundaries (each block keeps its own id in the JSON, so alignment is unaffected) — one commentary dropped from 458 calls to 95. Wrap long runs in `caffeinate -is` on a Mac so a sleeping machine does not hang the calls.
+
 #### Step 3 — Translate the section headings
 
 ```bash
@@ -179,6 +181,25 @@ Never from here. The `translation-upload` skill lints, parses, checks the live r
 - [ ] Every source block ID appears exactly once in the rendered file, in source order
 - [ ] Frontmatter carries `track_type: machine-baseline`, `rails_used: none`, `status: draft`, and names the model version that answered
 - [ ] Nothing under `$SOURCES/`, `$RAILS/`, or any other track was modified
+
+### Variant — a commentary as the source (`gm_translate_commentary.py`)
+
+`gm_translate.py` translates a line-by-line text from the Tibetan root. `$SKILL/scripts/gm_translate_commentary.py` is its sibling for a block-ID'd **commentary** (prose paragraphs, verse quotations, headings at any depth, root-text transclusions, footnotes), translated from whatever language the commentary is written in — e.g. an English commentary into Traditional Chinese. Same contract: structured `{"blocks": [{"id", "lines"}]}` output, ids back identical and in order, line parity per block, every `[^n]` footnote marker of a source block present in its translation, an append-only ledger in `<track>/work/<stem>.jsonl`, and `<track>/style.md` seeded once then read back verbatim.
+
+- Three passes, each resumable: body blocks (default, batches of adjacent blocks with rolling context), `--headings` (the H1 and all headings, one call), `--notes` (the footnote notes, one call).
+- The render is the `translation-upload` shape: each body block a transclusion of the **source commentary's** block, a blank line, and the translation ending in the same ` ^id`. The source's root-text transclusions are not carried over — the file aligns to the commentary, block for block, and reaches the root only through it.
+- `--source-label`, `--target-label`, `--language-name`, `--lang-tag`, `--track` set the pair; the defaults are English → Traditional Chinese (Taiwan). `--script traditional` treats Simplified-only characters in the output as a failed check (re-run alone, up to `--attempts`); `--forbid` lists words the output may not contain.
+- Needs `GEMINI_API_KEY` in the environment.
+
+```bash
+python3 $SKILL/scripts/gm_translate_commentary.py --source "$COMMENTARIES/<commentary>.md" --list
+python3 $SKILL/scripts/gm_translate_commentary.py --source "$COMMENTARIES/<commentary>.md" --limit 6        # pilot
+python3 $SKILL/scripts/gm_translate_commentary.py --source "$COMMENTARIES/<commentary>.md"                  # all blocks
+python3 $SKILL/scripts/gm_translate_commentary.py --source "$COMMENTARIES/<commentary>.md" --headings
+python3 $SKILL/scripts/gm_translate_commentary.py --source "$COMMENTARIES/<commentary>.md" --notes
+```
+
+Upload the result with `translation-upload` after the commentary itself is live (`commentary-upload`).
 
 ---
 
@@ -353,7 +374,7 @@ A batch is also closed at a **heading boundary** — sections are never mixed �
 11. **The API key is a secret.** It lives only in the repo's git-ignored `$SYSTEM/scripts/.env`; it is never printed, committed, passed on a command line, or handed to another agent or repo.
 11. **Network failures that retrying cannot fix stop at once.** A proxy refusing the connection (`Tunnel connection failed: 403` — typical inside a Cowork/Claude sandbox, whose egress policy may not include dharmamitra.org) and a TLS certificate failure (`CERTIFICATE_VERIFY_FAILED`, typical of python.org builds on macOS) now abort the run immediately with an explanation, instead of six back-off retries. For the first, run the command from a terminal with direct internet access (the ledger resumes where the sandbox stopped) or allowlist the host; for the second, `pip3 install --upgrade certifi` — the script uses certifi's CA bundle automatically when `SSL_CERT_FILE` is not set.
 12. **Sandbox runs.** From a Claude/Cowork session the call may be blocked by the session's network policy even though your own machine can reach DharmaMitra. That is expected; hand the exact command to the user to run locally.
-13. **The glossary does not enforce terminology.** It is appended to the context as a suggestion. Measured on the Twenty-One Tārās: the glossary-primed English draft was ~88% identical to the unprimed zero-shot draft and still used "zombies" and "yakṣas" where the glossary said vetāla and yaksas. Enforce locked terms afterwards with `graded-translate` Phase 2 (and check with its Phase 3 script).
+13. **The glossary does not enforce terminology.** It is appended to the context as a suggestion. Measured on the Twenty-One Tārās: the glossary-primed English draft was ~88% identical to the unprimed zero-shot draft and still used "zombies" and "yakṣas" where the glossary said vetāla and yaksas. Enforce locked terms afterwards with `graded-translate` Phase 2 (and check with its Phase 3 script). At most `--glossary-max-hits` matching entries (default 15) are offered per call; a run that sends a whole termbase must raise it, and the script warns on stderr whenever entries are cut.
 
 ---
 
@@ -397,6 +418,10 @@ python3 $SKILL/scripts/dm_translate.py \
 
 One call per `##` heading (level ≥ 2) under `HEADING_STYLE`; the H1 is never sent. For a text with many headings (a commentary's sa-bcad), add `--heading-batch 8`: headings go N per call under the same `[[n]]` marker protocol as blocks, and a bad split falls back to one call each — 271 headings cost 36 calls instead of 271. Read the four-or-so results back: a short label, numeral kept, nothing added. Re-run one with `--headings --force --only <id>` if needed. These become the section titles of the translation's table of contents on upload.
 
+#### Step 3c — Commentaries that mark quoted root words
+
+Some commentaries mark each quoted root word with the emphasis sign ༷ (U+0F37). DharmaMitra then copies those words in Tibetan script — in Chinese especially — instead of translating them. `--strip-marks` removes ༷ before sending (recorded per record as `source_marks_stripped`). A verse cited by its opening words ("X སོགས་") may still come back in Tibetan; give it a `--glossary` entry rendering the incipit by the opening line of the same verse in the vault's own translation of the root, citing the aligned block. Find leftovers with a scan for Tibetan script in the ledger's translations (excluding ༈).
+
 #### Step 4 — Verify the render
 
 1. `blocks_translated == blocks_total` and `headings_translated` equals the number of `##` headings, or state the shortfall.
@@ -409,7 +434,7 @@ One call per `##` heading (level ≥ 2) under `HEADING_STYLE`; the H1 is never s
    diff <(grep -o '\^[A-Za-z0-9-]*$' "$SOURCE_TEXTS/<file>.md") \
         <(grep -o '\^[A-Za-z0-9-]*$' "$TRANSFORMATIONS/Translations/Dharmamitra/<tag>/<stem>-<tag>.md") && echo IDS OK
    ```
-4. Line parity per block and no Tibetan inside translation lines: `python3 $SKILLS/gemini-translate/scripts/gm_verify.py --lang-tag <tag> --track $TRANSFORMATIONS/Translations/Dharmamitra/<tag>` (the checker is generator-agnostic).
+4. Line parity per block and no Tibetan inside translation lines: `python3 $SKILL/scripts/gm_verify.py --lang-tag <tag> --track $TRANSFORMATIONS/Translations/Dharmamitra/<tag>` (the checker is generator-agnostic).
 5. Re-render at any time without calling the API: `--render-only` (add `--extra-fm work/extra-fm.json` to seed frontmatter keys).
 
 #### Step 5 — Report
