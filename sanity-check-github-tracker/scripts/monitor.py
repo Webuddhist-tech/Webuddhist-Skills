@@ -9,7 +9,7 @@ import requests
 from datetime import datetime, timedelta, timezone
 
 
-ORG = os.getenv("GITHUB_ORG", "Webuddhist-tech")
+ORG = os.getenv("GITHUB_ORG", "WeBuddhist")
 WINDOW_DAYS = 1
 TEAM_SLUG = os.getenv("GITHUB_TEAM", "openpecha-dev-team")
 _ISO_TZ_OFFSET = "+00:00"
